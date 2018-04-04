@@ -1,0 +1,228 @@
+C51 COMPILER V9.53.0.0   USBHOSTHUB_KM                                                     02/06/2018 18:06:36 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE USBHOSTHUB_KM
+OBJECT MODULE PLACED IN USBHostHUB_KM.obj
+COMPILER INVOKED BY: D:\Keil\Install\C51\BIN\C51.EXE USB\Host\USBHostHUB_KM.C LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJEC
+                    -TEXTEND PRINT(.\USBHostHUB_KM.lst) OBJECT(USBHostHUB_KM.obj)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT *******************************
+   3          * File Name          : USBHostHUB_KM.C
+   4          * Author             : WCH
+   5          * Version            : V1.0
+   6          * Date               : 2017/01/20
+   7          * Description        :
+   8           USB host example for CH554, start USB device under DP/DM and HP/HM port
+   9           USBÖ÷»úÓ¦ÓÃÀý×Ó,³õÊ¼»¯ºÍÃ¶¾ÙUSB¶Ë¿ÚÁ¬½ÓµÄÉè±¸,Í¬Ê±Ö§³Ö×î¶à1¸öUSBÉè±¸,Ö§³ÖÒ»¼¶Íâ²¿HUB,
+  10           ¿ÉÒÔ²Ù×÷USB¼üÊóºÍHUB,°üº¬HIDÀàÃüÁî´¦Àí
+  11           Èç¹ûÐèÒª²Ù×÷UÅÌ£¬Çë²Î¿¼U_DISKÎÄ¼þ¼ÐÏÂµÄÀý×Ó
+  12           Ö§³Ö¼òµ¥USB´òÓ¡»ú²Ù×÷£¬Ã»ÓÐ´¦ÀíUSB´òÓ¡»úÀàÃüÁî 
+  13          *******************************************************************************/
+  14          
+  15          #include "..\..\Public\CH554.H"                                               
+  16          #include "..\..\Public\Debug.H"
+  17          #include "..\USB_LIB\USBHOST.H"
+  18          #include <stdio.h>
+  19          #include <string.h>
+  20          
+  21          #pragma  NOAREGS
+  22          
+  23          /*»ñÈ¡Éè±¸ÃèÊö·û*/
+  24          UINT8C  SetupGetDevDescr[] = { USB_REQ_TYP_IN, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_DEVICE, 0x00, 0x00,
+             - sizeof( USB_DEV_DESCR ), 0x00 };
+  25          
+  26          /*»ñÈ¡ÅäÖÃÃèÊö·û*/
+  27          UINT8C  SetupGetCfgDescr[] = { USB_REQ_TYP_IN, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_CONFIG, 0x00, 0x00,
+             - 0x04, 0x00 };
+  28          
+  29          /*ÉèÖÃUSBµØÖ·*/
+  30          UINT8C  SetupSetUsbAddr[] = { USB_REQ_TYP_OUT, USB_SET_ADDRESS, USB_DEVICE_ADDR, 0x00, 0x00, 0x00, 0x00, 0
+             -x00 };
+  31          
+  32          /*ÉèÖÃUSBÅäÖÃ*/
+  33          UINT8C  SetupSetUsbConfig[] = { USB_REQ_TYP_OUT, USB_SET_CONFIGURATION, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+             - };
+  34          
+  35          /*ÉèÖÃUSB½Ó¿ÚÅäÖÃ*/
+  36          UINT8C  SetupSetUsbInterface[] = { USB_REQ_RECIP_INTERF, USB_SET_INTERFACE, 0x00, 0x00, 0x00, 0x00, 0x00, 
+             -0x00 };
+  37          
+  38          /*Çå³ý¶ËµãSTALL*/
+  39          UINT8C  SetupClrEndpStall[] = { USB_REQ_TYP_OUT | USB_REQ_RECIP_ENDP, USB_CLEAR_FEATURE, 0x00, 0x00, 0x00,
+             - 0x00, 0x00, 0x00 };
+  40          
+  41          /*»ñÈ¡HUBÃèÊö·û*/
+  42          UINT8C  SetupGetHubDescr[] = { HUB_GET_HUB_DESCRIPTOR, HUB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_HUB, 0x00, 
+             -0x00, sizeof( USB_HUB_DESCR ), 0x00 };
+  43          
+  44          /*»ñÈ¡HIDÉè±¸±¨±íÃèÊö·û*/
+  45          UINT8C  SetupGetHIDDevReport[] = { 0x81, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_REPORT, 0x00, 0x00, 0x41,
+             - 0x00 };
+  46          
+C51 COMPILER V9.53.0.0   USBHOSTHUB_KM                                                     02/06/2018 18:06:36 PAGE 2   
+
+  47          /*´òÓ¡»úÀàÃüÁî*/
+  48          UINT8C  XPrinterReport[] = { 0xA1, 0, 0x00, 0, 0x00, 0x00, 0xF1, 0x03 };
+  49          
+  50          UINT8X  UsbDevEndp0Size;                                                       //* USBÉè±¸µÄ¶Ëµã0µÄ×î´ó°ü³
+             -ß´ç */
+  51          UINT8X  RxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0000 ;                              // IN, must even address
+  52          UINT8X  TxBuffer[ 256 ] _at_ 0x0040 ;                              // OUT, must even address
+  53          
+  54          UINT8 Set_Port = 0;
+  55          
+  56          _RootHubDev xdata ThisUsbDev;                                                   //ROOT¿Ú
+  57          _DevOnHubPort xdata DevOnHubPort[HUB_MAX_PORTS];                                // ¼Ù¶¨:²»³¬¹ý1¸öÍâ²¿HUB,Ã
+             -¿¸öÍâ²¿HUB²»³¬¹ýHUB_MAX_PORTS¸ö¶Ë¿Ú(¶àÁË²»¹Ü)
+  58          
+  59          bit     RootHubId;                                                              // µ±Ç°ÕýÔÚ²Ù×÷µÄroot-hub¶
+             -Ë¿ÚºÅ:0=HUB0,1=HUB1
+  60          bit     FoundNewDev;
+  61          
+  62          extern MIDI_INFO        Midi;
+  63          
+  64          void main( )
+  65          {
+  66   1          UINT8   i, s, len, endp;
+  67   1          UINT16  loc;
+  68   1          CfgFsys( ); 
+  69   1          mDelaymS(5);                                                                      //ÐÞ¸ÄÖ÷Æµ£¬µÈ´ýÊ±ÖÓÎÈ¶¨
+  70   1          mInitSTDIO( );                                                              //ÎªÁËÈÃ¼ÆËã»úÍ¨¹ý´®¿Ú¼à¿Ø
+             -ÑÝÊ¾¹ý³Ì
+  71   1          printf( "Start @ChipID=%02X\n", (UINT16)CHIP_ID );
+  72   1          InitUSB_Host( );
+  73   1          FoundNewDev = 0;
+  74   1          printf( "Wait Device In\n" );
+  75   1          while ( 1 )
+  76   1          {
+  77   2              s = ERR_SUCCESS;
+  78   2              if ( UIF_DETECT ){                                                       // Èç¹ûÓÐUSBÖ÷»ú¼ì²âÖÐ¶ÏÔ
+             -ò´¦Àí
+  79   3                  UIF_DETECT = 0;                                                      // ÇåÖÐ¶Ï±êÖ¾
+  80   3                  s = AnalyzeRootHub( );                                               // ·ÖÎöROOT-HUB×´Ì¬
+  81   3                  if ( s == ERR_USB_CONNECT ) FoundNewDev = 1;                                                
+  82   3              }
+  83   2              if ( FoundNewDev ){                                                      // ÓÐÐÂµÄUSBÉè±¸²åÈë
+  84   3                  FoundNewDev = 0;
+  85   3                  mDelaymS( 200 );                                                     // ÓÉÓÚUSBÉè±¸¸Õ²åÈëÉÐÎ´Î
+             -È¶¨,¹ÊµÈ´ýUSBÉè±¸Êý°ÙºÁÃë,Ïû³ý²å°Î¶¶¶¯
+  86   3                  s = EnumAllRootDevice( );                                            // Ã¶¾ÙËùÓÐROOT-HUB¶Ë¿ÚµÄ
+             -USBÉè±¸
+  87   3                  if ( s != ERR_SUCCESS ){
+  88   4                      printf( "EnumAllRootDev err = %02X\n", (UINT16)s );
+  89   4                  }
+  90   3              }
+  91   2                      
+  92   2                      if(ThisUsbDev.DeviceStatus == ROOT_DEV_SUCCESS)
+  93   2                      {
+  94   3                              if(Midi.AudioType==0x03)  
+  95   3                              {
+  96   4                                      SelectHubPort( 0 ); 
+  97   4                                      
+  98   4                                      if( Midi.BulkInEp!=0)    //·¢IN°ü
+  99   4                                      {
+ 100   5                                              s = USBHostTransact( USB_PID_IN << 4 | Midi.BulkInEp & 0x7F, Midi.BulkInEp & 0x80 ? bUH_R_TOG | bUH_T
+             -_TOG : 0, 0 );// CH554´«ÊäÊÂÎñ,»ñÈ¡Êý¾Ý,NAK²»ÖØÊÔ
+C51 COMPILER V9.53.0.0   USBHOSTHUB_KM                                                     02/06/2018 18:06:36 PAGE 3   
+
+ 101   5                                              if ( s == ERR_SUCCESS ){
+ 102   6                                                      Midi.BulkInEp ^= 0x80;                                             // Í¬²½±êÖ¾·­×ª
+ 103   6                                                      len = USB_RX_LEN;                                         // ½ÓÊÕµ½µÄÊý¾Ý³¤¶È
+ 104   6                                                      if ( len ) {
+ 105   7                                                              printf("midi data: ");
+ 106   7                                                              for ( i = 0; i < len; i ++ ){
+ 107   8                                                                      printf("x%02X ",(UINT16)(RxBuffer[i]) );
+ 108   8                                                              }
+ 109   7                                                              printf("\n");
+ 110   7                                                      }
+ 111   6                                              }
+ 112   5                                              else if ( s != ( USB_PID_NAK | ERR_USB_TRANSFER ) ) {
+ 113   6                                                      printf("midi error %02x\n",(UINT16)s);                   // ¿ÉÄÜÊÇ¶Ï¿ªÁË
+ 114   6                                              }                               
+ 115   5                                      }
+ 116   4                                      if( Midi.BulkOutEp!=0)  //·¢OUT°ü
+ 117   4                                      {
+ 118   5      //                                      UH_TX_LEN = 64;
+ 119   5      //                                      for ( i = 0; i != UH_TX_LEN; i ++ )
+ 120   5      //                                      {
+ 121   5      //                                              TxBuffer[ i ] = 0;  //·¢0
+ 122   5      //                                      }
+ 123   5      //                              
+ 124   5      //                                      s = USBHostTransact( USB_PID_OUT << 4 | Midi.BulkOutEp & 0x7F, Midi.BulkOutEp & 0x80 ? bUH_R_TOG | 
+             -bUH_T_TOG : 0, 0 );// CH554´«ÊäÊÂÎñ,»ñÈ¡Êý¾Ý,NAK²»ÖØÊÔ
+ 125   5      //                                      if ( s == ERR_SUCCESS ){
+ 126   5      //                                              Midi.BulkOutEp ^= 0x80;                                             // Í¬²½±êÖ¾·­×ª
+ 127   5      
+ 128   5      //                                      }
+ 129   5                                      
+ 130   5                                      }
+ 131   4      
+ 132   4                              }                               
+ 133   3                              
+ 134   3                              
+ 135   3                      }
+ 136   2      
+ 137   2                      
+ 138   2      //            loc = SearchTypeDevice( DEV_TYPE_MOUSE );                             // ÔÚROOT-HUBÒÔ¼°Íâ²¿H
+             -UB¸÷¶Ë¿ÚÉÏËÑË÷Ö¸¶¨ÀàÐÍµÄÉè±¸ËùÔÚµÄ¶Ë¿ÚºÅ
+ 139   2      //            if ( loc != 0xFFFF ){                                                 // ÕÒµ½ÁË,Èç¹ûÓÐÁ½¸öMO
+             -USEÈçºÎ´¦Àí?
+ 140   2      //                printf( "Query Mouse @%04X\n", loc );
+ 141   2      //                i = (UINT8)( loc >> 8 );
+ 142   2      //                len = (UINT8)loc;
+ 143   2      //                SelectHubPort( len );                                             // Ñ¡Ôñ²Ù×÷Ö¸¶¨µÄROOT-
+             -HUB¶Ë¿Ú,ÉèÖÃµ±Ç°USBËÙ¶ÈÒÔ¼°±»²Ù×÷Éè±¸µÄUSBµØÖ·
+ 144   2      
+ 145   2      //                                      endp = len ? DevOnHubPort[len-1].GpVar : ThisUsbDev.GpVar;        // ÖÐ¶Ï¶ËµãµÄµØÖ·,Î»7ÓÃÓÚÍ¬²½±êÖ¾
+             -Î»
+ 146   2      //                                      if ( endp & USB_ENDP_ADDR_MASK ){                                 // ¶ËµãÓÐÐ§
+ 147   2      //                                              s = USBHostTransact( USB_PID_IN << 4 | endp & 0x7F, endp & 0x80 ? bUH_R_TOG | bUH_T_TOG : 0, 0 );/
+             -/ CH554´«ÊäÊÂÎñ,»ñÈ¡Êý¾Ý,NAK²»ÖØÊÔ
+ 148   2      //                                              if ( s == ERR_SUCCESS ){
+ 149   2      //                                                      endp ^= 0x80;                                             // Í¬²½±êÖ¾·­×ª
+ 150   2      //                                                      if ( len ) DevOnHubPort[len-1].GpVar = endp;              // ±£´æÍ¬²½±êÖ¾Î»
+ 151   2      //                                                      else ThisUsbDev.GpVar = endp;
+ 152   2      //                                                      len = USB_RX_LEN;                                         // ½ÓÊÕµ½µÄÊý¾Ý³¤¶È
+ 153   2      //                                                      if ( len ) {
+ 154   2      //                                                              printf("Mouse data: ");
+ 155   2      //                                                              for ( i = 0; i < len; i ++ ){
+ 156   2      //                                                                      printf("x%02X ",(UINT16)(RxBuffer[i]) );
+C51 COMPILER V9.53.0.0   USBHOSTHUB_KM                                                     02/06/2018 18:06:36 PAGE 4   
+
+ 157   2      //                                                              }
+ 158   2      //                                                              printf("\n");
+ 159   2      //                                                      }
+ 160   2      //                                              }
+ 161   2      //                                              else if ( s != ( USB_PID_NAK | ERR_USB_TRANSFER ) ) {
+ 162   2      //                                                      printf("Mouse error %02x\n",(UINT16)s);                   // ¿ÉÄÜÊÇ¶Ï¿ªÁË
+ 163   2      //                                              }
+ 164   2      //                                      }
+ 165   2      //                                      else {
+ 166   2      //                                              printf("Mouse no interrupt endpoint\n");
+ 167   2      //                                      }
+ 168   2      
+ 169   2      
+ 170   2          }
+ 171   1      }
+*** WARNING C280 IN LINE 66 OF USB\Host\USBHostHUB_KM.C: 'endp': unreferenced local variable
+*** WARNING C280 IN LINE 67 OF USB\Host\USBHostHUB_KM.C: 'loc': unreferenced local variable
+ 172          
+ 173          
+ 174          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    289    ----
+   CONSTANT SIZE    =    173    ----
+   XDATA SIZE       =     28       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

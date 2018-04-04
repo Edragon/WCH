@@ -1,0 +1,268 @@
+C51 COMPILER V9.53.0.0   CH554UFI                                                          05/25/2017 09:58:22 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE CH554UFI
+OBJECT MODULE PLACED IN CH554UFI.obj
+COMPILER INVOKED BY: D:\Keil\Install\C51\BIN\C51.EXE USB\USB_LIB\CH554UFI.C OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND 
+                    -PRINT(.\CH554UFI.lst) OBJECT(CH554UFI.obj)
+
+line level    source
+
+   1          /* 2014.09.09
+   2          *****************************************
+   3          **   Copyright  (C)  W.ch  1999-2015   **
+   4          **   Web:      http://wch.cn           **
+   5          *****************************************
+   6          **  USB-flash File Interface for CH554 **
+   7          **  KC7.0@MCS51                        **
+   8          *****************************************
+   9          */
+  10          /* CH554 UÅÌÖ÷»úÎÄ¼şÏµÍ³½Ó¿Ú, Ö§³Ö: FAT12/FAT16/FAT32 */
+  11          
+  12          //#define DISK_BASE_BUF_LEN             512     /* Ä¬ÈÏµÄ´ÅÅÌÊı¾İ»º³åÇø´óĞ¡Îª512×Ö½Ú,Îª0Ôò½ûÖ¹ÔÚ±¾ÎÄ¼şÖĞ¶¨Òå»º³åÇø²¢ÓÉÓ¦Ó
+             -Ã³ÌĞòÔÚpDISK_BASE_BUFÖĞÖ¸¶¨ */
+  13          /* Èç¹ûĞèÒª¸´ÓÃ´ÅÅÌÊı¾İ»º³åÇøÒÔ½ÚÔ¼RAM,ÄÇÃ´¿É½«DISK_BASE_BUF_LEN¶¨ÒåÎª0ÒÔ½ûÖ¹ÔÚ±¾ÎÄ¼şÖĞ¶¨Òå»º³åÇø,¶øÓÉÓ¦ÓÃ
+             -³ÌĞòÔÚµ÷ÓÃCH554LibInitÖ®Ç°½«ÓëÆäËü³ÌĞòºÏÓÃµÄ»º³åÇøÆğÊ¼µØÖ·ÖÃÈëpDISK_BASE_BUF±äÁ¿ */
+  14          
+  15          //#define NO_DEFAULT_ACCESS_SECTOR      1               /* ½ûÖ¹Ä¬ÈÏµÄ´ÅÅÌÉÈÇø¶ÁĞ´×Ó³ÌĞò,ÏÂÃæÓÃ×ÔĞĞ±àĞ´µÄ³ÌĞò´úÌæËü */
+  16          //#define NO_DEFAULT_DISK_CONNECT               1               /* ½ûÖ¹Ä¬ÈÏµÄ¼ì²é´ÅÅÌÁ¬½Ó×Ó³ÌĞò,ÏÂÃæÓÃ×ÔĞĞ±àĞ´µÄ³ÌĞò´úÌæËü */
+  17          //#define NO_DEFAULT_FILE_ENUMER                1               /* ½ûÖ¹Ä¬ÈÏµÄÎÄ¼şÃûÃ¶¾Ù»Øµ÷³ÌĞò,ÏÂÃæÓÃ×ÔĞĞ±àĞ´µÄ³ÌĞò´úÌæËü */
+  18          
+  19          //#include "CH554.H"
+  20          #include "CH554UFI.H"
+*** WARNING C318 IN LINE 17 OF USB\USB_LIB\CH554UFI.H: can't open file 'CH554.H'
+*** ERROR C141 IN LINE 97 OF USB\USB_LIB\CH554UFI.H: syntax error near 'UINT8'
+*** ERROR C129 IN LINE 97 OF USB\USB_LIB\CH554UFI.H: missing ';' before 'DIR_Name'
+  21          
+  22          CMD_PARAM_I     mCmdParam;                                              /* ÃüÁî²ÎÊı */
+  23          #if             DISK_BASE_BUF_LEN > 0
+  24          UINT8X  DISK_BASE_BUF[ DISK_BASE_BUF_LEN ] _at_ 0x0080; /* Íâ²¿RAMµÄ´ÅÅÌÊı¾İ»º³åÇø,»º³åÇø³¤¶ÈÎªÒ»¸öÉÈÇøµÄ³¤
+             -¶È */
+  25          #endif
+  26          
+  27          /* ÒÔÏÂ³ÌĞò¿ÉÒÔ¸ù¾İĞèÒªĞŞ¸Ä */
+  28          
+  29          #ifndef NO_DEFAULT_ACCESS_SECTOR                /* ÔÚÓ¦ÓÃ³ÌĞòÖĞ¶¨ÒåNO_DEFAULT_ACCESS_SECTOR¿ÉÒÔ½ûÖ¹Ä¬ÈÏµÄ´ÅÅÌÉÈÇø¶ÁĞ´×Ó³
+             -ÌĞò,È»ºóÓÃ×ÔĞĞ±àĞ´µÄ³ÌĞò´úÌæËü */
+  30          //if ( use_external_interface ) {  // Ìæ»»UÅÌÉÈÇøµ×²ã¶ÁĞ´×Ó³ÌĞò
+  31          //    CH554DiskStatus=DISK_MOUNTED;  // Ç¿ÖÆ¿éÉè±¸Á¬½Ó³É¹¦(Ö»²î·ÖÎöÎÄ¼şÏµÍ³)
+  32          //}
+  33          
+  34          #pragma ot(8,size)
+  35          
+  36          UINT8   CH554ReadSector( UINT8 SectCount, PUINT8X DataBuf )  /* ´Ó´ÅÅÌ¶ÁÈ¡¶à¸öÉÈÇøµÄÊı¾İµ½»º³åÇøÖĞ */
+  37          {
+  38                  UINT8   retry;
+  39          //      if ( use_external_interface ) return( extReadSector( CH554vLbaCurrent, SectCount, DataBuf ) );  /* Íâ²¿
+             -½Ó¿Ú */
+  40                  for( retry = 0; retry < 3; retry ++ ) {  /* ´íÎóÖØÊÔ */
+  41                          pCBW -> mCBW_DataLen0 = 0;  /* Êı¾İ´«Êä³¤¶È */
+  42                          pCBW -> mCBW_DataLen1 = SectCount << CH554vSectorSizeB - 8;
+  43                          pCBW -> mCBW_DataLen2 = 0;
+  44                          pCBW -> mCBW_DataLen3 = 0;
+  45                          pCBW -> mCBW_Flag = 0x80;
+  46                          pCBW -> mCBW_LUN = CH554vCurrentLun;
+C51 COMPILER V9.53.0.0   CH554UFI                                                          05/25/2017 09:58:22 PAGE 2   
+
+  47                          pCBW -> mCBW_CB_Len = 10;
+  48                          pCBW -> mCBW_CB_Buf[ 0 ] = SPC_CMD_READ10;
+  49                          pCBW -> mCBW_CB_Buf[ 1 ] = 0x00;
+  50                          pCBW -> mCBW_CB_Buf[ 2 ] = *(PUINT8)&CH554vLbaCurrent;
+  51                          pCBW -> mCBW_CB_Buf[ 3 ] = *( (PUINT8)&CH554vLbaCurrent + 1 );
+  52                          pCBW -> mCBW_CB_Buf[ 4 ] = *( (PUINT8)&CH554vLbaCurrent + 2 );
+  53                          pCBW -> mCBW_CB_Buf[ 5 ] = *( (PUINT8)&CH554vLbaCurrent + 3 );
+  54                          pCBW -> mCBW_CB_Buf[ 6 ] = 0x00;
+  55                          pCBW -> mCBW_CB_Buf[ 7 ] = 0x00;
+  56                          pCBW -> mCBW_CB_Buf[ 8 ] = SectCount;
+  57                          pCBW -> mCBW_CB_Buf[ 9 ] = 0x00;
+  58                          CH554BulkOnlyCmd( DataBuf );  /* Ö´ĞĞ»ùÓÚBulkOnlyĞ­ÒéµÄÃüÁî */
+  59                          if ( CH554IntStatus == ERR_SUCCESS ) {
+  60                                  return( ERR_SUCCESS );
+  61                          }
+  62                          CH554IntStatus = CH554AnalyzeError( retry );
+  63                          if ( CH554IntStatus != ERR_SUCCESS ) {
+  64                                  return( CH554IntStatus );
+  65                          }
+  66                  }
+  67                  return( CH554IntStatus = ERR_USB_DISK_ERR );  /* ´ÅÅÌ²Ù×÷´íÎó */
+  68          }
+  69          
+  70          #ifdef  EN_DISK_WRITE
+  71          UINT8   CH554WriteSector( UINT8 SectCount, PUINT8X DataBuf )  /* ½«»º³åÇøÖĞµÄ¶à¸öÉÈÇøµÄÊı¾İ¿éĞ´Èë´ÅÅÌ */
+  72          {
+  73                  UINT8   retry;
+  74          //      if ( use_external_interface ) return( extWriteSector( CH554vLbaCurrent, SectCount, DataBuf ) );  /* Íâ²
+             -¿½Ó¿Ú */
+  75                  for( retry = 0; retry < 3; retry ++ ) {  /* ´íÎóÖØÊÔ */
+  76                          pCBW -> mCBW_DataLen0 = 0;  /* Êı¾İ´«Êä³¤¶È */
+  77                          pCBW -> mCBW_DataLen1 = SectCount << CH554vSectorSizeB - 8;
+  78                          pCBW -> mCBW_DataLen2 = 0;
+  79                          pCBW -> mCBW_DataLen3 = 0;
+  80                          pCBW -> mCBW_Flag = 0x00;
+  81                          pCBW -> mCBW_LUN = CH554vCurrentLun;
+  82                          pCBW -> mCBW_CB_Len = 10;
+  83                          pCBW -> mCBW_CB_Buf[ 0 ] = SPC_CMD_WRITE10;
+  84                          pCBW -> mCBW_CB_Buf[ 1 ] = 0x00;
+  85                          pCBW -> mCBW_CB_Buf[ 2 ] = *(PUINT8)&CH554vLbaCurrent;
+  86                          pCBW -> mCBW_CB_Buf[ 3 ] = *( (PUINT8)&CH554vLbaCurrent + 1 );
+  87                          pCBW -> mCBW_CB_Buf[ 4 ] = *( (PUINT8)&CH554vLbaCurrent + 2 );
+  88                          pCBW -> mCBW_CB_Buf[ 5 ] = *( (PUINT8)&CH554vLbaCurrent + 3 );
+  89                          pCBW -> mCBW_CB_Buf[ 6 ] = 0x00;
+  90                          pCBW -> mCBW_CB_Buf[ 7 ] = 0x00;
+  91                          pCBW -> mCBW_CB_Buf[ 8 ] = SectCount;
+  92                          pCBW -> mCBW_CB_Buf[ 9 ] = 0x00;
+  93                          CH554BulkOnlyCmd( DataBuf );  /* Ö´ĞĞ»ùÓÚBulkOnlyĞ­ÒéµÄÃüÁî */
+  94                          if ( CH554IntStatus == ERR_SUCCESS ) {
+  95                                  mDelayuS( 200 );  /* Ğ´²Ù×÷ºóÑÓÊ± */
+  96                                  return( ERR_SUCCESS );
+  97                          }
+  98                          CH554IntStatus = CH554AnalyzeError( retry );
+  99                          if ( CH554IntStatus != ERR_SUCCESS ) {
+ 100                                  return( CH554IntStatus );
+ 101                          }
+ 102                  }
+ 103                  return( CH554IntStatus = ERR_USB_DISK_ERR );  /* ´ÅÅÌ²Ù×÷´íÎó */
+ 104          }
+ 105          #endif
+ 106          #endif  // NO_DEFAULT_ACCESS_SECTOR
+ 107          
+C51 COMPILER V9.53.0.0   CH554UFI                                                          05/25/2017 09:58:22 PAGE 3   
+
+ 108          #ifndef NO_DEFAULT_DISK_CONNECT                 /* ÔÚÓ¦ÓÃ³ÌĞòÖĞ¶¨ÒåNO_DEFAULT_DISK_CONNECT¿ÉÒÔ½ûÖ¹Ä¬ÈÏµÄ¼ì²é´ÅÅÌÁ¬½Ó×Ó³Ì
+             -Ğò,È»ºóÓÃ×ÔĞĞ±àĞ´µÄ³ÌĞò´úÌæËü */
+ 109          /* ¼ì²é´ÅÅÌÊÇ·ñÁ¬½Ó */
+ 110          UINT8   CH554DiskConnect( void )
+ 111          {
+ 112                  USB_DEV_AD &= 0x7F;
+ 113                  if ( USB_DEV_AD == USB_DEVICE_ADDR ) {  /* ¸ùÏÂUSBÉè±¸ */
+ 114                          if ( UHOST_CTRL & bUH_PORT_EN ) {  /* USBÉè±¸´æÔÚÇÒÎ´²å°Î */
+ 115                                  return( ERR_SUCCESS );  /* USBÉè±¸ÒÑ¾­Á¬½ÓÇÒÎ´²å°Î */
+ 116                          }
+ 117                          else if ( USB_MIS_ST & bUMS_DEV_ATTACH ) {  /* USBÉè±¸´æÔÚ */
+ 118          mDiskConnect:
+ 119                                  CH554DiskStatus = DISK_CONNECT;  /* Ôø¾­¶Ï¿ª¹ı */
+ 120                                  return( ERR_SUCCESS );  /* Íâ²¿HUB»òUSBÉè±¸ÒÑ¾­Á¬½Ó»òÕß¶Ï¿ªºóÖØĞÂÁ¬½Ó */
+ 121                          }
+ 122                          else {  /* USBÉè±¸¶Ï¿ª */
+ 123          mDiskDisconn:
+ 124                                  CH554DiskStatus = DISK_DISCONNECT;
+ 125                                  return( ERR_USB_DISCON );
+ 126                          }
+ 127                  }
+ 128          #ifndef FOR_ROOT_UDISK_ONLY
+ 129                  else if ( USB_DEV_AD > 0x10 && USB_DEV_AD <= 0x14 ) {  /* Íâ²¿HUBµÄ¶Ë¿ÚÏÂµÄUSBÉè±¸ */
+ 130                          if ( UHOST_CTRL & bUH_PORT_EN ) {  /* Íâ²¿HUB´æÔÚÇÒÎ´²å°Î */
+ 131                                  TxBuffer[ MAX_PACKET_SIZE - 1 ] = USB_DEV_AD;  /* ±¸·İ */
+ 132                                  USB_DEV_AD = USB_DEVICE_ADDR - 1 + ( USB_DEV_AD >> 4 );  /* ÉèÖÃUSBÖ÷»ú¶ËµÄUSBµØÖ·Ö¸ÏòHUB */
+ 133                                  CH554IntStatus = HubGetPortStatus( TxBuffer[ MAX_PACKET_SIZE - 1 ] & 0x0F );  /* ²éÑ¯HUB¶Ë¿Ú×´Ì¬,·µ»ØÔÚ
+             -TxBufferÖĞ */
+ 134                                  if ( CH554IntStatus == ERR_SUCCESS ) {
+ 135                                          if ( TxBuffer[2] & (1<<(HUB_C_PORT_CONNECTION-0x10)) ) {  /* ¼ì²âµ½HUB¶Ë¿ÚÉÏµÄ²å°ÎÊÂ¼ş */
+ 136                                                  CH554DiskStatus = DISK_DISCONNECT;  /* ¼Ù¶¨ÎªHUB¶Ë¿ÚÉÏµÄUSBÉè±¸¶Ï¿ª */
+ 137                                                  HubClearPortFeature( TxBuffer[ MAX_PACKET_SIZE - 1 ] & 0x0F, HUB_C_PORT_CONNECTION );  /* Çå³ıHUB¶Ë¿Ú
+             -Á¬½ÓÊÂ¼ş×´Ì¬ */
+ 138                                          }
+ 139                                          USB_DEV_AD = TxBuffer[ MAX_PACKET_SIZE - 1 ];  /* ÉèÖÃUSBÖ÷»ú¶ËµÄUSBµØÖ·Ö¸ÏòUSBÉè±¸ */
+ 140                                          if ( TxBuffer[0] & (1<<HUB_PORT_CONNECTION) ) {  /* Á¬½Ó×´Ì¬ */
+ 141                                                  if ( CH554DiskStatus < DISK_CONNECT ) {
+ 142                                                          CH554DiskStatus = DISK_CONNECT;  /* Ôø¾­¶Ï¿ª¹ı */
+ 143                                                  }
+ 144                                                  return( ERR_SUCCESS );  /* USBÉè±¸ÒÑ¾­Á¬½Ó»òÕß¶Ï¿ªºóÖØĞÂÁ¬½Ó */
+ 145                                          }
+ 146                                          else {
+ 147          //                                      CH554DiskStatus = DISK_DISCONNECT;
+ 148          //                                      return( ERR_USB_DISCON );
+ 149                                                  CH554DiskStatus = DISK_CONNECT;
+ 150                                                  return( ERR_HUB_PORT_FREE );  /* HUBÒÑ¾­Á¬½Óµ«ÊÇHUB¶Ë¿ÚÉĞÎ´Á¬½Ó´ÅÅÌ */
+ 151                                          }
+ 152                                  }
+ 153                                  else {
+ 154                                          USB_DEV_AD = TxBuffer[ MAX_PACKET_SIZE - 1 ];  /* ÉèÖÃUSBÖ÷»ú¶ËµÄUSBµØÖ·Ö¸ÏòUSBÉè±¸ */
+ 155                                          if ( CH554IntStatus == ERR_USB_DISCON ) {
+ 156          //                                      CH554DiskStatus = DISK_DISCONNECT;
+ 157          //                                      return( ERR_USB_DISCON );
+ 158                                                  goto mDiskDisconn;
+ 159                                          }
+ 160                                          else {
+ 161                                                  CH554DiskStatus = DISK_CONNECT;  /* HUB²Ù×÷Ê§°Ü */
+ 162                                                  return( CH554IntStatus );
+ 163                                          }
+ 164                                  }
+ 165                          }
+ 166                          else if ( USB_MIS_ST & bUMS_DEV_ATTACH ) {  /* USBÉè±¸´æÔÚ,Íâ²¿HUB»òUSBÉè±¸ÒÑ¾­Á¬½Ó»òÕß¶Ï¿ªºóÖØĞÂÁ¬½Ó */
+C51 COMPILER V9.53.0.0   CH554UFI                                                          05/25/2017 09:58:22 PAGE 4   
+
+ 167          //                      CH554DiskStatus = DISK_CONNECT;  /* Ôø¾­¶Ï¿ª¹ı */
+ 168          //                      return( ERR_SUCCESS );  /* Íâ²¿HUB»òUSBÉè±¸ÒÑ¾­Á¬½Ó»òÕß¶Ï¿ªºóÖØĞÂÁ¬½Ó */
+ 169                                  goto mDiskConnect;
+ 170                          }
+ 171                          else {  /* Íâ²¿HUB¶Ï¿ª */
+ 172                                  CH554DiskStatus = DISK_DISCONNECT;
+ 173                          }
+ 174                  }
+ 175          #endif
+ 176                  else {
+ 177          //              CH554DiskStatus = DISK_DISCONNECT;
+ 178          //              return( ERR_USB_DISCON );
+ 179                          goto mDiskDisconn;
+ 180                  }
+ 181          }
+ 182          #endif  // NO_DEFAULT_DISK_CONNECT
+ 183          
+ 184          #pragma ot(8,speed)
+ 185          
+ 186          #ifndef NO_DEFAULT_FILE_ENUMER                  /* ÔÚÓ¦ÓÃ³ÌĞòÖĞ¶¨ÒåNO_DEFAULT_FILE_ENUMER¿ÉÒÔ½ûÖ¹Ä¬ÈÏµÄÎÄ¼şÃûÃ¶¾Ù»Øµ÷³ÌĞò
+             -,È»ºóÓÃ×ÔĞĞ±àĞ´µÄ³ÌĞò´úÌæËü */
+ 187          void xFileNameEnumer( void )                    /* ÎÄ¼şÃûÃ¶¾Ù»Øµ÷×Ó³ÌĞò */
+ 188          {
+ 189          /* Èç¹ûÖ¸¶¨Ã¶¾ÙĞòºÅCH554vFileSizeÎª0xFFFFFFFFºóµ÷ÓÃFileOpen£¬ÄÇÃ´Ã¿ËÑË÷µ½Ò»¸öÎÄ¼şFileOpen¶¼»áµ÷ÓÃ±¾»Øµ÷³ÌĞ
+             -ò£¬
+ 190             »Øµ÷³ÌĞòxFileNameEnumer·µ»Øºó£¬FileOpenµİ¼õCH554vFileSize²¢¼ÌĞøÃ¶¾ÙÖ±µ½ËÑË÷²»µ½ÎÄ¼ş»òÕßÄ¿Â¼¡£½¨Òé×ö·¨ÊÇ
+             -£¬
+ 191             ÔÚµ÷ÓÃFileOpenÖ®Ç°¶¨ÒåÒ»¸öÈ«¾Ö±äÁ¿Îª0£¬µ±FileOpen»Øµ÷±¾³ÌĞòºó£¬±¾³ÌĞòÓÉCH554vFdtOffsetµÃµ½½á¹¹FAT_DIR_I
+             -NFO£¬
+ 192             ·ÖÎö½á¹¹ÖĞµÄDIR_AttrÒÔ¼°DIR_NameÅĞ¶ÏÊÇ·ñÎªËùĞèÎÄ¼şÃû»òÕßÄ¿Â¼Ãû£¬¼ÇÂ¼Ïà¹ØĞÅÏ¢£¬²¢½«È«¾Ö±äÁ¿¼ÆÊıÔöÁ¿£¬
+ 193             µ±FileOpen·µ»Øºó£¬ÅĞ¶Ï·µ»ØÖµÈç¹ûÊÇERR_MISS_FILE»òERR_FOUND_NAME¶¼ÊÓÎª²Ù×÷³É¹¦£¬È«¾Ö±äÁ¿ÎªËÑË÷µ½µÄÓĞĞ§ÎÄ
+             -¼şÊı¡£
+ 194             Èç¹ûÔÚ±¾»Øµ÷³ÌĞòxFileNameEnumerÖĞ½«CH554vFileSizeÖÃÎª1£¬ÄÇÃ´¿ÉÒÔÍ¨ÖªFileOpenÌáÇ°½áÊøËÑË÷¡£ÒÔÏÂÊÇ»Øµ÷³ÌĞ
+             -òÀı×Ó */
+ 195          #if             0
+                      UINT8                   i;
+                      UINT16                  FileCount;
+                      PX_FAT_DIR_INFO pFileDir;
+                      PUINT8                  NameBuf;
+                      pFileDir = (PX_FAT_DIR_INFO)( pDISK_BASE_BUF + CH554vFdtOffset );  /* µ±Ç°FDTµÄÆğÊ¼µØÖ· */
+                      FileCount = (UINT16)( 0xFFFFFFFF - CH554vFileSize );  /* µ±Ç°ÎÄ¼şÃûµÄÃ¶¾ÙĞòºÅ,CH554vFileSize³õÖµÊÇ0xFFFFF
+             -FFF,ÕÒµ½ÎÄ¼şÃûºóµİ¼õ */
+                      if ( FileCount < sizeof( FILE_DATA_BUF ) / 12 ) {  /* ¼ì²é»º³åÇøÊÇ·ñ×ã¹»´æ·Å,¼Ù¶¨Ã¿¸öÎÄ¼şÃûĞèÕ¼ÓÃ12¸ö×Ö½Ú
+             -´æ·Å */
+                              NameBuf = & FILE_DATA_BUF[ FileCount * 12 ];  /* ¼ÆËã±£´æµ±Ç°ÎÄ¼şÃûµÄ»º³åÇøµØÖ· */
+                              for ( i = 0; i < 11; i ++ ) NameBuf[ i ] = pFileDir -> DIR_Name[ i ];  /* ¸´ÖÆÎÄ¼şÃû,³¤¶ÈÎª11¸ö×Ö·û,Î´´¦
+             -Àí¿Õ¸ñ */
+              //              if ( pFileDir -> DIR_Attr & ATTR_DIRECTORY ) NameBuf[ i ] = 1;  /* ÅĞ¶ÏÊÇÄ¿Â¼Ãû */
+                              NameBuf[ i ] = 0;  /* ÎÄ¼şÃû½áÊø·û */
+                      }
+              #endif
+ 209          }
+ 210          #endif  // NO_DEFAULT_FILE_ENUMER
+ 211          
+ 212          #pragma ot(8,size)
+ 213          
+ 214          UINT8   CH554LibInit( void )  /* ³õÊ¼»¯CH554³ÌĞò¿â,²Ù×÷³É¹¦·µ»Ø0 */
+ 215          {
+ 216                  if ( CH554GetVer( ) < CH554_LIB_VER ) return( 0xFF );  /* »ñÈ¡µ±Ç°×Ó³ÌĞò¿âµÄ°æ±¾ºÅ,°æ±¾Ì«µÍÔò·µ»Ø´íÎó */
+ 217          #if             DISK_BASE_BUF_LEN > 0
+ 218                  pDISK_BASE_BUF = & DISK_BASE_BUF[0];  /* Ö¸ÏòÍâ²¿RAMµÄ´ÅÅÌÊı¾İ»º³åÇø */
+ 219                  pDISK_FAT_BUF = & DISK_BASE_BUF[0];  /* Ö¸ÏòÍâ²¿RAMµÄ´ÅÅÌFATÊı¾İ»º³åÇø,¿ÉÒÔÓëpDISK_BASE_BUFºÏÓÃÒÔ½ÚÔ¼RAM 
+C51 COMPILER V9.53.0.0   CH554UFI                                                          05/25/2017 09:58:22 PAGE 5   
+
+             -*/
+ 220          /* Èç¹ûÏ£ÍûÌá¸ßÎÄ¼ş´æÈ¡ËÙ¶È,ÄÇÃ´¿ÉÒÔÔÚÖ÷³ÌĞòÖĞµ÷ÓÃCH554LibInitÖ®ºó,½«pDISK_FAT_BUFÖØĞÂÖ¸ÏòÁíÒ»¸ö¶ÀÁ¢·ÖÅäµÄ
+             -ÓëpDISK_BASE_BUFÍ¬Ñù´óĞ¡µÄ»º³åÇø */
+ 221          #endif
+ 222                  CH554DiskStatus = DISK_UNKNOWN;  /* Î´Öª×´Ì¬ */
+ 223                  CH554vStartLba = 0;  /* Ä¬ÈÏÎª×Ô¶¯·ÖÎöFDDºÍHDD */
+ 224                  return( ERR_SUCCESS );
+ 225          }
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  2 ERROR(S)

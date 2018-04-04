@@ -1,0 +1,271 @@
+C51 COMPILER V9.53.0.0   EXAM1                                                             11/22/2017 09:19:34 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE EXAM1
+OBJECT MODULE PLACED IN EXAM1.obj
+COMPILER INVOKED BY: D:\Keil\Install\C51\BIN\C51.EXE USB\U_DISK\EXAM1\EXAM1.C LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJEC
+                    -TEXTEND PRINT(.\EXAM1.lst) OBJECT(EXAM1.obj)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT *******************************
+   3          * File Name          :EXAM1.C
+   4          * Author             : WCH
+   5          * Version            : V1.0
+   6          * Date               : 2017/01/20
+   7          * Description        : 
+   8           CH554 CÓïÑÔµÄUÅÌÎÄ¼þ×Ö½Ú¶ÁÐ´Ê¾Àý³ÌÐò£¬ÎÄ¼þÖ¸ÕëÆ«ÒÆ£¬ÐÞ¸ÄÎÄ¼þÊôÐÔ£¬É¾³ýÎÄ¼þµÈ²Ù×÷
+   9           Ö§³Ö: FAT12/FAT16/FAT32  
+  10          *******************************************************************************/
+  11          
+  12          #include "..\..\..\Public\CH554.H"                                                      
+  13          #include <stdio.h>
+  14          #include <string.h>
+  15          
+  16          #define DISK_BASE_BUF_LEN               512     /* Ä¬ÈÏµÄ´ÅÅÌÊý¾Ý»º³åÇø´óÐ¡Îª512×Ö½Ú(¿ÉÒÔÑ¡ÔñÎª2048ÉõÖÁ4096ÒÔÖ§³ÖÄ³Ð©´óÉÈÇø
+             -µÄUÅÌ),Îª0Ôò½ûÖ¹ÔÚ±¾ÎÄ¼þÖÐ¶¨Òå»º³åÇø²¢ÓÉÓ¦ÓÃ³ÌÐòÔÚpDISK_BASE_BUFÖÐÖ¸¶¨ */
+  17          #define FOR_ROOT_UDISK_ONLY              1// Ö»ÓÃÓÚDP/DM¶Ë¿ÚµÄUÅÌÎÄ¼þ²Ù×÷(Ê¹ÓÃ×Ó³ÌÐò¿âCH554UFI/X),²»Ö§³ÖHUBÏÂUÅÌ²Ù×÷
+  18          //»¹ÐèÒªÌí¼ÓLIB¿âÎÄ¼þ
+  19          
+  20          //#define NO_DEFAULT_ACCESS_SECTOR      1               /* ½ûÖ¹Ä¬ÈÏµÄ´ÅÅÌÉÈÇø¶ÁÐ´×Ó³ÌÐò,ÏÂÃæÓÃ×ÔÐÐ±àÐ´µÄ³ÌÐò´úÌæËü */
+  21          //#define NO_DEFAULT_DISK_CONNECT               1               /* ½ûÖ¹Ä¬ÈÏµÄ¼ì²é´ÅÅÌÁ¬½Ó×Ó³ÌÐò,ÏÂÃæÓÃ×ÔÐÐ±àÐ´µÄ³ÌÐò´úÌæËü */
+  22          //#define NO_DEFAULT_FILE_ENUMER                1               /* ½ûÖ¹Ä¬ÈÏµÄÎÄ¼þÃûÃ¶¾Ù»Øµ÷³ÌÐò,ÏÂÃæÓÃ×ÔÐÐ±àÐ´µÄ³ÌÐò´úÌæËü */
+  23          
+  24          #include "..\..\USB_LIB\CH554UFI.H"
+  25          #include "..\..\USB_LIB\CH554UFI.C"
+*** WARNING C280 IN LINE 118 OF USB\U_DISK\EXAM1\..\..\USB_LIB\CH554UFI.C: 'mDiskConnect': unreferenced label
+  26          #include "..\..\..\Public\DEBUG.H"
+  27          #include "..\..\USB_LIB\USBHOST.H"
+*** WARNING C259 IN LINE 97 OF USB\U_DISK\EXAM1\..\..\USB_LIB\USBHOST.H: pointer: different mspace
+  28          
+  29          // ¸÷×Ó³ÌÐò·µ»Ø×´Ì¬Âë
+  30          #define ERR_SUCCESS                       0x00  // ²Ù×÷³É¹¦
+  31          #define ERR_USB_CONNECT         0x15    /* ¼ì²âµ½USBÉè±¸Á¬½ÓÊÂ¼þ,ÒÑ¾­Á¬½Ó */
+  32          #define ERR_USB_DISCON          0x16    /* ¼ì²âµ½USBÉè±¸¶Ï¿ªÊÂ¼þ,ÒÑ¾­¶Ï¿ª */
+  33          #define ERR_USB_BUF_OVER        0x17    /* USB´«ÊäµÄÊý¾ÝÓÐÎó»òÕßÊý¾ÝÌ«¶à»º³åÇøÒç³ö */
+  34          #define ERR_USB_DISK_ERR        0x1F    /* USB´æ´¢Æ÷²Ù×÷Ê§°Ü,ÔÚ³õÊ¼»¯Ê±¿ÉÄÜÊÇUSB´æ´¢Æ÷²»Ö§³Ö,ÔÚ¶ÁÐ´²Ù×÷ÖÐ¿ÉÄÜÊÇ´ÅÅÌË
+             -ð»µ»òÕßÒÑ¾­¶Ï¿ª */
+  35          #define ERR_USB_TRANSFER        0x20    /* NAK/STALLµÈ¸ü¶à´íÎóÂëÔÚ0x20~0x2F */
+  36          #define ERR_USB_UNSUPPORT       0xFB
+  37          #define ERR_USB_UNKNOWN         0xFE
+  38          
+  39          #define WAIT_USB_TOUT_200US             200  // µÈ´ýUSBÖÐ¶Ï³¬Ê±Ê±¼ä200uS@Fsys=12MHz
+  40          #define SetUsbSpeed( x )
+  41          
+  42          // »ñÈ¡Éè±¸ÃèÊö·û
+  43          UINT8C  SetupGetDevDescr[] = { USB_REQ_TYP_IN, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_DEVICE, 0x00, 0x00, 
+             -sizeof( USB_DEV_DESCR ), 0x00 };
+  44          // »ñÈ¡ÅäÖÃÃèÊö·û
+  45          UINT8C  SetupGetCfgDescr[] = { USB_REQ_TYP_IN, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_CONFIG, 0x00, 0x00, 
+             -0x04, 0x00 };
+  46          // ÉèÖÃUSBµØÖ·
+  47          UINT8C  SetupSetUsbAddr[] = { USB_REQ_TYP_OUT, USB_SET_ADDRESS, USB_DEVICE_ADDR, 0x00, 0x00, 0x00, 0x00, 0x
+             -00 };
+C51 COMPILER V9.53.0.0   EXAM1                                                             11/22/2017 09:19:34 PAGE 2   
+
+  48          // ÉèÖÃUSBÅäÖÃ
+  49          UINT8C  SetupSetUsbConfig[] = { USB_REQ_TYP_OUT, USB_SET_CONFIGURATION, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 
+             -};
+  50          // Çå³ý¶ËµãSTALL
+  51          UINT8C  SetupClrEndpStall[] = { USB_REQ_TYP_OUT | USB_REQ_RECIP_ENDP, USB_CLEAR_FEATURE, 0x00, 0x00, 0x00, 
+             -0x00, 0x00, 0x00 };
+  52          
+  53          UINT8X  UsbDevEndp0Size;        /* USBÉè±¸µÄ¶Ëµã0µÄ×î´ó°ü³ß´ç */
+  54          
+  55          //USBÉè±¸Ïà¹ØÐÅÏ¢±í,CH554×î¶àÖ§³Ö2¸öÉè±¸
+  56          #define ROOT_DEV_DISCONNECT             0
+  57          #define ROOT_DEV_CONNECTED              1
+  58          #define ROOT_DEV_FAILED                 2
+  59          #define ROOT_DEV_SUCCESS                3
+  60          
+  61          UINT8X  RxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0000 ;  // IN, must even address
+  62          UINT8X  TxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0040 ;  // OUT, must even address
+  63          #define pSetupReq       ((PXUSB_SETUP_REQ)TxBuffer)
+  64          bit             FoundNewDev;
+  65          
+  66          #pragma NOAREGS
+  67          
+  68          
+  69          /* ¼ì²é²Ù×÷×´Ì¬,Èç¹û´íÎóÔòÏÔÊ¾´íÎó´úÂë²¢Í£»ú */
+  70          void    mStopIfError( UINT8 iError )
+  71          {
+  72   1              if ( iError == ERR_SUCCESS ) return;  /* ²Ù×÷³É¹¦ */
+  73   1              printf( "Error: %02X\n", (UINT16)iError );  /* ÏÔÊ¾´íÎó */
+  74   1      /* Óöµ½´íÎóºó,Ó¦¸Ã·ÖÎö´íÎóÂëÒÔ¼°CH554DiskStatus×´Ì¬,ÀýÈçµ÷ÓÃCH554DiskReady²éÑ¯µ±Ç°UÅÌÊÇ·ñÁ¬½Ó,Èç¹ûUÅÌÒÑ¶Ï¿
+             -ªÄÇÃ´¾ÍÖØÐÂµÈ´ýUÅÌ²åÉÏÔÙ²Ù×÷,
+  75   1         ½¨Òé³ö´íºóµÄ´¦Àí²½Öè:
+  76   1         1¡¢µ÷ÓÃÒ»´ÎCH554DiskReady,³É¹¦Ôò¼ÌÐø²Ù×÷,ÀýÈçOpen,Read/WriteµÈ
+  77   1         2¡¢Èç¹ûCH554DiskReady²»³É¹¦,ÄÇÃ´Ç¿ÐÐ½«´ÓÍ·¿ªÊ¼²Ù×÷(µÈ´ýUÅÌÁ¬½Ó£¬CH554DiskReadyµÈ) */
+  78   1              while ( 1 ) {
+  79   2      //              LED_TMP=0;  /* LEDÉÁË¸ */
+  80   2      //              mDelaymS( 100 );
+  81   2      //              LED_TMP=1;
+  82   2      //              mDelaymS( 100 );
+  83   2              }
+  84   1      }
+  85          
+  86          void main( ) {
+  87   1              UINT8   s, c,i;
+  88   1              UINT16  TotalCount;
+  89   1              UINT8  buf[100];                                                          //³¤¶È¿ÉÒÔ¸ù¾ÝÓ¦ÓÃ×Ô¼ºÖ¸¶¨
+  90   1              
+  91   1        CfgFsys();
+  92   1        mDelaymS(5);                                                              //ÐÞ¸ÄÖ÷Æµ£¬ÉÔ¼ÓÑÓÊ±µÈ´ýÖ÷ÆµÎÈ
+             -¶¨
+  93   1              mInitSTDIO( );                                                            //³õÊ¼»¯´®¿Ú0ÎªÁËÈÃ¼ÆËã»úÍ¨¹ý´®
+             -¿Ú¼à¿ØÑÝÊ¾¹ý³Ì 
+  94   1              InitUSB_Host( );
+  95   1              CH554LibInit( );                                                          //³õÊ¼»¯CH554³ÌÐò¿âÒÔÖ§³ÖUÅÌÎÄ¼
+             -þ
+  96   1              FoundNewDev = 0;
+  97   1              while ( 1 ) {
+  98   2                         s = ERR_SUCCESS;
+  99   2                         if ( UIF_DETECT ) {                                                  // Èç¹ûÓÐUSBÖ÷»ú¼ì²âÖÐ¶ÏÔò´¦Àí
+ 100   3                                    UIF_DETECT = 0;                                                 // ÇåÁ¬½ÓÖÐ¶Ï±êÖ¾
+ 101   3                              s = AnalyzeRootHub( );                                          // ·ÖÎöROOT-HUB×´Ì¬
+ 102   3                              if ( s == ERR_USB_CONNECT ) FoundNewDev = 1;
+ 103   3                          }
+C51 COMPILER V9.53.0.0   EXAM1                                                             11/22/2017 09:19:34 PAGE 3   
+
+ 104   2                          if ( FoundNewDev || s == ERR_USB_CONNECT ) {                        // ÓÐÐÂµÄUSBÉè±¸²åÈë
+ 105   3                                     FoundNewDev = 0;
+ 106   3                               mDelaymS( 200 );                                               // ÓÉÓÚUSBÉè±¸¸Õ²åÈëÉÐÎ´ÎÈ¶¨,¹Êµ
+             -È´ýUSBÉè±¸Êý°ÙºÁÃë,Ïû³ý²å°Î¶¶¶¯
+ 107   3                                     s = InitRootDevice( );                                         // ³õÊ¼»¯USBÉè±¸
+ 108   3                                     if ( s == ERR_SUCCESS ){
+ 109   4                                           // UÅÌ²Ù×÷Á÷³Ì£ºUSB×ÜÏß¸´Î»¡¢UÅÌÁ¬½Ó¡¢»ñÈ¡Éè±¸ÃèÊö·ûºÍÉèÖÃUSBµØÖ·¡¢¿ÉÑ¡µÄ»ñÈ¡ÅäÖÃÃèÊö·û£¬Ö
+             -®ºóµ½´ï´Ë´¦£¬ÓÉCH554×Ó³ÌÐò¿â¼ÌÐøÍê³ÉºóÐø¹¤×÷
+ 110   4                                               CH554DiskStatus = DISK_USB_ADDR;
+ 111   4                                               for ( i = 0; i != 10; i ++ ) {
+ 112   5                                                         printf( "Wait DiskReady\n" );
+ 113   5                                                         s = CH554DiskReady( );                                 //µÈ´ýUÅÌ×¼±¸ºÃ
+ 114   5                                                         if ( s == ERR_SUCCESS ) break;
+ 115   5                                                         mDelaymS( 50 );
+ 116   5                                               }
+ 117   4                                               if ( CH554DiskStatus >= DISK_MOUNTED ) {  
+ 118   5      /* ¶ÁÎÄ¼þ */
+ 119   5                             strcpy( mCmdParam.Open.mPathName, "/C51/CH554HFT.C" ); //ÉèÖÃ½«Òª²Ù×÷µÄÎÄ¼þÂ·¾¶ºÍÎÄ
+             -¼þÃû/C51/CH554HFT.C
+ 120   5                             s = CH554FileOpen( );                                //´ò¿ªÎÄ¼þ
+ 121   5                             if ( s == ERR_MISS_DIR || s == ERR_MISS_FILE ) {     //Ã»ÓÐÕÒµ½ÎÄ¼þ
+ 122   6                               printf( "Ã»ÓÐÕÒµ½ÎÄ¼þ\n" );
+ 123   6                                                     }
+ 124   5                                                     else 
+ 125   5                             {                                                      //ÕÒµ½ÎÄ¼þ»òÕß³ö´í
+ 126   6                                                              TotalCount = 100;                                   //ÉèÖÃ×¼±¸¶ÁÈ¡×Ü³¤¶È100×Ö½Ú
+ 127   6                                                              printf( "´ÓÎÄ¼þÖÐ¶Á³öµÄÇ°%d¸ö×Ö·ûÊÇ:\n",TotalCount );
+ 128   6                                                              while ( TotalCount ) {                                 //Èç¹ûÎÄ¼þ±È½Ï´ó,Ò»´Î¶Á²»Íê,¿É
+             -ÒÔÔÙµ÷ÓÃCH554ByteRead¼ÌÐø¶ÁÈ¡,ÎÄ¼þÖ¸Õë×Ô¶¯ÏòºóÒÆ¶¯
+ 129   7                                                                       if ( TotalCount > (MAX_PATH_LEN-1) ) c = MAX_PATH_LEN-1;/* Ê£ÓàÊý¾Ý½Ï¶à,ÏÞÖÆµ¥´Î¶ÁÐ
+             -´µÄ³¤¶È²»ÄÜ³¬¹ý sizeof( mCmdParam.Other.mBuffer ) */
+ 130   7                                                                       else c = TotalCount;                                 /* ×îºóÊ£ÓàµÄ×Ö½ÚÊý */
+ 131   7                                                                       mCmdParam.ByteRead.mByteCount = c;                   /* ÇëÇó¶Á³ö¼¸Ê®×Ö½ÚÊý¾Ý */
+ 132   7                                   mCmdParam.ByteRead.mByteBuffer= &buf[0];
+ 133   7                                                                       s = CH554ByteRead( );                                /* ÒÔ×Ö½ÚÎªµ¥Î»¶ÁÈ¡Êý¾Ý¿é,µ¥´Î
+             -¶ÁÐ´µÄ³¤¶È²»ÄÜ³¬¹ýMAX_BYTE_IO,µÚ¶þ´Îµ÷ÓÃÊ±½Ó×Å¸Õ²ÅµÄÏòºó¶Á */
+ 134   7                                                                       TotalCount -= mCmdParam.ByteRead.mByteCount;         /* ¼ÆÊý,¼õÈ¥µ±Ç°Êµ¼ÊÒÑ¾­¶Á³öµÄ
+             -×Ö·ûÊý */
+ 135   7                                                                       for ( i=0; i!=mCmdParam.ByteRead.mByteCount; i++ ) printf( "%C", mCmdParam.ByteRead
+             -.mByteBuffer[i] );  /* ÏÔÊ¾¶Á³öµÄ×Ö·û */
+ 136   7                                                                       if ( mCmdParam.ByteRead.mByteCount < c ) {           /* Êµ¼Ê¶Á³öµÄ×Ö·ûÊýÉÙÓÚÒªÇó¶Á³
+             -öµÄ×Ö·ûÊý,ËµÃ÷ÒÑ¾­µ½ÎÄ¼þµÄ½áÎ² */
+ 137   8                                                                                printf( "\n" );
+ 138   8                                                                                printf( "ÎÄ¼þÒÑ¾­½áÊø\n" );
+ 139   8                                                                                break;
+ 140   8                                                                       }
+ 141   7                                                              }
+ 142   6                                                  printf( "Close\n" );
+ 143   6                                            i = CH554FileClose( );                                 /* ¹Ø±ÕÎÄ¼þ */
+ 144   6                                                              mStopIfError( i );
+ 145   6                                                      }
+ 146   5      //ÒÆ¶¯ÎÄ¼þÖ¸Õë                                                          
+ 147   5      /*  Èç¹ûÏ£Íû´ÓÖ¸¶¨Î»ÖÃ¿ªÊ¼¶ÁÐ´,¿ÉÒÔÒÆ¶¯ÎÄ¼þÖ¸Õë
+ 148   5                      mCmdParam.ByteLocate.mByteOffset = 608;  Ìø¹ýÎÄ¼þµÄÇ°608¸ö×Ö½Ú¿ªÊ¼¶ÁÐ´
+ 149   5                      CH554ByteLocate( );
+ 150   5                      mCmdParam.ByteRead.mByteCount = 5;  ¶ÁÈ¡5¸ö×Ö½Ú
+ 151   5          mCmdParam.ByteRead.mByteBuffer= &buf[0];
+ 152   5                      CH554ByteRead( );   Ö±½Ó¶ÁÈ¡ÎÄ¼þµÄµÚ608¸ö×Ö½Úµ½612¸ö×Ö½ÚÊý¾Ý,Ç°608¸ö×Ö½Ú±»Ìø¹ý
+ 153   5      
+ 154   5                Èç¹ûÏ£Íû½«ÐÂÊý¾ÝÌí¼Óµ½Ô­ÎÄ¼þµÄÎ²²¿,¿ÉÒÔÒÆ¶¯ÎÄ¼þÖ¸Õë
+ 155   5                      CH554FileOpen( );
+ 156   5                      mCmdParam.ByteLocate.mByteOffset = 0xffffffff;  ÒÆµ½ÎÄ¼þµÄÎ²²¿
+C51 COMPILER V9.53.0.0   EXAM1                                                             11/22/2017 09:19:34 PAGE 4   
+
+ 157   5                      CH554ByteLocate( );
+ 158   5                      mCmdParam.ByteWrite.mByteCount = 13;  Ð´Èë13¸ö×Ö½ÚµÄÊý¾Ý
+ 159   5                      CH554ByteWrite( );   ÔÚÔ­ÎÄ¼þµÄºóÃæÌí¼ÓÊý¾Ý,ÐÂ¼ÓµÄ13¸ö×Ö½Ú½Ó×ÅÔ­ÎÄ¼þµÄÎ²²¿·ÅÖÃ
+ 160   5                      mCmdParam.ByteWrite.mByteCount = 2;  Ð´Èë2¸ö×Ö½ÚµÄÊý¾Ý
+ 161   5                      CH554ByteWrite( );   ¼ÌÐøÔÚÔ­ÎÄ¼þµÄºóÃæÌí¼ÓÊý¾Ý
+ 162   5                      mCmdParam.ByteWrite.mByteCount = 0;  Ð´Èë0¸ö×Ö½ÚµÄÊý¾Ý,Êµ¼ÊÉÏ¸Ã²Ù×÷ÓÃÓÚÍ¨Öª³ÌÐò¿â¸üÐÂÎÄ¼þ³¤¶È
+ 163   5                      CH554ByteWrite( );   Ð´Èë0×Ö½ÚµÄÊý¾Ý,ÓÃÓÚ×Ô¶¯¸üÐÂÎÄ¼þµÄ³¤¶È,ËùÒÔÎÄ¼þ³¤¶ÈÔö¼Ó15,Èç¹û²»ÕâÑù×ö,ÄÇÃ´Ö´ÐÐCH55
+             -4FileCloseÊ±Ò²»á×Ô¶¯¸üÐÂÎÄ¼þ³¤¶È
+ 164   5      */
+ 165   5      
+ 166   5      //´´½¨ÎÄ¼þÑÝÊ¾                                                          
+ 167   5                                printf( "Create\n" );
+ 168   5                                strcpy( mCmdParam.Create.mPathName, "/NEWFILE.TXT" );          /* ÐÂÎÄ¼þÃû,ÔÚ¸ùÄ¿Â¼ÏÂ,ÖÐÎÄÎÄ¼þ
+             -Ãû */
+ 169   5                                s = CH554FileCreate( );                                        /* ÐÂ½¨ÎÄ¼þ²¢´ò¿ª,Èç¹ûÎÄ¼þÒÑ¾­´
+             -æÔÚÔòÏÈÉ¾³ýºóÔÙÐÂ½¨ */
+ 170   5                                mStopIfError( s );
+ 171   5                                                  printf( "ByteWrite\n" );
+ 172   5                                                      //Êµ¼ÊÓ¦¸ÃÅÐ¶ÏÐ´Êý¾Ý³¤¶ÈºÍ¶¨Òå»º³åÇø³¤¶ÈÊÇ·ñÏà·û£¬Èç¹û´óÓÚ»º³åÇø³¤¶ÈÔòÐèÒª¶à´ÎÐ´Èë
+ 173   5                                                  i = sprintf( buf,"Note: \xd\xaÕâ¸ö³ÌÐòÊÇÒÔ×Ö½ÚÎªµ¥Î»½øÐÐUÅÌÎÄ¼þ¶ÁÐ´,559¼òµ¥ÑÝÊ¾¹¦ÄÜ¡£\xd\xa");  /
+             -*ÑÝÊ¾ */
+ 174   5                                                        for(c=0;c<10;c++)
+ 175   5                                                        {
+ 176   6                                                    mCmdParam.ByteWrite.mByteCount = i;                          /* Ö¸¶¨±¾´ÎÐ´ÈëµÄ×Ö½ÚÊý */
+ 177   6                                                  mCmdParam.ByteWrite.mByteBuffer = buf;                       /* Ö¸Ïò»º³åÇø */
+ 178   6                                                    s = CH554ByteWrite( );                                       /* ÒÔ×Ö½ÚÎªµ¥Î»ÏòÎÄ¼þÐ´ÈëÊý¾Ý */
+ 179   6                                                          mStopIfError( s );
+ 180   6                                                          printf("³É¹¦Ð´Èë %02X´Î\n",(UINT16)c);
+ 181   6                                                      }
+ 182   5                                                      
+ 183   5      //ÑÝÊ¾ÐÞ¸ÄÎÄ¼þÊôÐÔ                                              
+ 184   5      /*      printf( "Modify\n" );
+ 185   5                      mCmdParam.Modify.mFileAttr = 0xff;   ÊäÈë²ÎÊý: ÐÂµÄÎÄ¼þÊôÐÔ,Îª0FFHÔò²»ÐÞ¸Ä
+ 186   5                      mCmdParam.Modify.mFileTime = 0xffff;   ÊäÈë²ÎÊý: ÐÂµÄÎÄ¼þÊ±¼ä,Îª0FFFFHÔò²»ÐÞ¸Ä,Ê¹ÓÃÐÂ½¨ÎÄ¼þ²úÉúµÄÄ¬ÈÏÊ±¼
+             -ä
+ 187   5                      mCmdParam.Modify.mFileDate = MAKE_FILE_DATE( 2015, 5, 18 );  ÊäÈë²ÎÊý: ÐÂµÄÎÄ¼þÈÕÆÚ: 2015.05.18
+ 188   5                      mCmdParam.Modify.mFileSize = 0xffffffff;   ÊäÈë²ÎÊý: ÐÂµÄÎÄ¼þ³¤¶È,ÒÔ×Ö½ÚÎªµ¥Î»Ð´ÎÄ¼þÓ¦¸ÃÓÉ³ÌÐò¿â¹Ø±ÕÎÄ¼þ
+             -Ê±×Ô¶¯¸üÐÂ³¤¶È,ËùÒÔ´Ë´¦²»ÐÞ¸Ä
+ 189   5                      i = CH554FileModify( );   ÐÞ¸Äµ±Ç°ÎÄ¼þµÄÐÅÏ¢,ÐÞ¸ÄÈÕÆÚ
+ 190   5                      mStopIfError( i );
+ 191   5      */
+ 192   5                               printf( "Close\n" );
+ 193   5                               mCmdParam.Close.mUpdateLen = 1;                                  /* ×Ô¶¯¼ÆËãÎÄ¼þ³¤¶È,ÒÔ×Ö½ÚÎªµ¥
+             -Î»Ð´ÎÄ¼þ,½¨ÒéÈÃ³ÌÐò¿â¹Ø±ÕÎÄ¼þÒÔ±ã×Ô¶¯¸üÐÂÎÄ¼þ³¤¶È */
+ 194   5                               i = CH554FileClose( );
+ 195   5                               mStopIfError( i );
+ 196   5      
+ 197   5      /* É¾³ýÄ³ÎÄ¼þ */
+ 198   5      /*      printf( "Erase\n" );
+ 199   5                      strcpy( mCmdParam.Create.mPathName, "/OLD" );  ½«±»É¾³ýµÄÎÄ¼þÃû,ÔÚ¸ùÄ¿Â¼ÏÂ
+ 200   5                      i = CH554FileErase( );  É¾³ýÎÄ¼þ²¢¹Ø±Õ
+ 201   5                      if ( i != ERR_SUCCESS ) printf( "Error: %02X\n", (UINT16)i );  ÏÔÊ¾´íÎó
+ 202   5      */
+ 203   5                   }
+ 204   4                                              }
+ 205   3                        }
+ 206   2                        mDelaymS( 100 );  // Ä£Äâµ¥Æ¬»ú×öÆäËüÊÂ
+ 207   2                  SetUsbSpeed( 1 );  // Ä¬ÈÏÎªÈ«ËÙ
+ 208   2                }
+ 209   1      }
+ 210          
+
+C51 COMPILER V9.53.0.0   EXAM1                                                             11/22/2017 09:19:34 PAGE 5   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    994    ----
+   CONSTANT SIZE    =    269    ----
+   XDATA SIZE       =      1     113
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =     32    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

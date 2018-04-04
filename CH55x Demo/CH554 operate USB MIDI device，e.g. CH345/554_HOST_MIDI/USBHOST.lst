@@ -1,0 +1,1671 @@
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE USBHOST
+OBJECT MODULE PLACED IN USBHOST.obj
+COMPILER INVOKED BY: D:\Keil\Install\C51\BIN\C51.EXE USB\USB_LIB\USBHOST.C LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEX
+                    -TEND PRINT(.\USBHOST.lst) OBJECT(USBHOST.obj)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT *******************************
+   3          * File Name          : USBHOST.C
+   4          * Author             : WCH
+   5          * Version            : V1.0
+   6          * Date               : 2017/01/20
+   7          * Description        : CH554 USB Ö÷»ú½Ó¿Úº¯Êý
+   8          *******************************************************************************/
+   9          
+  10          #include "..\..\Public\CH554.H"                                                 
+  11          #include "..\..\Public\Debug.H"
+  12          #include "stdio.h"
+  13          #include "USBHOST.H"
+  14          
+  15          // #include "CH554UFI.H"                                                        //Èç¹ûÊ¹ÓÃUSBH_HUB_KM.C ´Ë
+             -ÐÐÆÁ±Îµô  
+  16          
+  17          MIDI_INFO        Midi;
+  18          
+  19          
+  20          /*******************************************************************************
+  21          * Function Name  : DisableRootHubPort( )
+  22          * Description    : ¹Ø±ÕHUB¶Ë¿Ú
+  23          * Input          : None
+  24          * Output         : None
+  25          * Return         : None
+  26          *******************************************************************************/
+  27          void   DisableRootHubPort( )          
+  28          {
+  29   1      #ifdef  FOR_ROOT_UDISK_ONLY
+                        CH554DiskStatus = DISK_DISCONNECT;
+              #endif
+  32   1      #ifndef DISK_BASE_BUF_LEN
+  33   1                ThisUsbDev.DeviceStatus = ROOT_DEV_DISCONNECT;
+  34   1          ThisUsbDev.DeviceAddress = 0x00;
+  35   1      #endif
+  36   1      }
+  37          /*******************************************************************************
+  38          * Function Name  : AnalyzeRootHub(void)
+  39          * Description    : ·ÖÎöROOT-HUB×´Ì¬,´¦ÀíROOT-HUB¶Ë¿ÚµÄÉè±¸²å°ÎÊÂ¼þ
+  40                             Èç¹ûÉè±¸°Î³ö,º¯ÊýÖÐµ÷ÓÃDisableRootHubPort()º¯Êý,½«¶Ë¿Ú¹Ø±Õ,²åÈëÊÂ¼þ,ÖÃÏàÓ¦¶Ë¿ÚµÄ×´Ì¬Î»
+  41          * Input          : None
+  42          * Output         : None
+  43          * Return         : ·µ»ØERR_SUCCESSÎªÃ»ÓÐÇé¿ö,·µ»ØERR_USB_CONNECTÎª¼ì²âµ½ÐÂÁ¬½Ó,·µ»ØERR_USB_DISCONÎª¼ì²âµ½¶
+             -Ï¿ª
+  44          *******************************************************************************/
+  45          UINT8   AnalyzeRootHub( void )
+  46          { 
+  47   1              UINT8   s;
+  48   1              s = ERR_SUCCESS;
+  49   1              if ( USB_MIS_ST & bUMS_DEV_ATTACH ) {                                        // Éè±¸´æÔÚ
+  50   2      #ifdef DISK_BASE_BUF_LEN
+                              if ( CH554DiskStatus == DISK_DISCONNECT
+              #else
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 2   
+
+  53   2                      if ( ThisUsbDev.DeviceStatus == ROOT_DEV_DISCONNECT                        // ¼ì²âµ½ÓÐÉè±¸²åÈë
+  54   2      #endif
+  55   2                              || ( UHOST_CTRL & bUH_PORT_EN ) == 0x00 ) {                              // ¼ì²âµ½ÓÐÉè±¸²åÈë,µ«ÉÐÎ´ÔÊÐí
+             -,ËµÃ÷ÊÇ¸Õ²åÈë
+  56   3                              DisableRootHubPort( );                                                   // ¹Ø±Õ¶Ë¿Ú
+  57   3      #ifdef DISK_BASE_BUF_LEN
+                                      CH554DiskStatus = DISK_CONNECT;
+              #else
+  60   3      //              ThisUsbDev.DeviceSpeed = USB_HUB_ST & bUHS_DM_LEVEL ? 0 : 1;
+  61   3                              ThisUsbDev.DeviceStatus = ROOT_DEV_CONNECTED;                            //ÖÃÁ¬½Ó±êÖ¾
+  62   3      #endif
+  63   3      #if DE_PRINTF
+  64   3                              printf( "USB dev in\n" );
+  65   3      #endif
+  66   3                              s = ERR_USB_CONNECT;
+  67   3                      }
+  68   2              }
+  69   1      #ifdef DISK_BASE_BUF_LEN
+                      else if ( CH554DiskStatus >= DISK_CONNECT ) {
+              #else
+  72   1              else if ( ThisUsbDev.DeviceStatus >= ROOT_DEV_CONNECTED ) {                  //¼ì²âµ½Éè±¸°Î³ö
+  73   2      #endif
+  74   2                      DisableRootHubPort( );                                                     // ¹Ø±Õ¶Ë¿Ú
+  75   2      #if DE_PRINTF           
+  76   2                      printf( "USB dev out\n" );
+  77   2      #endif
+  78   2                      if ( s == ERR_SUCCESS ) s = ERR_USB_DISCON;
+  79   2              }
+  80   1      //      UIF_DETECT = 0;                                                            // ÇåÖÐ¶Ï±êÖ¾
+  81   1              return( s );
+  82   1      }
+  83          /*******************************************************************************
+  84          * Function Name  : SetHostUsbAddr
+  85          * Description    : ÉèÖÃUSBÖ÷»úµ±Ç°²Ù×÷µÄUSBÉè±¸µØÖ·
+  86          * Input          : UINT8 addr
+  87          * Output         : None
+  88          * Return         : None
+  89          *******************************************************************************/
+  90          void    SetHostUsbAddr( UINT8 addr )
+  91          {
+  92   1          USB_DEV_AD = USB_DEV_AD & bUDA_GP_BIT | addr & 0x7F;
+  93   1      }
+  94          
+  95          #ifndef FOR_ROOT_UDISK_ONLY
+  96          /*******************************************************************************
+  97          * Function Name  : SetUsbSpeed
+  98          * Description    : ÉèÖÃµ±Ç°USBËÙ¶È
+  99          * Input          : UINT8 FullSpeed
+ 100          * Output         : None
+ 101          * Return         : None
+ 102          *******************************************************************************/
+ 103          void    SetUsbSpeed( UINT8 FullSpeed )  
+ 104          {
+ 105   1          if ( FullSpeed )                                                           // È«ËÙ
+ 106   1          {
+ 107   2              USB_CTRL &= ~ bUC_LOW_SPEED;                                           // È«ËÙ
+ 108   2              UH_SETUP &= ~ bUH_PRE_PID_EN;                                          // ½ûÖ¹PRE PID
+ 109   2          }
+ 110   1          else
+ 111   1          {
+ 112   2              USB_CTRL |= bUC_LOW_SPEED;                                             // µÍËÙ
+ 113   2          }
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 3   
+
+ 114   1      }
+ 115          #endif
+ 116          
+ 117          /*******************************************************************************
+ 118          * Function Name  : ResetRootHubPort( )
+ 119          * Description    : ¼ì²âµ½Éè±¸ºó,¸´Î»×ÜÏß,ÎªÃ¶¾ÙÉè±¸×¼±¸,ÉèÖÃÎªÄ¬ÈÏÎªÈ«ËÙ
+ 120          * Input          : None   
+ 121          * Output         : None
+ 122          * Return         : None
+ 123          *******************************************************************************/
+ 124          void    ResetRootHubPort( )
+ 125          {
+ 126   1          UsbDevEndp0Size = DEFAULT_ENDP0_SIZE;                                      //USBÉè±¸µÄ¶Ëµã0µÄ×î´ó°ü³ß´
+             -ç
+ 127   1          SetHostUsbAddr( 0x00 );
+ 128   1          SetUsbSpeed( 1 );                                                          // Ä¬ÈÏÎªÈ«ËÙ
+ 129   1                UHOST_CTRL = UHOST_CTRL & ~ bUH_LOW_SPEED | bUH_BUS_RESET;                 // Ä¬ÈÏÎªÈ«ËÙ,¿ªÊ¼¸´Î»
+ 130   1          mDelaymS( 15 );                                                            // ¸´Î»Ê±¼ä10mSµ½20mS
+ 131   1          UHOST_CTRL = UHOST_CTRL & ~ bUH_BUS_RESET;                                 // ½áÊø¸´Î»
+ 132   1          mDelayuS( 250 );
+ 133   1          UIF_DETECT = 0;                                                            // ÇåÖÐ¶Ï±êÖ¾
+ 134   1      }
+ 135          /*******************************************************************************
+ 136          * Function Name  : EnableRootHubPort( )
+ 137          * Description    : Ê¹ÄÜROOT-HUB¶Ë¿Ú,ÏàÓ¦µÄbUH_PORT_ENÖÃ1¿ªÆô¶Ë¿Ú,Éè±¸¶Ï¿ª¿ÉÄÜµ¼ÖÂ·µ»ØÊ§°Ü
+ 138          * Input          : None
+ 139          * Output         : None
+ 140          * Return         : ·µ»ØERR_SUCCESSÎª¼ì²âµ½ÐÂÁ¬½Ó,·µ»ØERR_USB_DISCONÎªÎÞÁ¬½Ó
+ 141          *******************************************************************************/
+ 142          UINT8   EnableRootHubPort( )
+ 143          {
+ 144   1      #ifdef DISK_BASE_BUF_LEN
+                      if ( CH554DiskStatus < DISK_CONNECT ) CH554DiskStatus = DISK_CONNECT;
+              #else
+ 147   1              if ( ThisUsbDev.DeviceStatus < ROOT_DEV_CONNECTED ) ThisUsbDev.DeviceStatus = ROOT_DEV_CONNECTED;
+ 148   1      #endif
+ 149   1              if ( USB_MIS_ST & bUMS_DEV_ATTACH ) {                                        // ÓÐÉè±¸
+ 150   2      #ifndef DISK_BASE_BUF_LEN
+ 151   2                      if ( ( UHOST_CTRL & bUH_PORT_EN ) == 0x00 ) {                              // ÉÐÎ´Ê¹ÄÜ
+ 152   3                              ThisUsbDev.DeviceSpeed = USB_MIS_ST & bUMS_DM_LEVEL ? 0 : 1;
+ 153   3                              if ( ThisUsbDev.DeviceSpeed == 0 ) UHOST_CTRL |= bUH_LOW_SPEED;          // µÍËÙ
+ 154   3                      }
+ 155   2      #endif
+ 156   2                      UHOST_CTRL |= bUH_PORT_EN;                                                 //Ê¹ÄÜHUB¶Ë¿Ú
+ 157   2                      return( ERR_SUCCESS );
+ 158   2              }
+ 159   1              return( ERR_USB_DISCON );
+ 160   1      }
+ 161          #ifndef DISK_BASE_BUF_LEN
+ 162          /*******************************************************************************
+ 163          * Function Name  : SelectHubPort( UINT8 HubPortIndex )
+ 164          * Description    : Ñ¡¶¨ÐèÒª²Ù×÷µÄHUB¿Ú
+ 165          * Input          : UINT8 HubPortIndex Ñ¡Ôñ²Ù×÷Ö¸¶¨µÄROOT-HUB¶Ë¿ÚµÄÍâ²¿HUBµÄÖ¸¶¨¶Ë¿Ú
+ 166          * Output         : None
+ 167          * Return         : None
+ 168          *******************************************************************************/
+ 169          void    SelectHubPort( UINT8 HubPortIndex )  
+ 170          {
+ 171   1          if ( HubPortIndex )                                                        // Ñ¡Ôñ²Ù×÷Ö¸¶¨µÄROOT-HUB¶Ë
+             -¿ÚµÄÍâ²¿HUBµÄÖ¸¶¨¶Ë¿Ú
+ 172   1          {
+ 173   2              SetHostUsbAddr( DevOnHubPort[HubPortIndex-1].DeviceAddress );          // ÉèÖÃUSBÖ÷»úµ±Ç°²Ù×÷µÄUSB
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 4   
+
+             -Éè±¸µØÖ·
+ 174   2              if ( DevOnHubPort[HubPortIndex-1].DeviceSpeed == 0 )                   // Í¨¹ýÍâ²¿HUBÓëµÍËÙUSBÉè±¸
+             -Í¨Ñ¶ÐèÒªÇ°ÖÃID
+ 175   2              {
+ 176   3                  UH_SETUP |= bUH_PRE_PID_EN;                                        // ÆôÓÃPRE PID
+ 177   3              }
+ 178   2              SetUsbSpeed( DevOnHubPort[HubPortIndex-1].DeviceSpeed );               // ÉèÖÃµ±Ç°USBËÙ¶È
+ 179   2          }
+ 180   1          else                                                                       
+ 181   1          {
+ 182   2              SetHostUsbAddr( ThisUsbDev.DeviceAddress );                            // ÉèÖÃUSBÖ÷»úµ±Ç°²Ù×÷µÄUSB
+             -Éè±¸µØÖ·
+ 183   2              SetUsbSpeed( ThisUsbDev.DeviceSpeed );                                 // ÉèÖÃUSBÉè±¸µÄËÙ¶È
+ 184   2          }
+ 185   1      }
+ 186          #endif
+ 187          /*******************************************************************************
+ 188          * Function Name  : WaitUSB_Interrupt
+ 189          * Description    : µÈ´ýUSBÖÐ¶Ï
+ 190          * Input          : None
+ 191          * Output         : None
+ 192          * Return         : ·µ»ØERR_SUCCESS Êý¾Ý½ÓÊÕ»òÕß·¢ËÍ³É¹¦
+ 193                             ERR_USB_UNKNOWN Êý¾Ý½ÓÊÕ»òÕß·¢ËÍÊ§°Ü
+ 194          *******************************************************************************/
+ 195          UINT8   WaitUSB_Interrupt( void )
+ 196          {
+ 197   1          UINT16  i;
+ 198   1          for ( i = WAIT_USB_TOUT_200US; i != 0 && UIF_TRANSFER == 0; i -- ){;}
+ 199   1          return( UIF_TRANSFER ? ERR_SUCCESS : ERR_USB_UNKNOWN );
+ 200   1      }
+ 201          /*******************************************************************************
+ 202          * Function Name  : USBHostTransact
+ 203          * Description    : CH554´«ÊäÊÂÎñ,ÊäÈëÄ¿µÄ¶ËµãµØÖ·/PIDÁîÅÆ,Í¬²½±êÖ¾,ÒÔ20uSÎªµ¥Î»µÄNAKÖØÊÔ×ÜÊ±¼ä(0Ôò²»ÖØÊÔ,0
+             -xFFFFÎÞÏÞÖØÊÔ),·µ»Ø0³É¹¦,³¬Ê±/³ö´íÖØÊÔ
+ 204                             ±¾×Ó³ÌÐò×ÅÖØÓÚÒ×Àí½â,¶øÔÚÊµ¼ÊÓ¦ÓÃÖÐ,ÎªÁËÌá¹©ÔËÐÐËÙ¶È,Ó¦¸Ã¶Ô±¾×Ó³ÌÐò´úÂë½øÐÐÓÅ»¯
+ 205          * Input          : UINT8 endp_pid ÁîÅÆºÍµØÖ·  endp_pid: ¸ß4Î»ÊÇtoken_pidÁîÅÆ, µÍ4Î»ÊÇ¶ËµãµØÖ·
+ 206                             UINT8 tog      Í¬²½±êÖ¾
+ 207                             UINT16 timeout ³¬Ê±Ê±¼ä
+ 208          * Output         : None
+ 209          * Return         : ERR_USB_UNKNOWN ³¬Ê±£¬¿ÉÄÜÓ²¼þÒì³£
+ 210                             ERR_USB_DISCON  Éè±¸¶Ï¿ª
+ 211                             ERR_USB_CONNECT Éè±¸Á¬½Ó
+ 212                             ERR_SUCCESS     ´«ÊäÍê³É
+ 213          *******************************************************************************/
+ 214          UINT8   USBHostTransact( UINT8 endp_pid, UINT8 tog, UINT16 timeout )
+ 215          {
+ 216   1      //      UINT8   TransRetry;
+ 217   1      #define TransRetry      UEP0_T_LEN                                                     // ½ÚÔ¼ÄÚ´æ
+ 218   1              UINT8   s, r;
+ 219   1              UINT16  i;
+ 220   1              UH_RX_CTRL = UH_TX_CTRL = tog;
+ 221   1              TransRetry = 0;
+ 222   1              
+ 223   1              do {
+ 224   2                      UH_EP_PID = endp_pid;                                                      // Ö¸¶¨ÁîÅÆPIDºÍÄ¿µÄ¶ËµãºÅ
+ 225   2                      UIF_TRANSFER = 0;                                                          // ÔÊÐí´«Êä
+ 226   2      //  s = WaitUSB_Interrupt( );
+ 227   2                      for ( i = WAIT_USB_TOUT_200US; i != 0 && UIF_TRANSFER == 0; i -- );
+ 228   2                      UH_EP_PID = 0x00;                                                          // Í£Ö¹USB´«Êä
+ 229   2      //      if ( s != ERR_SUCCESS ) return( s );  // ÖÐ¶Ï³¬Ê±,¿ÉÄÜÊÇÓ²¼þÒì³£
+ 230   2                      if ( UIF_TRANSFER == 0 ) return( ERR_USB_UNKNOWN );
+ 231   2                      if ( UIF_DETECT ) {                                                        // USBÉè±¸²å°ÎÊÂ¼þ
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 5   
+
+ 232   3      //                      mDelayuS( 200 );                                                       // µÈ´ý´«ÊäÍê³É
+ 233   3                              UIF_DETECT = 0;                                                          // ÇåÖÐ¶Ï±êÖ¾
+ 234   3                              s = AnalyzeRootHub( );                                                   // ·ÖÎöROOT-HUB×´Ì¬
+ 235   3                              if ( s == ERR_USB_CONNECT ) FoundNewDev = 1;
+ 236   3      #ifdef DISK_BASE_BUF_LEN
+                                      if ( CH554DiskStatus == DISK_DISCONNECT ) return( ERR_USB_DISCON );      // USBÉè±¸¶Ï¿ªÊÂ¼þ
+                                      if ( CH554DiskStatus == DISK_CONNECT ) return( ERR_USB_CONNECT );        // USBÉè±¸Á¬½ÓÊÂ¼þ
+              #else
+ 240   3                              if ( ThisUsbDev.DeviceStatus == ROOT_DEV_DISCONNECT ) return( ERR_USB_DISCON );// USBÉè±¸¶Ï¿ªÊÂ¼þ
+ 241   3                              if ( ThisUsbDev.DeviceStatus == ROOT_DEV_CONNECTED ) return( ERR_USB_CONNECT );// USBÉè±¸Á¬½ÓÊÂ¼þ
+ 242   3      #endif
+ 243   3                              mDelayuS( 200 );  // µÈ´ý´«ÊäÍê³É
+ 244   3                      }
+ 245   2                      if ( UIF_TRANSFER ) {  // ´«ÊäÍê³É
+ 246   3                              if ( U_TOG_OK ) return( ERR_SUCCESS );
+ 247   3                              r = USB_INT_ST & MASK_UIS_H_RES;  // USBÉè±¸Ó¦´ð×´Ì¬
+ 248   3                              if ( r == USB_PID_STALL ) return( r | ERR_USB_TRANSFER );
+ 249   3                              if ( r == USB_PID_NAK ) {
+ 250   4                                      if ( timeout == 0 ) return( r | ERR_USB_TRANSFER );
+ 251   4                                      if ( timeout < 0xFFFF ) timeout --;
+ 252   4                                      -- TransRetry;
+ 253   4                              }
+ 254   3                              else switch ( endp_pid >> 4 ) {
+ 255   4                                      case USB_PID_SETUP:
+ 256   4                                      case USB_PID_OUT:
+ 257   4      //                                      if ( U_TOG_OK ) return( ERR_SUCCESS );
+ 258   4      //                                      if ( r == USB_PID_ACK ) return( ERR_SUCCESS );
+ 259   4      //                                      if ( r == USB_PID_STALL || r == USB_PID_NAK ) return( r | ERR_USB_TRANSFER );
+ 260   4                                              if ( r ) return( r | ERR_USB_TRANSFER );  // ²»ÊÇ³¬Ê±/³ö´í,ÒâÍâÓ¦´ð
+ 261   4                                              break;  // ³¬Ê±ÖØÊÔ
+ 262   4                                      case USB_PID_IN:
+ 263   4      //                                      if ( U_TOG_OK ) return( ERR_SUCCESS );
+ 264   4      //                                      if ( tog ? r == USB_PID_DATA1 : r == USB_PID_DATA0 ) return( ERR_SUCCESS );
+ 265   4      //                                      if ( r == USB_PID_STALL || r == USB_PID_NAK ) return( r | ERR_USB_TRANSFER );
+ 266   4                                              if ( r == USB_PID_DATA0 && r == USB_PID_DATA1 ) {  // ²»Í¬²½ÔòÐè¶ªÆúºóÖØÊÔ
+ 267   5                                              }  // ²»Í¬²½ÖØÊÔ
+ 268   4                                              else if ( r ) return( r | ERR_USB_TRANSFER );  // ²»ÊÇ³¬Ê±/³ö´í,ÒâÍâÓ¦´ð
+ 269   4                                              break;  // ³¬Ê±ÖØÊÔ
+ 270   4                                      default:
+ 271   4                                              return( ERR_USB_UNKNOWN );  // ²»¿ÉÄÜµÄÇé¿ö
+ 272   4                                              break;
+ 273   4                              }
+ 274   3                      }
+ 275   2                      else {  // ÆäËüÖÐ¶Ï,²»Ó¦¸Ã·¢ÉúµÄÇé¿ö
+ 276   3                              USB_INT_FG = 0xFF;  /* ÇåÖÐ¶Ï±êÖ¾ */
+ 277   3                      }
+ 278   2                      mDelayuS( 15 );
+ 279   2              } while ( ++ TransRetry < 3 );
+ 280   1              return( ERR_USB_TRANSFER );  // Ó¦´ð³¬Ê±
+ 281   1      }
+ 282          /*******************************************************************************
+ 283          * Function Name  : HostCtrlTransfer
+ 284          * Description    : Ö´ÐÐ¿ØÖÆ´«Êä,8×Ö½ÚÇëÇóÂëÔÚpSetupReqÖÐ,DataBufÎª¿ÉÑ¡µÄÊÕ·¢»º³åÇø
+ 285          * Input          : PUINT8X DataBuf Èç¹ûÐèÒª½ÓÊÕºÍ·¢ËÍÊý¾Ý,ÄÇÃ´DataBufÐèÖ¸ÏòÓÐÐ§»º³åÇøÓÃÓÚ´æ·ÅºóÐøÊý¾Ý
+ 286                             PUINT8 RetLen  Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È±£´æÔÚRetLenÖ¸ÏòµÄ×Ö½Ú±äÁ¿ÖÐ
+ 287          * Output         : None
+ 288          * Return         : ERR_USB_BUF_OVER IN×´Ì¬½×¶Î³ö´í
+ 289                             ERR_SUCCESS     Êý¾Ý½»»»³É¹¦
+ 290                             ÆäËû´íÎó×´Ì¬
+ 291          *******************************************************************************/
+ 292          UINT8   HostCtrlTransfer( PUINT8X DataBuf, PUINT8 RetLen )  
+ 293          {
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 6   
+
+ 294   1          UINT16  RemLen  = 0;
+ 295   1          UINT8   s, RxLen, RxCnt, TxCnt;
+ 296   1          PUINT8  xdata   pBuf;
+ 297   1          PUINT8  xdata   pLen;
+ 298   1          pBuf = DataBuf;
+ 299   1          pLen = RetLen;
+ 300   1      //    mDelayuS( 200 );
+ 301   1          if ( pLen )
+ 302   1          {
+ 303   2              *pLen = 0;                                                              // Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È
+ 304   2          }
+ 305   1          UH_TX_LEN = sizeof( USB_SETUP_REQ );
+ 306   1      //    mDelayuS( 5 );
+ 307   1              s = USBHostTransact( USB_PID_SETUP << 4 | 0x00, 0x00, 200000/20 );          // SETUP½×¶Î,200mS³¬Ê±
+ 308   1          if ( s != ERR_SUCCESS )
+ 309   1          {
+ 310   2              return( s );
+ 311   2          }
+ 312   1          UH_RX_CTRL = UH_TX_CTRL = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;// Ä¬ÈÏDATA1
+ 313   1          UH_TX_LEN = 0x01;                                                           // Ä¬ÈÏÎÞÊý¾Ý¹Ê×´Ì¬½×¶ÎÎªI
+             -N
+ 314   1          RemLen = (pSetupReq -> wLengthH << 8)|( pSetupReq -> wLengthL);
+ 315   1          if ( RemLen && pBuf )                                                       // ÐèÒªÊÕ·¢Êý¾Ý
+ 316   1          {
+ 317   2              if ( pSetupReq -> bRequestType & USB_REQ_TYP_IN )                       // ÊÕ
+ 318   2              {
+ 319   3                  while ( RemLen )
+ 320   3                  {
+ 321   4                      mDelayuS( 200 );
+ 322   4                      s = USBHostTransact( USB_PID_IN << 4 | 0x00, UH_RX_CTRL, 200000/20 );// INÊý¾Ý
+ 323   4                      if ( s != ERR_SUCCESS )
+ 324   4                      {
+ 325   5                          return( s );
+ 326   5                      }
+ 327   4                      RxLen = USB_RX_LEN < RemLen ? USB_RX_LEN : RemLen;
+ 328   4                      RemLen -= RxLen;
+ 329   4                      if ( pLen )
+ 330   4                      {
+ 331   5                          *pLen += RxLen;                                              // Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È
+ 332   5                      }
+ 333   4      //              memcpy( pBuf, RxBuffer, RxLen );
+ 334   4      //              pBuf += RxLen;
+ 335   4                      for ( RxCnt = 0; RxCnt != RxLen; RxCnt ++ )
+ 336   4                      {
+ 337   5                          *pBuf = RxBuffer[ RxCnt ];
+ 338   5                          pBuf ++;
+ 339   5                      }
+ 340   4                      if ( USB_RX_LEN == 0 || ( USB_RX_LEN & ( UsbDevEndp0Size - 1 ) ) )
+ 341   4                      {
+ 342   5                          break;                                                       // ¶Ì°ü
+ 343   5                      }
+ 344   4                  }
+ 345   3                  UH_TX_LEN = 0x00;                                                    // ×´Ì¬½×¶ÎÎªOUT
+ 346   3              }
+ 347   2              else                                                                     // ·¢
+ 348   2              {
+ 349   3                  while ( RemLen )
+ 350   3                  {
+ 351   4                      mDelayuS( 200 );
+ 352   4                      UH_TX_LEN = RemLen >= UsbDevEndp0Size ? UsbDevEndp0Size : RemLen;
+ 353   4      //              memcpy( TxBuffer, pBuf, UH_TX_LEN );
+ 354   4      //              pBuf += UH_TX_LEN;
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 7   
+
+ 355   4      #ifndef DISK_BASE_BUF_LEN
+ 356   4                      if(pBuf[1] == 0x09)                                              //HIDÀàÃüÁî´¦Àí
+ 357   4                      {
+ 358   5                          Set_Port = Set_Port^1;
+ 359   5                          *pBuf = Set_Port;
+ 360   5      #if DE_PRINTF                                                                   
+ 361   5                          printf("SET_PORT  %02X  %02X ",(UINT16)(*pBuf),(UINT16)(Set_Port));
+ 362   5      #endif                                                                  
+ 363   5                      }
+ 364   4      #endif
+ 365   4                      for ( TxCnt = 0; TxCnt != UH_TX_LEN; TxCnt ++ )
+ 366   4                      {
+ 367   5                          TxBuffer[ TxCnt ] = *pBuf;
+ 368   5                          pBuf ++;
+ 369   5                      }
+ 370   4                      s = USBHostTransact( USB_PID_OUT << 4 | 0x00, UH_TX_CTRL, 200000/20 );// OUTÊý¾Ý
+ 371   4                      if ( s != ERR_SUCCESS )
+ 372   4                      {
+ 373   5                          return( s );
+ 374   5                      }
+ 375   4                      RemLen -= UH_TX_LEN;
+ 376   4                      if ( pLen )
+ 377   4                      {
+ 378   5                          *pLen += UH_TX_LEN;                                           // Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È
+ 379   5                      }
+ 380   4                  }
+ 381   3      //          UH_TX_LEN = 0x01;                                                     // ×´Ì¬½×¶ÎÎªIN
+ 382   3              }
+ 383   2          }
+ 384   1          mDelayuS( 200 );
+ 385   1          s = USBHostTransact( ( UH_TX_LEN ? USB_PID_IN << 4 | 0x00: USB_PID_OUT << 4 | 0x00 ), bUH_R_TOG | bUH_
+             -T_TOG, 200000/20 );  // STATUS½×¶Î
+ 386   1          if ( s != ERR_SUCCESS )
+ 387   1          {
+ 388   2              return( s );
+ 389   2          }
+ 390   1          if ( UH_TX_LEN == 0 )
+ 391   1          {
+ 392   2              return( ERR_SUCCESS );                                                    // ×´Ì¬OUT
+ 393   2          }
+ 394   1          if ( USB_RX_LEN == 0 )
+ 395   1          {
+ 396   2              return( ERR_SUCCESS );                                                    // ×´Ì¬IN,¼ì²éIN×´Ì¬·µ»Ø
+             -Êý¾Ý³¤¶È
+ 397   2          }
+ 398   1          return( ERR_USB_BUF_OVER );                                                   // IN×´Ì¬½×¶Î´íÎó
+ 399   1      }
+ 400          /*******************************************************************************
+ 401          * Function Name  : CopySetupReqPkg
+ 402          * Description    : ¸´ÖÆ¿ØÖÆ´«ÊäµÄÇëÇó°ü
+ 403          * Input          : PUINT8C pReqPkt ¿ØÖÆÇëÇó°üµØÖ·
+ 404          * Output         : None
+ 405          * Return         : None
+ 406          *******************************************************************************/
+ 407          void    CopySetupReqPkg( PUINT8C pReqPkt )                                        // ¸´ÖÆ¿ØÖÆ´«ÊäµÄÇëÇó°ü
+ 408          {
+ 409   1          UINT8   i;
+ 410   1          for ( i = 0; i != sizeof( USB_SETUP_REQ ); i ++ )
+ 411   1          {
+ 412   2              ((PUINT8X)pSetupReq)[ i ] = *pReqPkt;
+ 413   2              pReqPkt ++;
+ 414   2          }
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 8   
+
+ 415   1      }
+ 416          /*******************************************************************************
+ 417          * Function Name  : CtrlGetDeviceDescr
+ 418          * Description    : »ñÈ¡Éè±¸ÃèÊö·û,·µ»ØÔÚTxBufferÖÐ
+ 419          * Input          : None
+ 420          * Output         : None
+ 421          * Return         : ERR_USB_BUF_OVER ÃèÊö·û³¤¶È´íÎó
+ 422                             ERR_SUCCESS      ³É¹¦
+ 423                             ÆäËû
+ 424          *******************************************************************************/
+ 425          UINT8   CtrlGetDeviceDescr( void )  
+ 426          {
+ 427   1          UINT8   s;
+ 428   1          UINT8   len;
+ 429   1          UsbDevEndp0Size = DEFAULT_ENDP0_SIZE;
+ 430   1          CopySetupReqPkg( SetupGetDevDescr );
+ 431   1              s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖÆ´«Êä
+ 432   1          if ( s != ERR_SUCCESS )
+ 433   1          {
+ 434   2              return( s );
+ 435   2          }
+ 436   1          UsbDevEndp0Size = ( (PXUSB_DEV_DESCR)TxBuffer ) -> bMaxPacketSize0;          // ¶Ëµã0×î´ó°ü³¤¶È,ÕâÊÇ¼ò
+             -»¯´¦Àí,Õý³£Ó¦¸ÃÏÈ»ñÈ¡Ç°8×Ö½ÚºóÁ¢¼´¸üÐÂUsbDevEndp0SizeÔÙ¼ÌÐø
+ 437   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetDevDescr ) -> wLengthL )
+ 438   1          {
+ 439   2              return( ERR_USB_BUF_OVER );                                              // ÃèÊö·û³¤¶È´íÎó
+ 440   2          }
+ 441   1          return( ERR_SUCCESS );
+ 442   1      }
+ 443          /*******************************************************************************
+ 444          * Function Name  : CtrlGetConfigDescr
+ 445          * Description    : »ñÈ¡ÅäÖÃÃèÊö·û,·µ»ØÔÚTxBufferÖÐ
+ 446          * Input          : None
+ 447          * Output         : None
+ 448          * Return         : ERR_USB_BUF_OVER ÃèÊö·û³¤¶È´íÎó
+ 449                             ERR_SUCCESS      ³É¹¦
+ 450                             ÆäËû
+ 451          *******************************************************************************/
+ 452          UINT8   CtrlGetConfigDescr( void )
+ 453          {
+ 454   1          UINT8   s;
+ 455   1          UINT8  len;
+ 456   1          CopySetupReqPkg( SetupGetCfgDescr );
+ 457   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖÆ´«Êä
+ 458   1          if ( s != ERR_SUCCESS )
+ 459   1          {
+ 460   2              return( s );
+ 461   2          }
+ 462   1              printf("len:%02x\n",(UINT16)len);
+ 463   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetCfgDescr ) -> wLengthL )
+ 464   1          {
+ 465   2              return( ERR_USB_BUF_OVER );                                              // ·µ»Ø³¤¶È´íÎó
+ 466   2          }
+ 467   1          len = ( (PXUSB_CFG_DESCR)TxBuffer ) -> wTotalLengthL;
+ 468   1          CopySetupReqPkg( SetupGetCfgDescr );
+ 469   1          pSetupReq -> wLengthL = len;                                                 // ÍêÕûÅäÖÃÃèÊö·ûµÄ×Ü³¤¶È
+ 470   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖÆ´«Êä
+ 471   1          if ( s != ERR_SUCCESS )
+ 472   1          {
+ 473   2              return( s );
+ 474   2          }
+ 475   1              printf("len:%02x\n",(UINT16)len);
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 9   
+
+ 476   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetCfgDescr ) -> wLengthL || len < ( (PXUSB_CFG_DESCR)TxBuffer ) -> 
+             -wTotalLengthL )
+ 477   1          {
+ 478   2              return( ERR_USB_BUF_OVER );                                              // ÃèÊö·û³¤¶È´íÎó
+ 479   2          }
+ 480   1          return( ERR_SUCCESS );
+ 481   1      }
+ 482          /*******************************************************************************
+ 483          * Function Name  : CtrlSetUsbAddress
+ 484          * Description    : ÉèÖÃUSBÉè±¸µØÖ·
+ 485          * Input          : UINT8 addr Éè±¸µØÖ·
+ 486          * Output         : None
+ 487          * Return         : ERR_SUCCESS      ³É¹¦
+ 488                             ÆäËû
+ 489          *******************************************************************************/
+ 490          UINT8   CtrlSetUsbAddress( UINT8 addr ) 
+ 491          {
+ 492   1          UINT8   s;
+ 493   1          CopySetupReqPkg( SetupSetUsbAddr );
+ 494   1          pSetupReq -> wValueL = addr;                                                // USBÉè±¸µØÖ·
+ 495   1          s = HostCtrlTransfer( NULL, (PUINT8)NULL );                                         // Ö´ÐÐ¿ØÖÆ´«Êä
+ 496   1          if ( s != ERR_SUCCESS )
+ 497   1          {
+ 498   2              return( s );
+ 499   2          }
+ 500   1          SetHostUsbAddr( addr );                                                     // ÉèÖÃUSBÖ÷»úµ±Ç°²Ù×÷µÄUS
+             -BÉè±¸µØÖ·
+ 501   1          mDelaymS( 10 );                                                             // µÈ´ýUSBÉè±¸Íê³É²Ù×÷
+ 502   1          return( ERR_SUCCESS );
+ 503   1      }
+ 504          /*******************************************************************************
+ 505          * Function Name  : CtrlSetUsbConfig
+ 506          * Description    : ÉèÖÃUSBÉè±¸ÅäÖÃ
+ 507          * Input          : UINT8 cfg       ÅäÖÃÖµ
+ 508          * Output         : None
+ 509          * Return         : ERR_SUCCESS      ³É¹¦
+ 510                             ÆäËû
+ 511          *******************************************************************************/
+ 512          UINT8   CtrlSetUsbConfig( UINT8 cfg )                   
+ 513          {
+ 514   1          CopySetupReqPkg( SetupSetUsbConfig );
+ 515   1          pSetupReq -> wValueL = cfg;                                                // USBÉè±¸ÅäÖÃ
+ 516   1          return( HostCtrlTransfer( NULL, (PUINT8)NULL ) );                                  // Ö´ÐÐ¿ØÖÆ´«Êä
+ 517   1      }
+ 518          /*******************************************************************************
+ 519          * Function Name  : CtrlClearEndpStall
+ 520          * Description    : Çå³ý¶ËµãSTALL
+ 521          * Input          : UINT8 endp       ¶ËµãµØÖ·
+ 522          * Output         : None
+ 523          * Return         : ERR_SUCCESS      ³É¹¦
+ 524                             ÆäËû
+ 525          *******************************************************************************/
+ 526          UINT8   CtrlClearEndpStall( UINT8 endp )  
+ 527          {
+ 528   1          CopySetupReqPkg( SetupClrEndpStall );                                      // Çå³ý¶ËµãµÄ´íÎó
+ 529   1          pSetupReq -> wIndexL = endp;                                               // ¶ËµãµØÖ·
+ 530   1          return( HostCtrlTransfer( NULL, (PUINT8)NULL ) );                                  // Ö´ÐÐ¿ØÖÆ´«Êä
+ 531   1      }
+ 532          
+ 533          #ifndef DISK_BASE_BUF_LEN
+ 534          /*******************************************************************************
+ 535          * Function Name  : CtrlSetUsbIntercace
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 10  
+
+ 536          * Description    : ÉèÖÃUSBÉè±¸½Ó¿Ú
+ 537          * Input          : UINT8 cfg       ÅäÖÃÖµ
+ 538          * Output         : None
+ 539          * Return         : ERR_SUCCESS      ³É¹¦
+ 540                             ÆäËû
+ 541          *******************************************************************************/
+ 542          UINT8   CtrlSetUsbIntercace( UINT8 cfg )                   
+ 543          {
+ 544   1          CopySetupReqPkg( SetupSetUsbInterface );
+ 545   1          pSetupReq -> wValueL = cfg;                                                // USBÉè±¸ÅäÖÃ
+ 546   1          return( HostCtrlTransfer( NULL, (PUINT8)NULL ) );                                  // Ö´ÐÐ¿ØÖÆ´«Êä
+ 547   1      }
+ 548          
+ 549          /*******************************************************************************
+ 550          * Function Name  : CtrlGetHIDDeviceReport
+ 551          * Description    : »ñÈ¡HIDÉè±¸±¨±íÃèÊö·û,·µ»ØÔÚTxBufferÖÐ
+ 552          * Input          : None
+ 553          * Output         : None
+ 554          * Return         : ERR_SUCCESS ³É¹¦
+ 555                             ÆäËû        ´íÎó
+ 556          *******************************************************************************/
+ 557          UINT8   CtrlGetHIDDeviceReport( void )  
+ 558          {
+ 559   1          UINT8   s;
+ 560   1          UINT8   len;
+ 561   1          UINT8 tmp[]= {0x21,0x0a,0x00,0x00,0x00,0x00,0x00,0x00};
+ 562   1          for ( s = 0; s != sizeof( tmp ); s ++ )
+ 563   1          {
+ 564   2              ((PUINT8X)pSetupReq)[ s ] = tmp[s];
+ 565   2          }
+ 566   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                                     // Ö´ÐÐ¿ØÖÆ´«Êä
+ 567   1      //    if ( s != ERR_SUCCESS )
+ 568   1      //    {
+ 569   1      //        return( s );
+ 570   1      //    }
+ 571   1          CopySetupReqPkg( SetupGetHIDDevReport );
+ 572   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                                    // Ö´ÐÐ¿ØÖÆ´«Êä
+ 573   1          if ( s != ERR_SUCCESS )
+ 574   1          {
+ 575   2              return( s );
+ 576   2          }
+ 577   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetDevDescr ) -> wLengthL )
+ 578   1          {
+ 579   2              return( ERR_USB_BUF_OVER );                                            // ÃèÊö·û³¤¶È´íÎó
+ 580   2          }
+ 581   1          return( ERR_SUCCESS );
+ 582   1      }
+ 583          /*******************************************************************************
+ 584          * Function Name  : CtrlGetHubDescr
+ 585          * Description    : »ñÈ¡HUBÃèÊö·û,·µ»ØÔÚTxBufferÖÐ
+ 586          * Input          : None
+ 587          * Output         : None
+ 588          * Return         : ERR_SUCCESS ³É¹¦
+ 589                             ERR_USB_BUF_OVER ³¤¶È´íÎó
+ 590          *******************************************************************************/
+ 591          UINT8   CtrlGetHubDescr( void )  
+ 592          {
+ 593   1          UINT8   s;
+ 594   1          UINT8D  len;
+ 595   1          CopySetupReqPkg( SetupGetHubDescr );
+ 596   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                                    // Ö´ÐÐ¿ØÖÆ´«Êä
+ 597   1          if ( s != ERR_SUCCESS )
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 11  
+
+ 598   1          {
+ 599   2              return( s );
+ 600   2          }
+ 601   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetHubDescr ) -> wLengthL )
+ 602   1          {
+ 603   2              return( ERR_USB_BUF_OVER );                                            // ÃèÊö·û³¤¶È´íÎó
+ 604   2          }
+ 605   1      //  if ( len < 4 ) return( ERR_USB_BUF_OVER );                                 // ÃèÊö·û³¤¶È´íÎó
+ 606   1          return( ERR_SUCCESS );
+ 607   1      }
+ 608          /*******************************************************************************
+ 609          * Function Name  : HubGetPortStatus
+ 610          * Description    : ²éÑ¯HUB¶Ë¿Ú×´Ì¬,·µ»ØÔÚTxBufferÖÐ
+ 611          * Input          : UINT8 HubPortIndex 
+ 612          * Output         : None
+ 613          * Return         : ERR_SUCCESS ³É¹¦
+ 614                             ERR_USB_BUF_OVER ³¤¶È´íÎó
+ 615          *******************************************************************************/
+ 616          UINT8   HubGetPortStatus( UINT8 HubPortIndex )   
+ 617          {
+ 618   1          UINT8   s;
+ 619   1          UINT8  len;
+ 620   1          pSetupReq -> bRequestType = HUB_GET_PORT_STATUS;
+ 621   1          pSetupReq -> bRequest = HUB_GET_STATUS;
+ 622   1          pSetupReq -> wValueL = 0x00;
+ 623   1          pSetupReq -> wValueH = 0x00;
+ 624   1          pSetupReq -> wIndexL = HubPortIndex;
+ 625   1          pSetupReq -> wIndexH = 0x00;
+ 626   1          pSetupReq -> wLengthL = 0x04;
+ 627   1          pSetupReq -> wLengthH = 0x00;
+ 628   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                           // Ö´ÐÐ¿ØÖÆ´«Êä
+ 629   1          if ( s != ERR_SUCCESS )
+ 630   1          {
+ 631   2              return( s );
+ 632   2          }
+ 633   1          if ( len < 4 )
+ 634   1          {
+ 635   2              return( ERR_USB_BUF_OVER );                                            // ÃèÊö·û³¤¶È´íÎó
+ 636   2          }
+ 637   1          return( ERR_SUCCESS );
+ 638   1      }
+ 639          /*******************************************************************************
+ 640          * Function Name  : HubSetPortFeature
+ 641          * Description    : ÉèÖÃHUB¶Ë¿ÚÌØÐÔ
+ 642          * Input          : UINT8 HubPortIndex    //HUB¶Ë¿Ú
+ 643                             UINT8 FeatureSelt     //HUB¶Ë¿ÚÌØÐÔ
+ 644          * Output         : None
+ 645          * Return         : ERR_SUCCESS ³É¹¦
+ 646                             ÆäËû        ´íÎó
+ 647          *******************************************************************************/
+ 648          UINT8   HubSetPortFeature( UINT8 HubPortIndex, UINT8 FeatureSelt ) 
+ 649          {
+ 650   1          pSetupReq -> bRequestType = HUB_SET_PORT_FEATURE;
+ 651   1          pSetupReq -> bRequest = HUB_SET_FEATURE;
+ 652   1          pSetupReq -> wValueL = FeatureSelt;
+ 653   1          pSetupReq -> wValueH = 0x00;
+ 654   1          pSetupReq -> wIndexL = HubPortIndex;
+ 655   1          pSetupReq -> wIndexH = 0x00;
+ 656   1          pSetupReq -> wLengthL = 0x00;
+ 657   1          pSetupReq -> wLengthH = 0x00;
+ 658   1          return( HostCtrlTransfer( NULL, NULL ) );                                 // Ö´ÐÐ¿ØÖÆ´«Êä
+ 659   1      }
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 12  
+
+ 660          /*******************************************************************************
+ 661          * Function Name  : HubClearPortFeature
+ 662          * Description    : Çå³ýHUB¶Ë¿ÚÌØÐÔ
+ 663          * Input          : UINT8 HubPortIndex                                         //HUB¶Ë¿Ú
+ 664                             UINT8 FeatureSelt                                          //HUB¶Ë¿ÚÌØÐÔ
+ 665          * Output         : None
+ 666          * Return         : ERR_SUCCESS ³É¹¦
+ 667                             ÆäËû        ´íÎó
+ 668          *******************************************************************************/
+ 669          UINT8   HubClearPortFeature( UINT8 HubPortIndex, UINT8 FeatureSelt ) 
+ 670          {
+ 671   1          pSetupReq -> bRequestType = HUB_CLEAR_PORT_FEATURE;
+ 672   1          pSetupReq -> bRequest = HUB_CLEAR_FEATURE;
+ 673   1          pSetupReq -> wValueL = FeatureSelt;
+ 674   1          pSetupReq -> wValueH = 0x00;
+ 675   1          pSetupReq -> wIndexL = HubPortIndex;
+ 676   1          pSetupReq -> wIndexH = 0x00;
+ 677   1          pSetupReq -> wLengthL = 0x00;
+ 678   1          pSetupReq -> wLengthH = 0x00;
+ 679   1          return( HostCtrlTransfer( NULL, NULL ) );                                // Ö´ÐÐ¿ØÖÆ´«Êä
+ 680   1      }
+ 681          
+ 682          /*******************************************************************************
+ 683          * Function Name  : CtrlGetXPrinterReport1
+ 684          * Description    : ´òÓ¡»úÀàÃüÁî
+ 685          * Input          : None
+ 686          * Output         : None
+ 687          * Return         : ERR_USB_BUF_OVER ÃèÊö·û³¤¶È´íÎó
+ 688                             ERR_SUCCESS      ³É¹¦
+ 689                             ÆäËû
+ 690          *******************************************************************************/
+ 691          UINT8   CtrlGetXPrinterReport1( void )  
+ 692          {
+ 693   1          UINT8   s;
+ 694   1          UINT16   len;
+ 695   1          CopySetupReqPkg( XPrinterReport );
+ 696   1          s = HostCtrlTransfer( TxBuffer, (PUINT8)&len );                         // Ö´ÐÐ¿ØÖÆ´«Êä
+ 697   1          if ( s != ERR_SUCCESS )
+ 698   1          {
+ 699   2              return( s );
+ 700   2          }
+ 701   1          if ( len < ( (XPrinterReport[7]<<8)|(XPrinterReport[6]) ))
+ 702   1          {
+ 703   2              return( ERR_USB_BUF_OVER );                                         // ÃèÊö·û³¤¶È´íÎó
+ 704   2          }
+ 705   1          return( ERR_SUCCESS );
+ 706   1      }
+ 707          
+ 708          /*******************************************************************************
+ 709          * Function Name  : AnalyzeHidIntEndp
+ 710          * Description    : ´ÓÃèÊö·ûÖÐ·ÖÎö³öHIDÖÐ¶Ï¶ËµãµÄµØÖ·
+ 711          * Input          : PUINT8X buf       ´ý·ÖÎöÊý¾Ý»º³åÇøµØÖ·
+ 712          * Output         : None
+ 713          * Return         : ÖÐ¶Ï¶ËµãµØÖ·
+ 714          *******************************************************************************/
+ 715          UINT8   AnalyzeHidIntEndp( PUINT8X buf ) 
+ 716          {
+ 717   1          UINT8   i, s, l;
+ 718   1          s = 0;
+ 719   1          for ( i = 0; i < ( (PXUSB_CFG_DESCR)buf ) -> wTotalLengthL; i += l )       // ËÑË÷ÖÐ¶Ï¶ËµãÃèÊö·û,Ìø¹ýÅ
+             -äÖÃÃèÊö·ûºÍ½Ó¿ÚÃèÊö·û
+ 720   1          {
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 13  
+
+ 721   2              if ( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bDescriptorType == USB_DESCR_TYP_ENDP  // ÊÇ¶ËµãÃèÊö·û
+ 722   2                      && ( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bmAttributes & USB_ENDP_TYPE_MASK ) == USB_ENDP_TYPE
+             -_INTER// ÊÇÖÐ¶Ï¶Ëµã
+ 723   2                      && ( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_DIR_MASK ) )// ÊÇIN¶Ëµã
+ 724   2              {
+ 725   3                  s = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_ADDR_MASK;// ÖÐ¶Ï¶ËµãµÄµØÖ·
+ 726   3                  break;                                                             // ¿ÉÒÔ¸ù¾ÝÐèÒª±£´æwMaxPack
+             -etSizeºÍbInterval
+ 727   3              }
+ 728   2              l = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bLength;                          // µ±Ç°ÃèÊö·û³¤¶È,Ìø¹ý
+ 729   2              if ( l > 16 )
+ 730   2              {
+ 731   3                  break;
+ 732   3              }
+ 733   2          }
+ 734   1          return( s );
+ 735   1      }
+ 736          
+ 737          //·ÖÎö¶ËµãÃèÊö·û
+ 738          void parse_config_descr(unsigned char *p)
+ 739          {
+ 740   1              unsigned char i,l;      
+ 741   1              
+ 742   1              for(i=0;i<p[2];i+=l)
+ 743   1              {                               
+ 744   2                      if((Midi.AudioType == 0x03) && (p[i+1]==0x05))//¶ËµãÃèÊö·û  bulkout_num
+ 745   2                      {       
+ 746   3                              if(p[i+3]==0x02)
+ 747   3                              {
+ 748   4                                      if(p[i+2]&0x80)                 //ÅúÁ¿IN¶Ëµã
+ 749   4                                      {
+ 750   5                                              Midi.BulkInEp = p[i+2]&0x0f;
+ 751   5                                              Midi.BulkInEpSize = p[i+4];
+ 752   5                                      }
+ 753   4                                      else                    //ÅúÁ¿OUT¶Ëµã
+ 754   4                                      {
+ 755   5                                              Midi.BulkOutEp = p[i+2]&0x0f;
+ 756   5                                              Midi.BulkOutEpSize = p[i+4];                                    
+ 757   5                                      }
+ 758   4                              }
+ 759   3                      }
+ 760   2                      else if(p[i+1]==0x04)      //½Ó¿ÚÃèÊö·û
+ 761   2                      {
+ 762   3                              if((p[i+5]==0x01)&&(p[i+6]==0x03))          //MIDI Streaming
+ 763   3                              {
+ 764   4                                      Midi.AudioType = 0x03;    
+ 765   4                                      Midi.IntfacNum = p[i+2];                                
+ 766   4                              }
+ 767   3                      }
+ 768   2                      l=p[i];
+ 769   2              }
+ 770   1      }
+ 771          
+ 772          /*******************************************************************************
+ 773          * Function Name  : InitRootDevice
+ 774          * Description    : ³õÊ¼»¯Ö¸¶¨ROOT-HUB¶Ë¿ÚµÄUSBÉè±¸
+ 775          * Input          : UINT8 RootHubIndex Ö¸¶¨¶Ë¿Ú£¬ÄÚÖÃHUB¶Ë¿ÚºÅ0/1
+ 776          * Output         : None
+ 777          * Return         :
+ 778          *******************************************************************************/
+ 779          UINT8   InitRootDevice( UINT8 RootHubIndex ) 
+ 780          {
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 14  
+
+ 781   1          UINT8   i, s, cfg, dv_cls, if_cls;
+ 782   1      #if DE_PRINTF   
+ 783   1          printf( "Reset root hub %1d# port\n", (UINT16)RootHubIndex );
+ 784   1      #endif
+ 785   1          ResetRootHubPort( );                                                    // ¼ì²âµ½Éè±¸ºó,¸´Î»ÏàÓ¦¶Ë¿ÚµÄ
+             -USB×ÜÏß
+ 786   1      //     mDelaymS( 10 );
+ 787   1          for ( i = 0, s = 0; i < 100; i ++ )                                     // µÈ´ýUSBÉè±¸¸´Î»ºóÖØÐÂÁ¬½Ó,1
+             -00mS³¬Ê±
+ 788   1          {
+ 789   2              mDelaymS( 1 );
+ 790   2              if ( EnableRootHubPort( ) == ERR_SUCCESS )                          // Ê¹ÄÜROOT-HUB¶Ë¿Ú
+ 791   2              {
+ 792   3                  i = 0;
+ 793   3                  s ++;                                                           // ¼ÆÊ±µÈ´ýUSBÉè±¸Á¬½ÓºóÎÈ¶¨
+ 794   3                  if ( s > 20 )
+ 795   3                  {
+ 796   4                      break;                                                      // ÒÑ¾­ÎÈ¶¨Á¬½Ó15mS
+ 797   4                  }
+ 798   3              }
+ 799   2          }   
+ 800   1          if ( i )                                                                 // ¸´Î»ºóÉè±¸Ã»ÓÐÁ¬½Ó
+ 801   1          {
+ 802   2              DisableRootHubPort( );
+ 803   2      #if DE_PRINTF                   
+ 804   2              printf( "Disable root hub %1d# port because of disconnect\n", (UINT16)RootHubIndex );
+ 805   2      #endif  
+ 806   2              return( ERR_USB_DISCON );
+ 807   2          }
+ 808   1          SelectHubPort( 0 );
+ 809   1      #if DE_PRINTF           
+ 810   1          printf( "GetDevDescr: " );
+ 811   1      #endif
+ 812   1          s = CtrlGetDeviceDescr( );                                               // »ñÈ¡Éè±¸ÃèÊö·û
+ 813   1          if ( s == ERR_SUCCESS )
+ 814   1          {
+ 815   2      #if DE_PRINTF   
+ 816   2              for ( i = 0; i < ( (PUSB_SETUP_REQ)SetupGetDevDescr ) -> wLengthL; i ++ )
+ 817   2              {                               
+ 818   3                  printf( "x%02X ", (UINT16)( TxBuffer[i] ) );                                
+ 819   3              }
+ 820   2              printf( "\n" );                                                       // ÏÔÊ¾³öÃèÊö·û
+ 821   2      #endif                          
+ 822   2              dv_cls = ( (PXUSB_DEV_DESCR)TxBuffer ) -> bDeviceClass;               // Éè±¸Àà´úÂë
+ 823   2              s = CtrlSetUsbAddress( RootHubIndex + ( (PUSB_SETUP_REQ)SetupSetUsbAddr ) -> wValueL );// ÉèÖÃUSBÉ
+             -è±¸µØÖ·,¼ÓÉÏRootHubIndex¿ÉÒÔ±£Ö¤2¸öHUB¶Ë¿Ú·ÖÅä²»Í¬µÄµØÖ·
+ 824   2              if ( s == ERR_SUCCESS )
+ 825   2              {
+ 826   3                  ThisUsbDev.DeviceAddress = RootHubIndex + ( (PUSB_SETUP_REQ)SetupSetUsbAddr ) -> wValueL;  // 
+             -±£´æUSBµØÖ·
+ 827   3      #if DE_PRINTF                                           
+ 828   3                  printf( "GetCfgDescr: " );
+ 829   3      #endif                                  
+ 830   3                  s = CtrlGetConfigDescr( );                                        // »ñÈ¡ÅäÖÃÃèÊö·û
+ 831   3                  if ( s == ERR_SUCCESS )
+ 832   3                  {
+ 833   4                      cfg = ( (PXUSB_CFG_DESCR)TxBuffer ) -> bConfigurationValue;
+ 834   4      #if DE_PRINTF                                                   
+ 835   4                      for ( i = 0; i < ( (PXUSB_CFG_DESCR)TxBuffer ) -> wTotalLengthL; i ++ )
+ 836   4                      {
+ 837   5                          printf( "x%02X ", (UINT16)( TxBuffer[i] ) );
+ 838   5                      }
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 15  
+
+ 839   4                      printf("\n");
+ 840   4      #endif                                                          
+ 841   4                      //·ÖÎöÅäÖÃÃèÊö·û,»ñÈ¡¶ËµãÊý¾Ý/¸÷¶ËµãµØÖ·/¸÷¶Ëµã´óÐ¡µÈ,¸üÐÂ±äÁ¿endp_addrºÍendp_sizeµÈ
+ 842   4                      if_cls = ( (PXUSB_CFG_DESCR_LONG)TxBuffer ) -> itf_descr.bInterfaceClass;  // ½Ó¿ÚÀà´úÂë
+ 843   4                                      
+ 844   4                                      parse_config_descr(TxBuffer);
+ 845   4                                      
+ 846   4                      if ( dv_cls == 0x00 && if_cls == USB_DEV_CLASS_STORAGE )      // ÊÇUSB´æ´¢ÀàÉè±¸,»ù±¾ÉÏÈ·È
+             -ÏÊÇUÅÌ
+ 847   4                      {
+ 848   5                          s = CtrlSetUsbConfig( cfg );                              // ÉèÖÃUSBÉè±¸ÅäÖÃ
+ 849   5                          if ( s == ERR_SUCCESS )
+ 850   5                          {
+ 851   6                              ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;
+ 852   6                              ThisUsbDev.DeviceType = USB_DEV_CLASS_STORAGE;
+ 853   6      #if DE_PRINTF                                                                                           
+ 854   6                              printf( "USB-Disk Ready\n" );
+ 855   6      #endif                                                                                  
+ 856   6                              SetUsbSpeed( 1 );                                     // Ä¬ÈÏÎªÈ«ËÙ
+ 857   6                              return( ERR_SUCCESS );
+ 858   6                          }
+ 859   5                      }
+ 860   4                      else if ( dv_cls == 0x00 && if_cls == USB_DEV_CLASS_PRINTER && ( (PXUSB_CFG_DESCR_LONG)TxB
+             -uffer ) -> itf_descr.bInterfaceSubClass == 0x01 )// ÊÇ´òÓ¡»úÀàÉè±¸
+ 861   4                      {
+ 862   5      #if DE_PRINTF                                                                           
+ 863   5                          printf( "USB-Print OK\n" );
+ 864   5      #endif                                                                  
+ 865   5                          if((TxBuffer[19] == 5)&&(TxBuffer[20]&&0x80)){
+ 866   6                             ThisUsbDev.GpVar = TxBuffer[20];                     //IN ¶Ëµã                                                                                   
+ 867   6                          }
+ 868   5                          else if((TxBuffer[19] == 5)&&((TxBuffer[20]&&0x80) == 0)){
+ 869   6                             ThisUsbDev.GpVar1 = TxBuffer[20];                    //OUT ¶Ëµã                                                                                          
+ 870   6                          }           
+ 871   5                          if((TxBuffer[26] == 5)&&(TxBuffer[20]&&0x80)){
+ 872   6                             ThisUsbDev.GpVar = TxBuffer[27];                     //IN ¶Ëµã                                                                                   
+ 873   6                          }
+ 874   5                          else if((TxBuffer[26] == 5)&&((TxBuffer[20]&&0x80) == 0)){
+ 875   6                             ThisUsbDev.GpVar1 = TxBuffer[27];                    //OUT ¶Ëµã                                                                                          
+ 876   6                          }                                                                           
+ 877   5      //                  ThisUsbDev.GpVar = ( (PUSB_CFG_DESCR_LONG)TxBuffer ) -> endp_descr[0].bEndpointAddress
+             -;// ±£´æÅúÁ¿´«Êä¶Ëµã
+ 878   5                          s = CtrlSetUsbConfig( cfg );                            // ÉèÖÃUSBÉè±¸ÅäÖÃ
+ 879   5                          if ( s == ERR_SUCCESS )
+ 880   5                          {                                                                   
+ 881   6                              s = CtrlSetUsbIntercace(cfg);
+ 882   6      //                         if(s == ERR_SUCCESS){
+ 883   6                                                                                 //Ðè±£´æ¶ËµãÐÅÏ¢ÒÔ±ãÖ÷³ÌÐò½øÐÐU
+             -SB´«Êä
+ 884   6                               s = CtrlGetXPrinterReport1( );                    //´òÓ¡»úÀàÃüÁî
+ 885   6                               if(s == ERR_SUCCESS){                                                                                                   
+ 886   7                                 ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;
+ 887   7                                 ThisUsbDev.DeviceType = USB_DEV_CLASS_PRINTER;
+ 888   7      #if DE_PRINTF                                                                                                            
+ 889   7                                 printf( "USB-Print Ready\n" );
+ 890   7      #endif                                                                                                   
+ 891   7                                 SetUsbSpeed( 1 );                               // Ä¬ÈÏÎªÈ«ËÙ
+ 892   7                                 return( ERR_SUCCESS );
+ 893   7                                                                                                       }                                                                                                       
+ 894   6      //                         }
+ 895   6                          }
+ 896   5                      }
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 16  
+
+ 897   4                      else if ( dv_cls == 0x00 && if_cls == USB_DEV_CLASS_HID && ( (PXUSB_CFG_DESCR_LONG)TxBuffe
+             -r ) -> itf_descr.bInterfaceSubClass <= 0x01 )// ÊÇHIDÀàÉè±¸,¼üÅÌ/Êó±êµÈ
+ 898   4                      { 
+ 899   5                          s = AnalyzeHidIntEndp( TxBuffer );                    // ´ÓÃèÊö·ûÖÐ·ÖÎö³öHIDÖÐ¶Ï¶ËµãµÄ
+             -µØÖ·
+ 900   5                          ThisUsbDev.GpVar = s & USB_ENDP_ADDR_MASK ;           // ±£´æÖÐ¶Ï¶ËµãµÄµØÖ·,Î»7ÓÃÓÚÍ¬²
+             -½±êÖ¾Î»,Çå0
+ 901   5                          if_cls = ( (PXUSB_CFG_DESCR_LONG)TxBuffer ) -> itf_descr.bInterfaceProtocol;
+ 902   5                          s = CtrlSetUsbConfig( cfg );                          // ÉèÖÃUSBÉè±¸ÅäÖÃ
+ 903   5                          if ( s == ERR_SUCCESS )
+ 904   5                          {
+ 905   6      #if DE_PRINTF                                                                                           
+ 906   6                              printf( "GetHIDReport: " );
+ 907   6      #endif                                                                                  
+ 908   6                              s = CtrlGetHIDDeviceReport();                    //»ñÈ¡±¨±íÃèÊö·û
+ 909   6                              if(s == ERR_SUCCESS)
+ 910   6                              {
+ 911   7      #if DE_PRINTF                                                                                                           
+ 912   7                                  for ( i = 0; i < 64; i++ )
+ 913   7                                  {
+ 914   8                                      printf( "x%02X ", (UINT16)( TxBuffer[i] ) );
+ 915   8                                  }
+ 916   7                                  printf("\n");
+ 917   7      #endif                                                                                                          
+ 918   7                              }
+ 919   6                              //Set_Idle( );
+ 920   6                                                                               //Ðè±£´æ¶ËµãÐÅÏ¢ÒÔ±ãÖ÷³ÌÐò½øÐÐUSB
+             -´«Êä
+ 921   6                              ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;
+ 922   6                              if ( if_cls == 1 )
+ 923   6                              {
+ 924   7                                  ThisUsbDev.DeviceType = DEV_TYPE_KEYBOARD;
+ 925   7                                                                               //½øÒ»²½³õÊ¼»¯,ÀýÈçÉè±¸¼üÅÌÖ¸Ê¾µÆ
+             -LEDµÈ
+ 926   7      #if DE_PRINTF                                                                                                           
+ 927   7                                  printf( "USB-Keyboard Ready\n" );
+ 928   7      #endif                                                                                                  
+ 929   7                                  SetUsbSpeed( 1 );                            // Ä¬ÈÏÎªÈ«ËÙ
+ 930   7                                  return( ERR_SUCCESS );
+ 931   7                              }
+ 932   6                              else if ( if_cls == 2 )
+ 933   6                              {
+ 934   7                                  ThisUsbDev.DeviceType = DEV_TYPE_MOUSE;
+ 935   7                                                                               //ÎªÁËÒÔºó²éÑ¯Êó±ê×´Ì¬,Ó¦¸Ã·ÖÎöÃè
+             -Êö·û,È¡µÃÖÐ¶Ï¶Ë¿ÚµÄµØÖ·,³¤¶ÈµÈÐÅÏ¢
+ 936   7      #if DE_PRINTF                                                                                                   
+ 937   7                                  printf( "USB-Mouse Ready\n" );
+ 938   7      #endif                                                                                                  
+ 939   7                                  SetUsbSpeed( 1 );                            // Ä¬ÈÏÎªÈ«ËÙ
+ 940   7                                  return( ERR_SUCCESS );
+ 941   7                              }
+ 942   6                              s = ERR_USB_UNSUPPORT;
+ 943   6                          }
+ 944   5                      }
+ 945   4                      else if ( dv_cls == USB_DEV_CLASS_HUB )                   // ÊÇHUBÀàÉè±¸,¼¯ÏßÆ÷µÈ
+ 946   4                      {
+ 947   5                          s = AnalyzeHidIntEndp( TxBuffer );                    // ´ÓÃèÊö·ûÖÐ·ÖÎö³öHIDÖÐ¶Ï¶ËµãµÄ
+             -µØÖ·
+ 948   5                          ThisUsbDev.GpVar1 = s & USB_ENDP_ADDR_MASK ;          // ±£´æÖÐ¶Ï¶ËµãµÄµØÖ·,Î»7ÓÃÓÚÍ¬²
+             -½±êÖ¾Î»,Çå0
+ 949   5      #if DE_PRINTF                                                                           
+ 950   5                          printf( "GetHubDescr: ");
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 17  
+
+ 951   5      #endif                                                                  
+ 952   5                          s = CtrlGetHubDescr( );
+ 953   5                          if ( s == ERR_SUCCESS )
+ 954   5                          {
+ 955   6      #if DE_PRINTF                                                                                           
+ 956   6                              for( i = 0; i < TxBuffer[0]; i++ )
+ 957   6                              {
+ 958   7                                  printf( "x%02X ",(UINT16)(TxBuffer[i]) );
+ 959   7                              }                       
+ 960   6                                                                                                      printf("\n");
+ 961   6      #endif                                                                                          
+ 962   6                              ThisUsbDev.GpVar = ( (PXUSB_HUB_DESCR)TxBuffer ) -> bNbrPorts;// ±£´æHUBµÄ¶Ë¿ÚÊýÁ¿
+ 963   6                              if ( ThisUsbDev.GpVar > HUB_MAX_PORTS )
+ 964   6                              {
+ 965   7                                  ThisUsbDev.GpVar = HUB_MAX_PORTS;// ÒòÎª¶¨Òå½á¹¹DevOnHubPortÊ±ÈËÎª¼Ù¶¨Ã¿¸öHUB²
+             -»³¬¹ýHUB_MAX_PORTS¸ö¶Ë¿Ú
+ 966   7                              }
+ 967   6                              //if ( ( (PXUSB_HUB_DESCR)TxBuffer ) -> wHubCharacteristics[0] & 0x04 ) printf("´ø
+             -ÓÐ¼¯ÏßÆ÷µÄ¸´ºÏÉè±¸\n");
+ 968   6                              //else printf("µ¥Ò»µÄ¼¯ÏßÆ÷²úÆ·\n");
+ 969   6                              s = CtrlSetUsbConfig( cfg );                     // ÉèÖÃUSBÉè±¸ÅäÖÃ
+ 970   6                              if ( s == ERR_SUCCESS )
+ 971   6                              {
+ 972   7                                  ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;
+ 973   7                                  ThisUsbDev.DeviceType = USB_DEV_CLASS_HUB;
+ 974   7                                  //Ðè±£´æ¶ËµãÐÅÏ¢ÒÔ±ãÖ÷³ÌÐò½øÐÐUSB´«Êä,±¾À´ÖÐ¶Ï¶Ëµã¿ÉÓÃÓÚHUBÊÂ¼þÍ¨Öª,µ«±¾³ÌÐòÊ¹
+             -ÓÃ²éÑ¯×´Ì¬¿ØÖÆ´«Êä´úÌæ
+ 975   7                                  //¸øHUB¸÷¶Ë¿ÚÉÏµç,²éÑ¯¸÷¶Ë¿Ú×´Ì¬,³õÊ¼»¯ÓÐÉè±¸Á¬½ÓµÄHUB¶Ë¿Ú,³õÊ¼»¯Éè±¸
+ 976   7                                  for ( i = 1; i <= ThisUsbDev.GpVar; i ++ )// ¸øHUB¸÷¶Ë¿Ú¶¼ÉÏµç
+ 977   7                                  {
+ 978   8                                      DevOnHubPort[i-1].DeviceStatus = ROOT_DEV_DISCONNECT;  // ÇåÍâ²¿HUB¶Ë¿ÚÉÏÉ
+             -è±¸µÄ×´Ì¬
+ 979   8                                      s = HubSetPortFeature( i, HUB_PORT_POWER );
+ 980   8                                      if ( s != ERR_SUCCESS )
+ 981   8                                      {
+ 982   9      #if DE_PRINTF                                                                                                                                           
+ 983   9                                          printf( "Ext-HUB Port_%1d# power on error\n",(UINT16)i );// ¶Ë¿ÚÉÏµçÊ§
+             -°Ü
+ 984   9      #endif                                                                                                                                  
+ 985   9                                      }
+ 986   8                                  }
+ 987   7                                  for ( i = 1; i <= ThisUsbDev.GpVar; i ++ )         // Çå³ýHUB¸÷¶Ë¿ÚÁ¬½Ó×´Ì¬
+ 988   7                                  {
+ 989   8                                      s = HubClearPortFeature( i, HUB_C_PORT_CONNECTION );
+ 990   8                                      if ( s != ERR_SUCCESS )
+ 991   8                                      {
+ 992   9      #if DE_PRINTF                                                                                                                                           
+ 993   9                                          printf( "Ext-HUB Port_%1d#  clear connection error\n",(UINT16)i );// ¶
+             -Ë¿ÚÁ¬½Ó×´Ì¬Çå³ýÊ§°Ü
+ 994   9      #endif                                                                                                                                  
+ 995   9                                      }
+ 996   8                                  }  
+ 997   7                                                                                                                      for ( i = 1; i <= ThisUsbDev.GpVar; i ++ )            // ²éÑ¯HUB¸÷¶Ë¿ÚÁ¬½Ó×´Ì¬
+ 998   7                                                                                                                      {       
+ 999   8                                                                                                                              s = HubGetPortStatus( i );                           // »ñÈ¡¶Ë¿Ú×´Ì¬
+1000   8                                                                                                                              if ( s != ERR_SUCCESS ) 
+1001   8      #if DE_PRINTF                                                                                                                                   
+1002   8                                                                                                                                      printf( "Ext-HUB Port_%1d#      clear connection error\n",(UINT16)i );  // ¶Ë¿ÚÁ¬½Ó×´Ì¬Çå³ýÊ§°Ü
+1003   8      #endif                                                                                                                  
+1004   8                                                                                                                              if ( ( TxBuffer[0] != 0 ) && ( DevOnHubPort[i-1].DeviceStatus != ROOT_DEV_SUCCESS) ){ //HUB
+             -ÏÂÓÎ¶Ë¿ÚÒÑÓÐÉè±¸Á¬½Ó
+1005   9                                                                                                                              s = HubSetPortFeature( i, HUB_PORT_RESET );  // ¶ÔÓÐÉè±¸Á¬½ÓµÄ¶Ë¿Ú¸´Î»
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 18  
+
+1006   9                                                                                                                              if ( s != ERR_SUCCESS ) 
+1007   9                                                                                                                              return s;  // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1008   9                                                                                                                              do // ²éÑ¯¸´Î»¶Ë¿Ú,Ö±µ½¸´Î»Íê³É,°ÑÍê³ÉºóµÄ×´Ì¬ÏÔÊ¾³öÀ´
+1009   9                                                                                                                              {
+1010  10                                                                                                                                      mDelaymS( 1 );
+1011  10                                                                                                                                      s = HubGetPortStatus( i );
+1012  10                                                                                                                                      if ( s != ERR_SUCCESS ) return s;  // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1013  10                                                                                                                              } while ( TxBuffer[0] & (1<<(HUB_PORT_RESET&0x07)) );  // ¶Ë¿ÚÕýÔÚ¸´Î»ÔòµÈ´ý                                                    
+1014   9                                                                                                                       }
+1015   8                                                                                                                      }                                                                                                               
+1016   7                                  SetUsbSpeed( 1 );                                        // Ä¬ÈÏÎªÈ«ËÙ
+1017   7                                  return( ERR_SUCCESS );
+1018   7                              }
+1019   6                          }
+1020   5                      }
+1021   4                      else                                                                 // ¿ÉÒÔ½øÒ»²½·ÖÎö
+1022   4                      {
+1023   5                          s = CtrlSetUsbConfig( cfg );                                     // ÉèÖÃUSBÉè±¸ÅäÖÃ
+1024   5                          if ( s == ERR_SUCCESS ) 
+1025   5                          {
+1026   6                              //Ðè±£´æ¶ËµãÐÅÏ¢ÒÔ±ãÖ÷³ÌÐò½øÐÐUSB´«Êä
+1027   6                              ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;
+1028   6      //                        ThisUsbDev.DeviceStatus = dv_cls ? dv_cls : if_cls;
+1029   6                              SetUsbSpeed( 1 );                                            // Ä¬ÈÏÎªÈ«ËÙ
+1030   6                              return( ERR_SUCCESS );                                       // Î´ÖªÉè±¸³õÊ¼»¯³É¹¦
+1031   6                          }
+1032   5                      }
+1033   4                  }
+1034   3              }
+1035   2          }
+1036   1      #if DE_PRINTF                   
+1037   1          printf( "InitRootDev Err = %02X\n", (UINT16)s );
+1038   1      #endif          
+1039   1          ThisUsbDev.DeviceStatus = ROOT_DEV_FAILED;
+1040   1          SetUsbSpeed( 1 );                                                                 // Ä¬ÈÏÎªÈ«ËÙ
+1041   1          return( s );
+1042   1      }
+1043          /*******************************************************************************
+1044          * Function Name  : EnumAllRootDevice
+1045          * Description    : Ã¶¾ÙËùÓÐROOT-HUB¶Ë¿ÚµÄUSBÉè±¸
+1046          * Input          : None
+1047          * Output         : None
+1048          * Return         : None
+1049          *******************************************************************************/
+1050          UINT8   EnumAllRootDevice( void )   
+1051          {
+1052   1          UINT8I   s, RootHubIndex;
+1053   1      #if DE_PRINTF   
+1054   1          printf( "EnumAllRootDev\n" );
+1055   1      #endif
+1056   1          for ( RootHubIndex = 0; RootHubIndex != 1; RootHubIndex ++ )
+1057   1          {
+1058   2      #if DE_PRINTF                   
+1059   2              printf( "RootHubIndex %02x\n",(UINT16)RootHubIndex );
+1060   2      #endif          
+1061   2              if ( ThisUsbDev.DeviceStatus == ROOT_DEV_CONNECTED )                        // ¸Õ²åÈëÉè±¸ÉÐÎ´³õÊ¼»
+             -¯
+1062   2              {
+1063   3                  s = InitRootDevice( RootHubIndex );                                      // ³õÊ¼»¯/Ã¶¾ÙÖ¸¶¨HUB
+             -¶Ë¿ÚµÄUSBÉè±¸
+1064   3                  if ( s != ERR_SUCCESS )
+1065   3                  {
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 19  
+
+1066   4                      return( s );
+1067   4                  }
+1068   3              }
+1069   2          }
+1070   1          return( ERR_SUCCESS );
+1071   1      }
+1072          /*******************************************************************************
+1073          * Function Name  : InitDevOnHub
+1074          * Description    : ³õÊ¼»¯Ã¶¾ÙÍâ²¿HUBºóµÄ¶þ¼¶USBÉè±¸
+1075          * Input          : UINT8 HubPortIndex  Ö¸¶¨Íâ²¿HUB
+1076          * Output         : None
+1077          * Return         : ERR_SUCCESS ³É¹¦
+1078                             ERR_USB_UNKNOWN Î´ÖªÉè±¸                 
+1079          *******************************************************************************/
+1080          UINT8   InitDevOnHub( UINT8 HubPortIndex ) 
+1081          {
+1082   1          UINT8   i, s, cfg, dv_cls, if_cls;
+1083   1      #if DE_PRINTF           
+1084   1          printf( "Init dev @ExtHub-port_%1d ", (UINT16)HubPortIndex );
+1085   1      #endif
+1086   1          if ( HubPortIndex == 0 )
+1087   1          {
+1088   2              return( ERR_USB_UNKNOWN );
+1089   2          }
+1090   1          SelectHubPort( HubPortIndex );                                      // Ñ¡Ôñ²Ù×÷Ö¸¶¨µÄROOT-HUB¶Ë¿ÚµÄÍâ²
+             -¿HUBµÄÖ¸¶¨¶Ë¿Ú,Ñ¡ÔñËÙ¶È
+1091   1      #if DE_PRINTF           
+1092   1          printf( "GetDevDescr: " );
+1093   1      #endif
+1094   1          s = CtrlGetDeviceDescr( );                                          // »ñÈ¡Éè±¸ÃèÊö·û
+1095   1          if ( s != ERR_SUCCESS )
+1096   1          {
+1097   2              return( s );
+1098   2          }
+1099   1          dv_cls = ( (PXUSB_DEV_DESCR)TxBuffer ) -> bDeviceClass;             // Éè±¸Àà´úÂë
+1100   1          cfg = ( 1<<4 ) + HubPortIndex;                                      // ¼ÆËã³öÒ»¸öUSBµØÖ·,±ÜÃâµØÖ·ÖØµþ
+1101   1          s = CtrlSetUsbAddress( cfg );                                       // ÉèÖÃUSBÉè±¸µØÖ·
+1102   1          if ( s != ERR_SUCCESS )
+1103   1          {
+1104   2              return( s );
+1105   2          }
+1106   1          DevOnHubPort[HubPortIndex-1].DeviceAddress = cfg;                   // ±£´æ·ÖÅäµÄUSBµØÖ·
+1107   1      #if DE_PRINTF                   
+1108   1          printf( "GetCfgDescr: " );
+1109   1      #endif
+1110   1          s = CtrlGetConfigDescr( );                                          // »ñÈ¡ÅäÖÃÃèÊö·û
+1111   1          if ( s != ERR_SUCCESS )
+1112   1          {
+1113   2              return( s );
+1114   2          }
+1115   1          cfg = ( (PXUSB_CFG_DESCR)TxBuffer ) -> bConfigurationValue;
+1116   1      #if DE_PRINTF                   
+1117   1          for ( i = 0; i < ( (PXUSB_CFG_DESCR)TxBuffer ) -> wTotalLengthL; i ++ )
+1118   1          {
+1119   2              printf( "x%02X ", (UINT16)( TxBuffer[i] ) );
+1120   2          }
+1121   1          printf("\n");
+1122   1      #endif          
+1123   1          /* ·ÖÎöÅäÖÃÃèÊö·û,»ñÈ¡¶ËµãÊý¾Ý/¸÷¶ËµãµØÖ·/¸÷¶Ëµã´óÐ¡µÈ,¸üÐÂ±äÁ¿endp_addrºÍendp_sizeµÈ */
+1124   1          if_cls = ( (PXUSB_CFG_DESCR_LONG)TxBuffer ) -> itf_descr.bInterfaceClass; // ½Ó¿ÚÀà´úÂë
+1125   1          if ( dv_cls == 0x00 && if_cls == USB_DEV_CLASS_STORAGE )                  // ÊÇUSB´æ´¢ÀàÉè±¸,»ù±¾ÉÏÈ·È
+             -ÏÊÇUÅÌ
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 20  
+
+1126   1          {
+1127   2              s = CtrlSetUsbConfig( cfg );                                          // ÉèÖÃUSBÉè±¸ÅäÖÃ
+1128   2              if ( s == ERR_SUCCESS )
+1129   2              {
+1130   3                  DevOnHubPort[HubPortIndex-1].DeviceStatus = ROOT_DEV_SUCCESS;
+1131   3                  DevOnHubPort[HubPortIndex-1].DeviceType = USB_DEV_CLASS_STORAGE;
+1132   3      #if DE_PRINTF                                           
+1133   3                  printf( "USB-Disk Ready\n" );
+1134   3      #endif                                  
+1135   3                  SetUsbSpeed( 1 );                                                 // Ä¬ÈÏÎªÈ«ËÙ
+1136   3                  return( ERR_SUCCESS );
+1137   3              }
+1138   2          }
+1139   1          else if ( dv_cls == 0x00 && if_cls == USB_DEV_CLASS_HID && ( (PXUSB_CFG_DESCR_LONG)TxBuffer ) -> itf_d
+             -escr.bInterfaceSubClass <= 0x01 )    // ÊÇHIDÀàÉè±¸,¼üÅÌ/Êó±êµÈ
+1140   1          {
+1141   2              s = AnalyzeHidIntEndp( TxBuffer );                                     // ´ÓÃèÊö·ûÖÐ·ÖÎö³öHIDÖÐ¶Ï¶
+             -ËµãµÄµØÖ·
+1142   2              DevOnHubPort[HubPortIndex-1].GpVar = s;                                // ±£´æÖÐ¶Ï¶ËµãµÄµØÖ·,Î»7ÓÃ
+             -ÓÚÍ¬²½±êÖ¾Î»,Çå0
+1143   2              if_cls = ( (PXUSB_CFG_DESCR_LONG)TxBuffer ) -> itf_descr.bInterfaceProtocol;
+1144   2              s = CtrlSetUsbConfig( cfg );                                           // ÉèÖÃUSBÉè±¸ÅäÖÃ
+1145   2              if ( s == ERR_SUCCESS )
+1146   2              {
+1147   3                  //Ðè±£´æ¶ËµãÐÅÏ¢ÒÔ±ãÖ÷³ÌÐò½øÐÐUSB´«Êä
+1148   3                  DevOnHubPort[HubPortIndex-1].DeviceStatus = ROOT_DEV_SUCCESS;
+1149   3                  if ( if_cls == 1 )
+1150   3                  {
+1151   4                      DevOnHubPort[HubPortIndex-1].DeviceType = DEV_TYPE_KEYBOARD;
+1152   4                      //½øÒ»²½³õÊ¼»¯,ÀýÈçÉè±¸¼üÅÌÖ¸Ê¾µÆLEDµÈ
+1153   4      #if DE_PRINTF                                                           
+1154   4                      printf( "USB-Keyboard Ready\n" );
+1155   4      #endif                                          
+1156   4                      SetUsbSpeed( 1 );                                               // Ä¬ÈÏÎªÈ«ËÙ
+1157   4                      return( ERR_SUCCESS );
+1158   4                  }
+1159   3                  else if ( if_cls == 2 )
+1160   3                  {
+1161   4                      DevOnHubPort[HubPortIndex-1].DeviceType = DEV_TYPE_MOUSE;
+1162   4      #if DE_PRINTF                                                                     //ÎªÁËÒÔºó²éÑ¯Êó±ê×´Ì¬,Ó¦¸
+             -Ã·ÖÎöÃèÊö·û,È¡µÃÖÐ¶Ï¶Ë¿ÚµÄµØÖ·,³¤¶ÈµÈÐÅÏ¢
+1163   4                      printf( "USB-Mouse Ready\n" );
+1164   4      #endif                                                  
+1165   4                      SetUsbSpeed( 1 );                                               // Ä¬ÈÏÎªÈ«ËÙ
+1166   4                      return( ERR_SUCCESS );
+1167   4                  }
+1168   3                  s = ERR_USB_UNSUPPORT;
+1169   3              }
+1170   2          }
+1171   1          else if ( dv_cls == USB_DEV_CLASS_HUB )                                     // ÊÇHUBÀàÉè±¸,¼¯ÏßÆ÷µÈ
+1172   1          {
+1173   2              DevOnHubPort[HubPortIndex-1].DeviceType = USB_DEV_CLASS_HUB;
+1174   2      #if DE_PRINTF                           
+1175   2              printf( "This program don't support Level 2 HUB\n");                    // ÐèÒªÖ§³Ö¶à¼¶HUB¼¶ÁªÇë²Î
+             -¿¼±¾³ÌÐò½øÐÐÀ©Õ¹
+1176   2      #endif          
+1177   2              s = HubClearPortFeature( i, HUB_PORT_ENABLE );                          // ½ûÖ¹HUB¶Ë¿Ú
+1178   2              if ( s != ERR_SUCCESS )
+1179   2              {
+1180   3                  return( s );
+1181   3              }
+1182   2              s = ERR_USB_UNSUPPORT;
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 21  
+
+1183   2          }
+1184   1          else                                                                         // ¿ÉÒÔ½øÒ»²½·ÖÎö
+1185   1          {
+1186   2              s = CtrlSetUsbConfig( cfg );                                             // ÉèÖÃUSBÉè±¸ÅäÖÃ
+1187   2              if ( s == ERR_SUCCESS )
+1188   2              {
+1189   3                  //Ðè±£´æ¶ËµãÐÅÏ¢ÒÔ±ãÖ÷³ÌÐò½øÐÐUSB´«Êä
+1190   3                  DevOnHubPort[HubPortIndex-1].DeviceStatus = ROOT_DEV_SUCCESS;
+1191   3                  DevOnHubPort[HubPortIndex-1].DeviceType = dv_cls ? dv_cls : if_cls;
+1192   3                  SetUsbSpeed( 1 );                                                    // Ä¬ÈÏÎªÈ«ËÙ
+1193   3                  return( ERR_SUCCESS );                                               //Î´ÖªÉè±¸³õÊ¼»¯³É¹¦
+1194   3              }
+1195   2          }
+1196   1      #if DE_PRINTF                   
+1197   1          printf( "InitDevOnHub Err = %02X\n", (UINT16)s );
+1198   1      #endif          
+1199   1          DevOnHubPort[HubPortIndex-1].DeviceStatus = ROOT_DEV_FAILED;
+1200   1          SetUsbSpeed( 1 );                                                            // Ä¬ÈÏÎªÈ«ËÙ
+1201   1          return( s );
+1202   1      }
+1203          /*******************************************************************************
+1204          * Function Name  : EnumHubPort
+1205          * Description    : Ã¶¾ÙÖ¸¶¨ROOT-HUB¶Ë¿ÚÉÏµÄÍâ²¿HUB¼¯ÏßÆ÷µÄ¸÷¸ö¶Ë¿Ú,¼ì²é¸÷¶Ë¿ÚÓÐÎÞÁ¬½Ó»òÒÆ³ýÊÂ¼þ²¢³õÊ¼»¯¶þ¼
+             -¶USBÉè±¸
+1206          * Input          : UINT8 RootHubIndex ROOT_HUB0ºÍROOT_HUB1
+1207          * Output         : None
+1208          * Return         : ERR_SUCCESS ³É¹¦
+1209                             ÆäËû        Ê§°Ü
+1210          *******************************************************************************/
+1211          UINT8   EnumHubPort( ) 
+1212          {
+1213   1          UINT8   i, s;
+1214   1      #if DE_PRINTF           
+1215   1          printf( "EnumHubPort\n" );
+1216   1      #endif  
+1217   1          for ( i = 1; i <= ThisUsbDev.GpVar; i ++ )                                       // ²éÑ¯¼¯ÏßÆ÷µÄ¶Ë¿ÚÊÇ
+             -·ñÓÐ±ä»¯
+1218   1          {
+1219   2              SelectHubPort( 0 );                                                          // Ñ¡Ôñ²Ù×÷Ö¸¶¨µÄROOT
+             --HUB¶Ë¿Ú,ÉèÖÃµ±Ç°USBËÙ¶ÈÒÔ¼°±»²Ù×÷Éè±¸µÄUSBµØÖ·
+1220   2              s = HubGetPortStatus( i );                                                   // »ñÈ¡¶Ë¿Ú×´Ì¬
+1221   2              if ( s != ERR_SUCCESS )
+1222   2              {
+1223   3                  return( s );                                                              // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1224   3              }
+1225   2              if ( (( TxBuffer[0]&(1<<(HUB_PORT_CONNECTION&0x07)) ) && ( TxBuffer[2]&(1<<(HUB_C_PORT_CONNECTION&
+             -0x07)) ))||(TxBuffer[2] == 0x10) ) 
+1226   2              {// ·¢ÏÖÓÐÉè±¸Á¬½Ó
+1227   3                  DevOnHubPort[i-1].DeviceStatus = ROOT_DEV_CONNECTED;                     // ÓÐÉè±¸Á¬½Ó
+1228   3                  DevOnHubPort[i-1].DeviceAddress = 0x00;
+1229   3                  s = HubGetPortStatus( i );                                               // »ñÈ¡¶Ë¿Ú×´Ì¬
+1230   3                  if ( s != ERR_SUCCESS )
+1231   3                  {
+1232   4                      return( s );                                                         // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1233   4                  }
+1234   3                  DevOnHubPort[i-1].DeviceSpeed = TxBuffer[1] & (1<<(HUB_PORT_LOW_SPEED&0x07)) ? 0 : 1;// µÍËÙ»¹
+             -ÊÇÈ«ËÙ
+1235   3                  if ( DevOnHubPort[i-1].DeviceSpeed )
+1236   3                  {
+1237   4      #if DE_PRINTF                                                           
+1238   4                      printf( "Found full speed device on port %1d\n", (UINT16)i );
+1239   4      #endif                                                  
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 22  
+
+1240   4                  }
+1241   3                  else
+1242   3                  {
+1243   4      #if DE_PRINTF                                                           
+1244   4                      printf( "Found low speed device on port %1d\n", (UINT16)i );
+1245   4      #endif                                                  
+1246   4                  }
+1247   3      //            mDelaymS( 200 );                                                          // µÈ´ýÉè±¸ÉÏµçÎÈ¶
+             -¨
+1248   3                  s = HubClearPortFeature( i, HUB_C_PORT_CONNECTION );                      // Çå³ýÁ¬½Ó»òÒÆ³ý±ä»
+             -¯±êÖ¾
+1249   3                  if ( s != ERR_SUCCESS )
+1250   3                  {
+1251   4                      return( s );
+1252   4                  }
+1253   3                              
+1254   3                  s = HubSetPortFeature( i, HUB_PORT_RESET );                               // ¶ÔÓÐÉè±¸Á¬½ÓµÄ¶Ë¿
+             -Ú¸´Î»
+1255   3                  if ( s != ERR_SUCCESS )
+1256   3                  {
+1257   4                      return( s );                                                          // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1258   4                  }
+1259   3      #if DE_PRINTF                                                   
+1260   3                  printf( "Reset port and then wait in\n" );
+1261   3      #endif                                          
+1262   3                  do                                                                        // ²éÑ¯¸´Î»¶Ë¿Ú,Ö±µ½
+             -¸´Î»Íê³É,°ÑÍê³ÉºóµÄ×´Ì¬ÏÔÊ¾³öÀ´
+1263   3                  {
+1264   4                      mDelaymS( 1 );
+1265   4                      s = HubGetPortStatus( i );
+1266   4                      if ( s != ERR_SUCCESS )
+1267   4                      {
+1268   5                          return( s );                                                      // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1269   5                      }
+1270   4                  }
+1271   3                  while ( TxBuffer[0] & (1<<(HUB_PORT_RESET&0x07)) );                       // ¶Ë¿ÚÕýÔÚ¸´Î»ÔòµÈ´
+             -ý
+1272   3                  s = HubClearPortFeature( i, HUB_C_PORT_RESET );                           // Çå³ý¸´Î»Íê³É±êÖ¾
+1273   3      //             s = HubSetPortFeature( i, HUB_PORT_ENABLE );                              // ÆôÓÃHUB¶Ë¿Ú
+1274   3                              mDelaymS( 10 );
+1275   3                              
+1276   3      //            s = HubGetPortStatus( i );                                                // ÔÙ¶ÁÈ¡×´Ì¬,¸´²é
+             -Éè±¸ÊÇ·ñ»¹ÔÚ
+1277   3      //            if ( s != ERR_SUCCESS )
+1278   3      //            {
+1279   3      //                return( s );
+1280   3      //            }
+1281   3      //            if ( ( TxBuffer[0]&(1<<(HUB_PORT_CONNECTION&0x07)) ) == 0 )
+1282   3      //            {
+1283   3      //                DevOnHubPort[i-1].DeviceStatus = ROOT_DEV_DISCONNECT;                 // Éè±¸²»ÔÚÁË
+1284   3      //            }
+1285   3                  s = InitDevOnHub( i );                                                    // ³õÊ¼»¯¶þ¼¶USBÉè±¸
+1286   3                  if ( s != ERR_SUCCESS )
+1287   3                  {
+1288   4                      return( s );
+1289   4                  }
+1290   3                  SetUsbSpeed( 1 );                                                         // Ä¬ÈÏÎªÈ«ËÙ
+1291   3              }
+1292   2                                      else if (TxBuffer[2]&(1<<(HUB_C_PORT_ENABLE&0x07))  )                         // Éè±¸Á¬½Ó³ö´í
+1293   2                                      {
+1294   3                                                      HubClearPortFeature( i, HUB_C_PORT_ENABLE );                              // Çå³ýÁ¬½Ó´íÎó±êÖ¾
+1295   3      #if DE_PRINTF                                           
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 23  
+
+1296   3                                                printf( "Device on port error\n" );           
+1297   3      #endif                                  
+1298   3                                              s = HubSetPortFeature( i, HUB_PORT_RESET );                               // ¶ÔÓÐÉè±¸Á¬½ÓµÄ¶Ë¿Ú¸´Î»
+1299   3                                                if ( s != ERR_SUCCESS ) 
+1300   3                                                      return( s );                                                              // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1301   3                                                do                                                                        // ²éÑ¯¸´Î»¶Ë¿Ú,Ö±µ½¸´Î»Í
+             -ê³É,°ÑÍê³ÉºóµÄ×´Ì¬ÏÔÊ¾³öÀ´
+1302   3                                                {
+1303   4                                                        mDelaymS( 1 );
+1304   4                                                        s = HubGetPortStatus( i );
+1305   4                                                        if ( s != ERR_SUCCESS ) return( s );                                    // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1306   4                                                } while ( TxBuffer[0] & (1<<(HUB_PORT_RESET&0x07)) );                     // ¶Ë¿ÚÕýÔÚ¸´Î»ÔòµÈ´ý
+1307   3                                      }
+1308   2              else if ( ( TxBuffer[0]&(1<<(HUB_PORT_CONNECTION&0x07)) ) == 0 )              // Éè±¸ÒÑ¾­¶Ï¿ª
+1309   2              {
+1310   3                  if ( DevOnHubPort[i-1].DeviceStatus >= ROOT_DEV_CONNECTED )
+1311   3                  {
+1312   4      #if DE_PRINTF                                                           
+1313   4                      printf( "Device on port %1d removed\n", (UINT16)i );
+1314   4      #endif                                                  
+1315   4                  }
+1316   3                  DevOnHubPort[i-1].DeviceStatus = ROOT_DEV_DISCONNECT;                     // ÓÐÉè±¸Á¬½Ó
+1317   3                  if ( TxBuffer[2]&(1<<(HUB_C_PORT_CONNECTION&0x07)) )
+1318   3                  {
+1319   4                      HubClearPortFeature( i, HUB_C_PORT_CONNECTION );                      // Çå³ýÒÆ³ý±ä»¯±êÖ¾
+1320   4                  }
+1321   3              }
+1322   2          }
+1323   1          return( ERR_SUCCESS );                                                            // ·µ»Ø²Ù×÷³É¹¦
+1324   1      }
+1325          /*******************************************************************************
+1326          * Function Name  : EnumAllHubPort
+1327          * Description    : Ã¶¾ÙËùÓÐROOT-HUB¶Ë¿ÚÏÂÍâ²¿HUBºóµÄ¶þ¼¶USBÉè±¸
+1328          * Input          : None
+1329          * Output         : None
+1330          * Return         : ERR_SUCCESS ³É¹¦
+1331                             ÆäËû        Ê§°Ü
+1332          *******************************************************************************/
+1333          UINT8   EnumAllHubPort( void ) 
+1334          {
+1335   1          UINT8   s,i, RootHubIndex;
+1336   1      #if DE_PRINTF           
+1337   1          printf( "EnumAllHubPort\n" );
+1338   1      #endif  
+1339   1      
+1340   1              if ( ThisUsbDev.DeviceStatus >= ROOT_DEV_SUCCESS && ThisUsbDev.DeviceType == USB_DEV_CLASS_HUB )// HUBÃ¶¾
+             -Ù³É¹¦
+1341   1              { 
+1342   2                      SelectHubPort( 0 );                                                        // Ñ¡Ôñ²Ù×÷Ö¸¶¨µÄROOT-HUB¶Ë¿Ú
+             -,ÉèÖÃµ±Ç°USBËÙ¶ÈÒÔ¼°±»²Ù×÷Éè±¸µÄUSBµØÖ·
+1343   2                      //×öµãÊ²Ã´?  ¸øHUB¸÷¶Ë¿ÚÉÏµç,²éÑ¯¸÷¶Ë¿Ú×´Ì¬,³õÊ¼»¯ÓÐÉè±¸Á¬½ÓµÄHUB¶Ë¿Ú,³õÊ¼»¯Éè±¸
+1344   2                       for ( i = 1; i <= ThisUsbDev.GpVar; i ++ ){                             // ³õÊ¼»¯HUB¸÷¶Ë¿Ú
+1345   3                         s = HubSetPortFeature( i, HUB_PORT_POWER );                           // ¸øHUB¸÷¶Ë¿ÚÉÏµç
+1346   3                         if ( s != ERR_SUCCESS )
+1347   3                         {
+1348   4                               return( s );                                                        // ¿ÉÄÜÊÇ¸ÃHUB¶Ï¿ªÁË
+1349   4                         }                                                                    
+1350   3                       }                              
+1351   2                      s = EnumHubPort( );                                                        // Ã¶¾ÙÖ¸¶¨ROOT-HUB¶Ë¿ÚÉÏµÄÍâ
+             -²¿HUB¼¯ÏßÆ÷µÄ¸÷¸ö¶Ë¿Ú,¼ì²é¸÷¶Ë¿ÚÓÐÎÞÁ¬½Ó»òÒÆ³ýÊÂ¼þ
+1352   2                      if ( s != ERR_SUCCESS )                                                    // ¿ÉÄÜÊÇHUB¶Ï¿ªÁË
+1353   2                      {
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 24  
+
+1354   3      #if DE_PRINTF                                                           
+1355   3                              printf( "EnumAllHubPort err = %02X\n", (UINT16)s );
+1356   3      #endif                                                  
+1357   3                      }
+1358   2                      SetUsbSpeed( 1 );                                                          // Ä¬ÈÏÎªÈ«ËÙ
+1359   2              }
+1360   1      
+1361   1          return( ERR_SUCCESS );
+1362   1      }
+*** WARNING C280 IN LINE 1335 OF USB\USB_LIB\USBHOST.C: 'RootHubIndex': unreferenced local variable
+1363          /*******************************************************************************
+1364          * Function Name  : SearchTypeDevice
+1365          * Description    : ÔÚROOT-HUBÒÔ¼°Íâ²¿HUB¸÷¶Ë¿ÚÉÏËÑË÷Ö¸¶¨ÀàÐÍµÄÉè±¸ËùÔÚµÄ¶Ë¿ÚºÅ,Êä³ö¶Ë¿ÚºÅÎª0xFFFFÔòÎ´ËÑË÷µ
+             -½
+1366          * Input          : UINT8 type ËÑË÷µÄÉè±¸ÀàÐÍ
+1367          * Output         : None
+1368          * Return         : Êä³ö¸ß8Î»ÎªROOT-HUB¶Ë¿ÚºÅ,µÍ8Î»ÎªÍâ²¿HUBµÄ¶Ë¿ÚºÅ,µÍ8Î»Îª0ÔòÉè±¸Ö±½ÓÔÚROOT-HUB¶Ë¿ÚÉÏ
+1369                             µ±È»Ò²¿ÉÒÔ¸ù¾ÝUSBµÄ³§ÉÌVID²úÆ·PID½øÐÐËÑË÷(ÊÂÏÈÒª¼ÇÂ¼¸÷Éè±¸µÄVIDºÍPID),ÒÔ¼°Ö¸¶¨ËÑË÷ÐòºÅ
+1370          *******************************************************************************/
+1371          UINT16  SearchTypeDevice( UINT8 type )   
+1372          {
+1373   1      
+1374   1          UINT8   RootHubIndex, HubPortIndex;
+1375   1          for ( RootHubIndex = 0; RootHubIndex != 2; RootHubIndex ++ )                      // ÏÖÊ±ËÑË÷¿ÉÒÔ±ÜÃâÉ
+             -è±¸ÖÐÍ¾°Î³ö¶øÄ³Ð©ÐÅÏ¢Î´¼°Ê±¸üÐÂµÄÎÊÌâ
+1376   1          {
+1377   2              if ( ThisUsbDev.DeviceType == type && ThisUsbDev.DeviceStatus >= ROOT_DEV_SUCCESS )
+1378   2              {
+1379   3                  return( (UINT16)RootHubIndex << 8 );                                      // ÀàÐÍÆ¥ÅäÇÒÃ¶¾Ù³É¹
+             -¦,ÔÚROOT-HUB¶Ë¿ÚÉÏ
+1380   3              }
+1381   2              if ( ThisUsbDev.DeviceType == USB_DEV_CLASS_HUB && ThisUsbDev.DeviceStatus >= ROOT_DEV_SUCCESS )//
+             - Íâ²¿¼¯ÏßÆ÷HUBÇÒÃ¶¾Ù³É¹¦
+1382   2              {
+1383   3                  for ( HubPortIndex = 1; HubPortIndex <= ThisUsbDev.GpVar; HubPortIndex ++ )// ËÑË÷Íâ²¿HUBµÄ¸÷¸
+             -ö¶Ë¿Ú
+1384   3                  {
+1385   4                      if ( DevOnHubPort[HubPortIndex-1].DeviceType == type && DevOnHubPort[HubPortIndex-1].Devic
+             -eStatus >= ROOT_DEV_SUCCESS )
+1386   4                      {
+1387   5                          return( ( (UINT16)RootHubIndex << 8 ) | HubPortIndex );           // ÀàÐÍÆ¥ÅäÇÒÃ¶¾Ù³É¹
+             -¦
+1388   5                      }
+1389   4                  }
+1390   3              }
+1391   2          }
+1392   1          return( 0xFFFF );
+1393   1      }
+1394          /*******************************************************************************
+1395          * Function Name  : SETorOFFNumLock
+1396          * Description    : NumLockµÄµãµÆÅÐ¶Ï
+1397          * Input          : PUINT8 buf µãµÆ¼üÖµ
+1398          * Output         : None
+1399          * Return         : None
+1400          *******************************************************************************/
+1401          UINT8 SETorOFFNumLock(PUINT8 buf)
+1402          {
+1403   1          UINT8 tmp[]= {0x21,0x09,0x00,0x02,0x00,0x00,0x01,0x00};
+1404   1          UINT8 len,s;
+1405   1          if((buf[2]==0x53)&(buf[0]|buf[1]|buf[3]|buf[4]|buf[5]|buf[6]|buf[7]==0))
+1406   1          {
+1407   2              for ( s = 0; s != sizeof( tmp ); s ++ )
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 25  
+
+1408   2              {
+1409   3                  ((PUINT8X)pSetupReq)[ s ] = tmp[s];
+1410   3              }
+1411   2              s = HostCtrlTransfer( TxBuffer, &len );                                     // Ö´ÐÐ¿ØÖÆ´«Êä
+1412   2              if ( s != ERR_SUCCESS )
+1413   2              {
+1414   3                  return( s );
+1415   3              }
+1416   2          }
+1417   1          return( ERR_SUCCESS );
+1418   1      }
+1419          #endif
+1420          
+1421          #ifdef DISK_BASE_BUF_LEN
+              UINT8   InitRootDevice( void )                                                       // ³õÊ¼»¯USBÉè±¸
+              {
+                      UINT8   i, s, cfg, dv_cls, if_cls;
+              #if DE_PRINTF   
+                      printf( "Reset host port\n" );
+              #endif
+                      ResetRootHubPort( );                                                            // ¼ì²âµ½Éè±¸ºó,¸´Î»ÏàÓ¦¶
+             -Ë¿ÚµÄUSB×ÜÏß
+                      for ( i = 0, s = 0; i < 100; i ++ ) {                                           // µÈ´ýUSBÉè±¸¸´Î»ºóÖØÐÂÁ
+             -¬½Ó,100mS³¬Ê±
+                              mDelaymS( 1 );
+                              if ( EnableRootHubPort( ) == ERR_SUCCESS ) {                                  // Ê¹ÄÜ¶Ë¿Ú
+                                      i = 0;
+                                      s ++;                                                                       // ¼ÆÊ±µÈ´ýUSBÉè±¸Á¬½ÓºóÎÈ¶
+             -¨
+                                      if ( s > 100 ) break;                                                       // ÒÑ¾­ÎÈ¶¨Á¬½Ó100mS
+                              }
+                      }
+                      if ( i ) {                                                                      // ¸´Î»ºóÉè±¸Ã»ÓÐÁ¬½Ó
+                              DisableRootHubPort( );
+              #if DE_PRINTF                   
+                              printf( "Disable host port because of disconnect\n" );
+              #endif          
+                              return( ERR_USB_DISCON );
+                      }
+                      SetUsbSpeed( 1 );                                                              // ÉèÖÃµ±Ç°USBËÙ¶È
+                      s = CtrlGetDeviceDescr( );                                                     // »ñÈ¡Éè±¸ÃèÊö·û
+                      if ( s == ERR_SUCCESS ) {
+              #if DE_PRINTF                   
+                        printf( "GetDevDescr: " );            
+                              for ( i = 0; i < ( (PUSB_SETUP_REQ)SetupGetDevDescr ) -> wLengthL; i ++ ) printf( "x%02X ", (UINT16)( Tx
+             -Buffer[i] ) );
+                              printf( "\n" );                                                             // ÏÔÊ¾³öÃèÊö·û
+              #endif          
+                              dv_cls = ( (PXUSB_DEV_DESCR)TxBuffer ) -> bDeviceClass;                     // Éè±¸Àà´úÂë
+                              s = CtrlSetUsbAddress( ( (PUSB_SETUP_REQ)SetupSetUsbAddr ) -> wValueL );    // ÉèÖÃUSBÉè±¸µØÖ·
+                              if ( s == ERR_SUCCESS ) {
+              
+                                      s = CtrlGetConfigDescr( );                                                // »ñÈ¡ÅäÖÃÃèÊö·û
+                                      if ( s == ERR_SUCCESS ) {
+                                              cfg = ( (PXUSB_CFG_DESCR)TxBuffer ) -> bConfigurationValue;
+              #if DE_PRINTF                                   
+                                        printf( "GetCfgDescr: " );                            
+                                              for ( i = 0; i < ( (PXUSB_CFG_DESCR)TxBuffer ) -> wTotalLengthL; i ++ ) printf( "x%02X ", (UINT16)( Tx
+             -Buffer[i] ) );
+                                              printf("\n");
+              #endif                          
+              /* ·ÖÎöÅäÖÃÃèÊö·û,»ñÈ¡¶ËµãÊý¾Ý/¸÷¶ËµãµØÖ·/¸÷¶Ëµã´óÐ¡µÈ,¸üÐÂ±äÁ¿endp_addrºÍendp_sizeµÈ */
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 26  
+
+                                              if_cls = ( (PXUSB_CFG_DESCR_LONG)TxBuffer ) -> itf_descr.bInterfaceClass; // ½Ó¿ÚÀà´úÂë
+                                              if ( dv_cls == 0x00 && if_cls == USB_DEV_CLASS_STORAGE ) {                // ÊÇUSB´æ´¢ÀàÉè±¸,»ù±¾ÉÏÈ·È
+             -ÏÊÇUÅÌ
+                                                      CH554DiskStatus = DISK_USB_ADDR;
+                                                      return( ERR_SUCCESS );
+                                              }
+                                              else {
+                                                      return( ERR_USB_UNSUPPORT );
+                                              }
+                                      }
+                              }
+                      }
+              #if DE_PRINTF           
+                      printf( "InitRootDev Err = %02X\n", (UINT16)s );
+              #endif
+                      CH554DiskStatus = DISK_CONNECT;
+                      SetUsbSpeed( 1 );                                                              // Ä¬ÈÏÎªÈ«ËÙ
+                      return( s );
+              }
+              #endif
+1484          /*******************************************************************************
+1485          * Function Name  : InitUSB_Host
+1486          * Description    : ³õÊ¼»¯USBÖ÷»ú
+1487          * Input          : None
+1488          * Output         : None
+1489          * Return         : None
+1490          *******************************************************************************/
+1491          void    InitUSB_Host( void )
+1492          {
+1493   1          UINT8   i;
+1494   1          IE_USB = 0;
+1495   1      //  LED_CFG = 1;
+1496   1      //  LED_RUN = 0;
+1497   1          USB_CTRL = bUC_HOST_MODE;                                                    // ÏÈÉè¶¨Ä£Ê½
+1498   1          USB_DEV_AD = 0x00;
+1499   1          UH_EP_MOD = bUH_EP_TX_EN | bUH_EP_RX_EN ;
+1500   1          UH_RX_DMA = RxBuffer;
+1501   1          UH_TX_DMA = TxBuffer;
+1502   1          UH_RX_CTRL = 0x00;
+1503   1          UH_TX_CTRL = 0x00;
+1504   1          USB_CTRL = bUC_HOST_MODE | bUC_INT_BUSY | bUC_DMA_EN;                        // Æô¶¯USBÖ÷»ú¼°DMA,ÔÚÖÐ¶
+             -Ï±êÖ¾Î´Çå³ýÇ°×Ô¶¯ÔÝÍ£
+1505   1      //  UHUB0_CTRL = 0x00;
+1506   1      //  UHUB1_CTRL = 0x00;
+1507   1          UH_SETUP = bUH_SOF_EN;
+1508   1          USB_INT_FG = 0xFF;                                                           // ÇåÖÐ¶Ï±êÖ¾
+1509   1          for ( i = 0; i != 2; i ++ )
+1510   1          {
+1511   2              DisableRootHubPort( );                                                   // Çå¿Õ
+1512   2          }
+1513   1          USB_INT_EN = bUIE_TRANSFER | bUIE_DETECT;
+1514   1      //  IE_USB = 1;                                                                  // ²éÑ¯·½Ê½
+1515   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   5220    ----
+   CONSTANT SIZE    =    777    ----
+   XDATA SIZE       =      8      65
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----       2
+C51 COMPILER V9.53.0.0   USBHOST                                                           02/06/2018 18:06:36 PAGE 27  
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
