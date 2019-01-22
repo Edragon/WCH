@@ -1,0 +1,221 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        03/03/2017  17:22:25  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL_V5_954A\C51\BIN\BL51.EXE CH559_DEMO.obj TO CH559_DEMO RAMSIZE (256) CODE (0X0000-0XAFFF)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  CH559_DEMO.obj (CH559_DEMO)
+  C:\KEIL_V5_954A\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  CH559_DEMO (CH559_DEMO)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0003H     UNIT         ?DT?CH559_DEMO
+            DATA    000BH     0002H     UNIT         _DATA_GROUP_
+            IDATA   000DH     0001H     UNIT         ?STACK
+
+            * * * * * * *  X D A T A   M E M O R Y  * * * * * * *
+                    0000H     2446H                  *** GAP ***
+            XDATA   2446H     0001H     ABSOLUTE     
+            XDATA   2447H     0001H     ABSOLUTE     
+            XDATA   2448H     0001H     ABSOLUTE     
+            XDATA   2449H     0001H     ABSOLUTE     
+            XDATA   244AH     0001H     ABSOLUTE     
+            XDATA   244BH     0001H     ABSOLUTE     
+            XDATA   244CH     0001H     ABSOLUTE     
+            XDATA   244DH     0001H     ABSOLUTE     
+            XDATA   244EH     0001H     ABSOLUTE     
+            XDATA   244FH     0001H     ABSOLUTE     
+                    2450H     00F6H                  *** GAP ***
+            XDATA   2546H     0001H     ABSOLUTE     
+            XDATA   2547H     0001H     ABSOLUTE     
+            XDATA   2548H     0001H     ABSOLUTE     
+            XDATA   2549H     0001H     ABSOLUTE     
+            XDATA   254AH     0001H     ABSOLUTE     
+            XDATA   254BH     0001H     ABSOLUTE     
+            XDATA   254CH     0001H     ABSOLUTE     
+            XDATA   254DH     0001H     ABSOLUTE     
+            XDATA   254EH     0001H     ABSOLUTE     
+            XDATA   254FH     0001H     ABSOLUTE     
+                    2550H     0330H                  *** GAP ***
+            XDATA   2880H     0001H     ABSOLUTE     
+            XDATA   2881H     0001H     ABSOLUTE     
+            XDATA   2882H     0001H     ABSOLUTE     
+            XDATA   2883H     0001H     ABSOLUTE     
+            XDATA   2884H     0001H     ABSOLUTE     
+            XDATA   2885H     0001H     ABSOLUTE     
+            XDATA   2886H     0001H     ABSOLUTE     
+                    2887H     0001H                  *** GAP ***
+            XDATA   2888H     0001H     ABSOLUTE     
+            XDATA   2889H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/03/2017  17:22:25  PAGE 2
+
+
+                    288AH     00F6H                  *** GAP ***
+            XDATA   2980H     0001H     ABSOLUTE     
+            XDATA   2981H     0001H     ABSOLUTE     
+            XDATA   2982H     0001H     ABSOLUTE     
+            XDATA   2983H     0001H     ABSOLUTE     
+            XDATA   2984H     0001H     ABSOLUTE     
+            XDATA   2985H     0001H     ABSOLUTE     
+            XDATA   2986H     0001H     ABSOLUTE     
+                    2987H     0001H                  *** GAP ***
+            XDATA   2988H     0001H     ABSOLUTE     
+            XDATA   2989H     0001H     ABSOLUTE     
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     003AH     UNIT         ?PR?MAIN?CH559_DEMO
+            CODE    003DH     0031H     UNIT         ?PR?_MDELAY20US?CH559_DEMO
+            CODE    006EH     000CH     UNIT         ?C_C51STARTUP
+
+
+
+OVERLAY MAP OF MODULE:   CH559_DEMO (CH559_DEMO)
+
+
+SEGMENT                              DATA_GROUP 
+  +--> CALLED SEGMENT              START    LENGTH
+--------------------------------------------------
+?C_C51STARTUP                      -----    -----
+  +--> ?PR?MAIN?CH559_DEMO
+
+?PR?MAIN?CH559_DEMO                000BH    0002H
+  +--> ?PR?_MDELAY20US?CH559_DEMO
+
+
+
+SYMBOL TABLE OF MODULE:  CH559_DEMO (CH559_DEMO)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        CH559_DEMO
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  X:2989H         PUBLIC        pLED_DMA_XL
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  X:2888H         PUBLIC        LED_DMA_XH
+  D:00E8H         PUBLIC        IE_EX
+  X:2889H         PUBLIC        LED_DMA_XL
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        USB_INT_FG
+  C:0003H         PUBLIC        main
+  C:0056H         PUBLIC        _mDelay20us
+  X:2983H         PUBLIC        pLED_CK_SE
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/03/2017  17:22:25  PAGE 3
+
+
+  D:00F8H         PUBLIC        SPI0_STAT
+  X:2883H         PUBLIC        LED_CK_SE
+  D:00BAH         PUBLIC        P1_DIR
+  X:2982H         PUBLIC        pLED_DATA
+  D:00BCH         PUBLIC        P2_DIR
+  D:00BEH         PUBLIC        P3_DIR
+  D:00C2H         PUBLIC        P4_DIR
+  D:0008H         PUBLIC        tasksArr
+  X:2882H         PUBLIC        LED_DATA
+  X:2981H         PUBLIC        pLED_CTRL
+  D:00C0H         PUBLIC        P4_OUT
+  X:2547H         PUBLIC        pUEP2_3_MOD
+  X:2546H         PUBLIC        pUEP4_1_MOD
+  X:2984H         PUBLIC        pLED_DMA_AH
+  X:2980H         PUBLIC        pLED_STAT
+  X:2985H         PUBLIC        pLED_DMA_AL
+  X:2548H         PUBLIC        pUEP0_DMA_H
+  D:00C8H         PUBLIC        T2CON
+  X:254AH         PUBLIC        pUEP1_DMA_H
+  X:254CH         PUBLIC        pUEP2_DMA_H
+  X:254EH         PUBLIC        pUEP3_DMA_H
+  X:2986H         PUBLIC        pLED_DMA_CN
+  X:2549H         PUBLIC        pUEP0_DMA_L
+  X:2881H         PUBLIC        LED_CTRL
+  X:254BH         PUBLIC        pUEP1_DMA_L
+  X:254DH         PUBLIC        pUEP2_DMA_L
+  X:254FH         PUBLIC        pUEP3_DMA_L
+  X:2447H         PUBLIC        UEP2_3_MOD
+  X:2446H         PUBLIC        UEP4_1_MOD
+  X:2884H         PUBLIC        LED_DMA_AH
+  X:2880H         PUBLIC        LED_STAT
+  X:2885H         PUBLIC        LED_DMA_AL
+  X:2448H         PUBLIC        UEP0_DMA_H
+  X:244AH         PUBLIC        UEP1_DMA_H
+  X:244CH         PUBLIC        UEP2_DMA_H
+  X:244EH         PUBLIC        UEP3_DMA_H
+  X:2988H         PUBLIC        pLED_DMA_XH
+  X:2886H         PUBLIC        LED_DMA_CN
+  X:2449H         PUBLIC        UEP0_DMA_L
+  D:00D0H         PUBLIC        PSW
+  X:244BH         PUBLIC        UEP1_DMA_L
+  X:244DH         PUBLIC        UEP2_DMA_L
+  X:244FH         PUBLIC        UEP3_DMA_L
+  C:0052H         SYMBOL        L?0011
+  -------         PROC          L?0010
+  -------         ENDPROC       L?0010
+  C:0052H         SYMBOL        L?0011
+  -------         PROC          _MDELAY20US
+  D:0006H         SYMBOL        n
+  C:0056H         LINE#         30
+  C:0056H         LINE#         31
+  C:0056H         LINE#         32
+  C:0065H         LINE#         33
+  C:0066H         LINE#         34
+  C:006DH         LINE#         35
+  -------         ENDPROC       _MDELAY20US
+  -------         PROC          MAIN
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/03/2017  17:22:25  PAGE 4
+
+
+  -------         DO            
+  D:000BH         SYMBOL        i
+  -------         ENDDO         
+  C:0003H         LINE#         44
+  C:0003H         LINE#         45
+  C:0003H         LINE#         46
+  C:0008H         LINE#         48
+  C:000AH         LINE#         49
+  C:000DH         LINE#         50
+  C:0010H         LINE#         51
+  C:0013H         LINE#         52
+  C:0016H         LINE#         53
+  C:001DH         LINE#         54
+  C:001DH         LINE#         55
+  C:001DH         LINE#         70
+  C:0020H         LINE#         71
+  C:0023H         LINE#         72
+  C:0026H         LINE#         73
+  C:0029H         LINE#         74
+  C:0029H         LINE#         75
+  C:0029H         LINE#         76
+  C:0029H         LINE#         77
+  C:002CH         LINE#         78
+  C:002FH         LINE#         79
+  C:0031H         LINE#         80
+  C:0033H         LINE#         81
+  C:0035H         LINE#         82
+  C:0035H         LINE#         83
+  C:0035H         LINE#         84
+  C:0035H         LINE#         85
+  C:0038H         LINE#         86
+  C:003BH         LINE#         89
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        CH559_DEMO
+
+Program Size: data=14.0 xdata=38 code=122
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

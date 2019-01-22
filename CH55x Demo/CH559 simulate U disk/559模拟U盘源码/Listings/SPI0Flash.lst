@@ -1,0 +1,1363 @@
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE SPI0FLASH
+OBJECT MODULE PLACED IN .\Objects\SPI0Flash.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE SPI0Flash.C LARGE BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\SPI0Flash.lst)
+                    - TABS(2) OBJECT(.\Objects\SPI0Flash.obj)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT *******************************
+   3          * File Name          : SPI0Flash.C
+   4          * Author             : WCH
+   5          * Version            : V1.2
+   6          * Date               : 2016/1/15
+   7          * Description        : CH559 SPI0 ¶ÁÐ´Íâ²¿Flash
+   8          *******************************************************************************/
+   9          #include ".\DEBUG.C"                                                          //µ÷ÊÔÐÅÏ¢´òÓ¡
+  10          #include ".\DEBUG.H"
+  11          #include "string.h"
+  12          #pragma  NOAREGS
+  13          
+  14          #define THIS_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
+  15          UINT8X  Ep0Buffer[THIS_ENDP0_SIZE] _at_ 0x0000;                                //¶Ëµã0 OUT&IN»º³åÇø£¬±ØÐëÊ
+             -ÇÅ¼µØÖ·
+  16          UINT8X  Ep1Buffer[2*MAX_PACKET_SIZE] _at_ 0x0008;                                //¶Ëµã1 IN»º³åÇø,±ØÐëÊÇÅ¼
+             -µØÖ·
+  17          UINT8   UsbConfig = 0; 
+  18          
+  19          #define UsbSetupBuf     ((PUSB_SETUP_REQ)Ep0Buffer)
+  20          
+  21          /*Éè±¸ÃèÊö·û*/
+  22          UINT8C  MyDevDescr[] = { 0x12, 0x01, 0x10, 0x01,
+  23                                   0x00, 0x00, 0x00, THIS_ENDP0_SIZE,
+  24                                   0x44, 0x33, 0x33, 0x35,                              // ³§ÉÌIDºÍ²úÆ·ID
+  25                                   0x00, 0x01, 0x01, 0x02,
+  26                                   0x00, 0x01
+  27                                 };
+  28          /*ÅäÖÃÃèÊö·û*/
+  29          UINT8C  MyCfgDescr[] = { 0x09, 0x02, 0x20, 0x00, 0x01, 0x01, 0x00, 0x80, 0x32,
+  30                                   0x09, 0x04, 0x00, 0x00, 0x02, 0x08, 0x06, 0x50, 0x00,                     
+  31                                   0x07, 0x05, 0x01, 0x02, 0x40, 0x00, 0x00,
+  32                                   0x07, 0x05, 0x81, 0x02, 0x40, 0x00, 0x00
+  33                                 };
+  34          /*ÓïÑÔÃèÊö·û*/
+  35          UINT8C  MyLangDescr[] = { 0x04, 0x03, 0x09, 0x04 };
+  36          /*³§¼ÒÐÅÏ¢*/
+  37          UINT8C  MyManuInfo[] = { 0x0E, 0x03, 'w', 0, 'c', 0, 'h', 0, '.', 0, 'c', 0, 'n', 0 };
+  38          /*²úÆ·ÐÅÏ¢*/
+  39          UINT8C  MyProdInfo[] = { 0x0C, 0x03, 'C', 0, 'H', 0, '5', 0, '5', 0, '9', 0 };
+  40          
+  41          UINT8C  MAX_LUN[] = {0};
+  42          
+  43          //INQUIRY inform
+  44          UINT8C  DBINQUITY[]={
+  45                      0x00,             //Peripheral Device Type
+  46                      0x80,       //
+  47                      0x02 ,      //ISO/ECMA
+  48                      0x02 ,      //
+  49                      0x1f ,      //Additional Length
+  50          
+  51                      00 ,      //Reserved
+  52                      00 ,      //Reserved
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 2   
+
+  53                      00 ,        //Reserved
+  54          
+  55          
+  56                        'w' ,     //Vendor Information
+  57                      'c' ,     //
+  58                      'h' ,     //
+  59                      '.' ,     //
+  60                      'c' ,     //
+  61                      'n' ,     //
+  62                      ' ' ,     //
+  63                      ' ' ,     //
+  64          
+  65          
+  66                            0xc7,     //Product Identification
+  67                      0xdf,       //
+  68                      0xba,     //
+  69                      0xe3,     //
+  70                      0xb5,     //
+  71                      0xe7,     //
+  72                      0xd7,     //
+  73                      0xd3,     //
+  74                      0x55,     //
+  75                      0xc5,     //
+  76                      0xcc,     //
+  77                      0xb7,     //
+  78                      0xbd,     //
+  79                      0xb0,     //
+  80                      0xb8,     //
+  81                      0x00,          //
+  82          
+  83                              '1' ,     //Product Revision Level
+  84                      '.' ,     //
+  85                      '1' ,     //
+  86                      '0'       //
+  87                        };
+  88          
+  89          //ÐÞ¸Äºã¶¨ÒåµÄÊ±ºò×¢ÒâÐÞ¸Ä²Á³ýº¯Êý£¬µ±Ç°Îª²Á³ý4kº¯Êý¡£ÐèÒªÏàÓ¦ÐÞ¸ÄÕâ¸öº¯Êý¼´¿É¡£
+  90                        
+  91          #define DISK_SEC_NUM   0x00000200       //×ÜÉÈÇøÊý  ¹²512ÎïÀíÉÈÇø
+  92          #define DISK_SEC_LAST  DISK_SEC_NUM- 1  //×îºóÒ»¸öÂß¼­ÉÈÇøµØÖ·          
+  93          #define DISK_SEC_LEN   0x00001000       //ÉÈÇø´óÐ¡  Ã¿¸öÉÈÇø4096×Ö½Ú´óÐ¡
+  94                                    
+  95                        
+  96          UINT8C DBCAPACITY[]={ (DISK_SEC_LAST>>24)&0xFF, (DISK_SEC_LAST>>16)&0xFF, (DISK_SEC_LAST>>8)&0xFF, DISK_SE
+             -C_LAST&0xFF , (DISK_SEC_LEN>>24)&0xFF, (DISK_SEC_LEN>>16)&0xFF, (DISK_SEC_LEN>>8)&0xFF, DISK_SEC_LEN&0xFF};    //last lo
+             -gic addr//block lenth
+  97          
+  98          UINT8C  modesense3F[]={
+  99                  0x0b, 0x00, 0x00, 0x08, (DISK_SEC_NUM>>24)&0xFF, (DISK_SEC_NUM>>16)&0xFF, (DISK_SEC_NUM>>8)&0xFF, DISK
+             -_SEC_NUM&0xFF, 00, 00, 02, 00 };   //ÎïÀíÉÈÇøÊý
+ 100          
+ 101          UINT8C  mode5sense3F[]={
+ 102                  0x00, 0x06, 0x00, 0x00, 0x08, 0x00, 0x00, 0x08,(DISK_SEC_NUM>>24)&0xFF, (DISK_SEC_NUM>>16)&0xFF, (DISK
+             -_SEC_NUM>>8)&0xFF, DISK_SEC_NUM&0xFF, 00, 00, 02, 00 };  //ÎïÀíÉÈÇøÊý
+ 103          
+ 104          
+ 105          sbit CHIP_SELECT = P1^4;
+ 106          #define SENDBYTE_SPI( d )    {  SPI0_DATA = d;while(S0_FREE == 0); }
+ 107          #define RECVBYTE_SPI( d )    { SPI0_DATA = 0xff;while(S0_FREE == 0);d = SPI0_DATA;}
+ 108          
+ 109          UINT8 buffer[64]; 
+ 110          
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 3   
+
+ 111          typedef union _CBWCB{
+ 112              unsigned char buf1[16];
+ 113          }CBWCB;
+ 114          
+ 115          typedef  union _MASS_PARA {
+ 116              unsigned char buf[64];
+ 117              struct  _SENSE{
+ 118                unsigned char ErrorCode;
+ 119                unsigned char Reserved1;
+ 120                unsigned char SenseKey;
+ 121                unsigned char Information[4];
+ 122                unsigned char AddSenseLength;
+ 123                unsigned char Reserved2[4];
+ 124                unsigned char AddSenseCode;
+ 125                unsigned char AddSenseCodeQua;
+ 126                unsigned char Reserved3[4];
+ 127              }Sense;
+ 128            //  unsigned char SenseData[18];
+ 129              struct  _CBW{
+ 130              unsigned char dCBWsig[4];
+ 131              unsigned char dCBWTag[4];
+ 132              unsigned long dCBWDatL;
+ 133              unsigned char bmCBWFlags;
+ 134              unsigned char bCBWLUN;
+ 135              unsigned char bCBWCBLength;
+ 136              CBWCB        cbwcb;
+ 137            }cbw;
+ 138              struct _CSW{
+ 139          
+ 140              unsigned char buf2[13];
+ 141            }csw;
+ 142          
+ 143          
+ 144          }MASS_PARA;
+ 145          
+ 146          enum _HOST_DEV_DISAGREE {
+ 147          CASEOK = 0,
+ 148          CASE1,
+ 149          CASE2,
+ 150          CASE3,
+ 151          CASE4,
+ 152          CASE5,
+ 153          CASE6,
+ 154          CASE7,
+ 155          CASE8,
+ 156          CASE9,
+ 157          CASE10,
+ 158          CASE11,
+ 159          CASE12,
+ 160          CASE13,
+ 161          CASECBW,
+ 162          CASECMDFAIL
+ 163          };
+ 164          
+ 165          #define FORMAT_UNIT   0x04
+ 166          #define INQUIRY     0x12
+ 167          #define MODE_SELECT   0x15
+ 168          #define MODE_SENSE5   0x5A
+ 169          #define MODE_SENSE    0x1A
+ 170          #define PER_RES_IN    0x5E
+ 171          #define PER_RES_OUT   0x5F
+ 172          #define PRE_OR_MED    0x1E
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 4   
+
+ 173          #define READ      0x28
+ 174          #define READ_CAPACITY   0x25
+ 175          #define RELEASE     0x17
+ 176          #define REQUEST_SENSE   0x03
+ 177          #define RESERVE     0x16
+ 178          #define STA_STO_UNIT  0x1B
+ 179          #define SYN_CACHE     0x35
+ 180          #define TES_UNIT    0x00
+ 181          #define VERIFY      0x2F
+ 182          #define WRITE       0x2A
+ 183          #define WRITE_BUFFER  0x3B
+ 184          
+ 185          
+ 186          union {
+ 187          unsigned long mDataLength;              //Êý¾Ý³¤¶È
+ 188          unsigned char mdataLen[4];              //
+ 189          } LEN;
+ 190          
+ 191          
+ 192          unsigned char mdCBWTag[4];            //dCBWTag
+ 193          MASS_PARA  MassPara;
+ 194          bit CH375BULKUP;                  //Êý¾ÝÉÏ´«
+ 195          bit CH375BULKDOWN;                  //Êý¾ÝÏÂ´«
+ 196          bit CH375CSW;                   //CSWÉÏ´«±êÖ¾
+ 197          unsigned char BcswStatus;             //CSW×´Ì¬
+ 198          unsigned char mSenseKey;
+ 199          unsigned char mASC;
+ 200          bit FSTALL;                     //Êý¾Ý´íÎó±êÖ¾
+ 201          bit lastFSTALL;
+ 202          bit pBuf_ReSelect = 0;
+ 203          
+ 204          UINT32 Locate_Addr;
+ 205          
+ 206          unsigned char *pBuf;
+ 207          
+ 208          /*******************************************************************************
+ 209          * Function Name  : USBDeviceCfg()
+ 210          * Description    : USBÉè±¸Ä£Ê½ÅäÖÃ
+ 211          * Input          : None
+ 212          * Output         : None
+ 213          * Return         : None
+ 214          *******************************************************************************/
+ 215          void    InitUSB_Device( void )                                                      // ³õÊ¼»¯USBÉè±¸
+ 216          {
+ 217   1          IE_USB = 0;
+ 218   1          USB_CTRL = 0x00;                                                                // ÏÈÉè¶¨Ä£Ê½
+ 219   1          UEP4_1_MOD = bUEP1_TX_EN | bUEP1_RX_EN;                                         // ¶Ëµã1ÊÕ·¢Ä£Ê½
+ 220   1          UEP0_DMA = Ep0Buffer;
+ 221   1          UEP1_DMA = Ep1Buffer;
+ 222   1          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 223   1          UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 224   1          USB_DEV_AD = 0x00;
+ 225   1          UDEV_CTRL = bUD_DP_PD_DIS | bUD_DM_PD_DIS;                                      // ½ûÖ¹DP/DMÏÂÀ­µç×è
+ 226   1          USB_CTRL = bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;                           // Æô¶¯USBÉè±¸¼°DMA£¬Ô
+             -ÚÖÐ¶ÏÆÚ¼äÖÐ¶Ï±êÖ¾Î´Çå³ýÇ°×Ô¶¯·µ»ØNAK
+ 227   1          UDEV_CTRL |= bUD_PORT_EN;                                                       // ÔÊÐíUSB¶Ë¿Ú
+ 228   1          USB_INT_FG = 0xFF;                                                              // ÇåÖÐ¶Ï±êÖ¾
+ 229   1          USB_INT_EN = bUIE_SUSPEND | bUIE_TRANSFER | bUIE_BUS_RST;
+ 230   1          IE_USB = 1;
+ 231   1        UEP1_T_LEN = 0;                                                       //Ô¤Ê¹ÓÃ·¢ËÍ³¤¶ÈÒ»¶¨ÒªÇå¿Õ 
+ 232   1        
+ 233   1        EA = 1;
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 5   
+
+ 234   1      }
+ 235          
+ 236          
+ 237          /*******************************************************************************
+ 238          * Function Name  : InitHostSPI0( void )
+ 239          * Description    : SPI0Ö÷»úÄ£Ê½³õÊ¼»¯
+ 240          * Input          : None
+ 241          * Output         : None
+ 242          * Return         : None
+ 243          *******************************************************************************/
+ 244          void    InitHostSPI0( void )
+ 245          {
+ 246   1          SPI0_SETUP &=~(bS0_MODE_SLV | bS0_BIT_ORDER);                              /*ÉèÖÃ³ÉÖ÷»úÄ£Ê½*/
+ 247   1          SPI0_CTRL = bS0_SCK_OE | bS0_MOSI_OE;                                      /*Ö÷»úÐ´£¬Ä¬ÈÏ²»Æô¶¯Ð´´«Êä£
+             -¬Èç¹ûÊ¹ÄÜbS0_DATA_DIR*/
+ 248   1                                                                                     /*ÄÇÃ´·¢ËÍÊý¾Ýºó×Ô¶¯²úÉúÒ»¸
+             -ö×Ö½ÚµÄÊ±ÖÓ£¬ÓÃÓÚ¿ìËÙÊý¾ÝÊÕ·¢*/
+ 249   1          P1_DIR |= (bMOSI | bSCK | bSCS| bPWM3 );                                   /*bMOSI ¡¢bSCK ¡¢bSCSÖÃÎªÊä
+             -³ö·½Ïò*/
+ 250   1          P1_DIR &= ~bMISO;
+ 251   1          SPI0_CK_SE = 0x02; //0x02                                                        /*·ÖÆµÎª12M*/
+ 252   1      //  SPI0_STAT = 0xFF;                                                          /*ÇåÖÐ¶Ï±êÖ¾*/
+ 253   1      //  IE_SPI0 = 1;
+ 254   1      }
+ 255          
+ 256          /*******************************************************************************
+ 257          * Function Name  : ReadExternalFlashStatusReg_SPI
+ 258          * Description    : ÓÃÀ´¶ÁÈ¡×´Ì¬¼Ä´æÆ÷,²¢·µ»Ø×´Ì¬¼Ä´æÆ÷µÄÖµ
+ 259          * Input          : None
+ 260          * Output         : None
+ 261          * Return         : ExFlashRegStatus
+ 262          *******************************************************************************/
+ 263          UINT8 ReadExternalFlashStatusReg_SPI( void )
+ 264          {
+ 265   1          UINT8 ExFlashRegStatus;
+ 266   1          CHIP_SELECT = 0;
+ 267   1          SENDBYTE_SPI(0x05);                                                        /*·¢ËÍ¶Á×´Ì¬¼Ä´æÆ÷µÄÃüÁî */
+ 268   1          RECVBYTE_SPI(ExFlashRegStatus);                                            /*¶ÁÈ¡×´Ì¬¼Ä´æÆ÷*/
+ 269   1          CHIP_SELECT = 1 ;
+ 270   1          return ExFlashRegStatus;
+ 271   1      }
+ 272             
+ 273          /*******************************************************************************
+ 274          * Function Name  : WaitExternalFlashIfBusy
+ 275          * Description    : µÈ´ýÐ¾Æ¬¿ÕÏÐ(ÔÚÖ´ÐÐByte-Program, Sector-Erase, Block-Erase, Chip-Erase²Ù×÷ºó)
+ 276          * Input          : None
+ 277          * Output         : None
+ 278          * Return         : None
+ 279          *******************************************************************************/
+ 280          void WaitExternalFlashIfBusy( void )
+ 281          {
+ 282   1          while ((ReadExternalFlashStatusReg_SPI())&0x01 == 0x01 )                   /*µÈ´ýÖ±µ½Flash¿ÕÏÐ*/
+ 283   1          {
+ 284   2              ReadExternalFlashStatusReg_SPI( );
+ 285   2          }
+ 286   1      }
+ 287          
+ 288          /*******************************************************************************
+ 289          * Function Name  : WriteExternalFlashStatusReg_SPI
+ 290          * Description    : Íù×´Ì¬¼Ä´æÆ÷ÀïÐ´Ò»¸ö×Ö½Ú
+ 291          * Input          : status -Ð´ÈëµÄÊý¾Ý
+ 292          * Output         : None
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 6   
+
+ 293          * Return         : None
+ 294          *******************************************************************************/
+ 295          void WriteExternalFlashStatusReg_SPI( UINT8 status )
+ 296          {
+ 297   1          CHIP_SELECT = 0 ;
+ 298   1          SENDBYTE_SPI(0x01);                                                       /*·¢ËÍÐ´×´Ì¬¼Ä´æÆ÷*/
+ 299   1          SENDBYTE_SPI(status);                                                     /*¸Ä±ä¼Ä´æÆ÷ÀïBPx»òÕßBPL (Ö»
+             -ÓÐ2,3,4,5,7Î»¿ÉÒÔ¸ÄÐ´)*/
+ 300   1          CHIP_SELECT = 1 ;
+ 301   1      }
+ 302           /*********************************************************
+ 303          *º¯ÊýÃû£º  static void st25vf016b_WRDI(void)
+ 304          *º¯Êý¹¦ÄÜ£ºÐ´½ûÖ¹
+ 305          *²ÎÊý£º    ÎÞ
+ 306          *·µ»ØÖµ£º  ÎÞ                                                                                             
+             -       
+ 307          ***************************************************************/
+ 308          void WriteFlashForbidden(void)
+ 309          {
+ 310   1        CHIP_SELECT = 0 ;
+ 311   1        SENDBYTE_SPI(0x04);
+ 312   1        CHIP_SELECT = 1 ;   
+ 313   1      }
+ 314          /*******************************************************************************
+ 315          * Function Name  : WriteExternalFlashEnable_SPI
+ 316          * Description    : Ð´Ê¹ÄÜ,Í¬Ñù¿ÉÒÔÓÃÓÚÊ¹ÄÜÐ´×´Ì¬¼Ä´æÆ÷
+ 317          * Input          : None
+ 318          * Output         : None
+ 319          * Return         : None
+ 320          *******************************************************************************/
+ 321          void WriteExternalFlashEnable_SPI( void )
+ 322          {
+ 323   1          CHIP_SELECT = 0 ;
+ 324   1          SENDBYTE_SPI(0x06);                                                       /*·¢ËÍÐ´Ê¹ÄÜÃüÁî*/
+ 325   1          CHIP_SELECT = 1 ;
+ 326   1      }
+ 327          
+ 328          /*******************************************************************************
+ 329          * Function Name  : CheckExternalFlashWriteEnable_SPI
+ 330          * Description    : ¼ì²é²ÁÐ´²Ù×÷Ç°WELÎ»ÊÇ·ñÎª1
+ 331          * Input          : None
+ 332          * Output         : None
+ 333          * Return         : None
+ 334          *******************************************************************************/
+ 335          void CheckExternalFlashWriteEnable_SPI( void )
+ 336          {
+ 337   1          UINT8 WRENStatus;
+ 338   1          WRENStatus = ReadExternalFlashStatusReg_SPI();                            /*¶ÁÈ¡×´Ì¬register*/
+ 339   1          if ((WRENStatus&0x02) != 0x02)                                            /*¼ì²éWELÎ»ÖÃÎ»*/
+ 340   1          {
+ 341   2              WriteExternalFlashEnable_SPI( );                                      /*Èç¹ûÎ´ÖÃ1½øÐÐÏàÓ¦´¦Àí,Èç¶Ô
+             -Æä½øÐÐÐ´Ê¹ÄÜ²Ù×÷*/
+ 342   2          }
+ 343   1      }
+ 344          
+ 345          /*******************************************************************************
+ 346          * Function Name  : EraseExternalFlash_SPI
+ 347          * Description    : ²Á³ý4K Flash  ²Á³ýÒ»¸öÉÈÇø
+ 348          * Input          : Dst_Addr 0-1 ffff ffff ,Çå³ýÈÎÒâµØÖ·ËùÔÚµÄÉÈÇø¡£
+ 349          * Output         : None
+ 350          * Return         : None
+ 351          *******************************************************************************/
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 7   
+
+ 352          void EraseExternalFlash_SPI( UINT32 Dst_Addr )
+ 353          {
+ 354   1      //  WriteExternalFlashStatusReg_SPI( 0x00 ); //ÉèÖÃÐ¾Æ¬ÎªÎÞ±£»¤
+ 355   1      //  WriteExternalFlashEnable_SPI();//Ð´Ê¹ÄÜ
+ 356   1          CheckExternalFlashWriteEnable_SPI();
+ 357   1          CHIP_SELECT = 0 ;
+ 358   1          SENDBYTE_SPI(0x20);    //ÉÈÇø²Á³ýÃüÁî         //0x60²ÁÕûÆ¬£»0x20²Á³ýÒ»¸öÉÈÇø
+ 359   1          SENDBYTE_SPI(((Dst_Addr & 0xFFFFFF) >> 16));                                //send 3 address bytes  
+ 360   1          SENDBYTE_SPI(((Dst_Addr & 0xFFFF) >> 8));
+ 361   1          SENDBYTE_SPI(Dst_Addr & 0xFF);  
+ 362   1        
+ 363   1          CHIP_SELECT = 1 ;
+ 364   1          WaitExternalFlashIfBusy();
+ 365   1      }
+ 366          
+ 367          /*******************************************************************************
+ 368          * Function Name  : ByteReadExternalFlash_SPI
+ 369          * Description    : ¶ÁÈ¡Ò»¸öµØÖ·ÄÚÒ»¸ö×Ö½ÚµÄÊý¾Ý.·µ»Ø¶ÁÈ¡µÄÊý¾Ý 
+ 370          * Input          : UINT32 StarAddr -Destination Address 000000H - 1FFFFFH
+ 371          * Output         : None
+ 372          * Return         : byte -¶ÁÈ¡µÄÊý¾Ý
+ 373          *******************************************************************************/
+ 374          UINT8 ByteReadExternalFlash_SPI(UINT32 StarAddr)    
+ 375          {   
+ 376   1          UINT8 dat = 0;    
+ 377   1          CHIP_SELECT = 0 ;                                                           //enable device  
+ 378   1          SENDBYTE_SPI(0x03);                                                         //read command 
+ 379   1          SENDBYTE_SPI(((StarAddr & 0xFFFFFF) >> 16));                                //send 3 address bytes  
+ 380   1          SENDBYTE_SPI(((StarAddr & 0xFFFF) >> 8));
+ 381   1          SENDBYTE_SPI(StarAddr & 0xFF);
+ 382   1          RECVBYTE_SPI(dat);   
+ 383   1          CHIP_SELECT = 1 ;                                                           //disable device   
+ 384   1          return dat;                                                                 //return one byte read
+ 385   1      } 
+ 386          
+ 387          /*******************************************************************************
+ 388          * Function Name  : ByteWriteExternalFlash_SPI
+ 389          * Description    : Ð´Êý¾Ý
+ 390          * Input          : StarAddr  -Destination Address 000000H - 1FFFFFH
+ 391          *                  dat -ÒªÐ´ÈëµÄÊý¾Ý
+ 392          * Output         : None
+ 393          * Return         : None
+ 394          *******************************************************************************/
+ 395          void ByteWriteExternalFlash_SPI(UINT32 StarAddr, UINT8 dat)
+ 396          {
+ 397   1          WriteExternalFlashEnable_SPI();
+ 398   1          CHIP_SELECT = 0 ;                                                          //Ð¾Æ¬Ê¹ÄÜ 
+ 399   1          SENDBYTE_SPI(0x02);                                                        //·¢ËÍÐ´²Ù×÷Ö¸Áî 
+ 400   1          SENDBYTE_SPI(((StarAddr & 0xFFFFFF) >> 16));                                    //·¢ËÍ3×Ö½ÚµØÖ· 
+ 401   1          SENDBYTE_SPI(((StarAddr & 0xFFFF) >> 8));
+ 402   1          SENDBYTE_SPI(StarAddr & 0xFF);
+ 403   1          SENDBYTE_SPI(dat);                                                         //·¢ËÍÒªÐ´µÄÊý¾Ý
+ 404   1          CHIP_SELECT = 1 ;
+ 405   1          WaitExternalFlashIfBusy();
+ 406   1      }
+ 407          
+ 408          /*******************************************************************************
+ 409          * Function Name  : BlukReadExternalFlash_SPI
+ 410          * Description    : ¶ÁÈ¡ÆðÊ¼µØÖ·(StarAddr)ÄÚ¶à¸ö×Ö½Ú(Len)µÄÊý¾Ý.´æÈë»º³åÇøRcvBufferÖÐ
+ 411          * Input          : StarAddr -Destination Address 000000H - 1FFFFFH
+ 412                             Len ¶ÁÈ¡Êý¾Ý³¤¶È
+ 413                             RcvBuffer ½ÓÊÕ»º³åÇøÆðÊ¼µØÖ·
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 8   
+
+ 414          * Output         : None
+ 415          * Return         : None
+ 416          *******************************************************************************/
+ 417          void BlukReadExternalFlash_SPI(UINT32 StarAddr,UINT16 Len,PUINT8 RcvBuffer)
+ 418          {
+ 419   1        UINT16 i; 
+ 420   1          CHIP_SELECT = 0 ;                                                           //enable device  
+ 421   1          SENDBYTE_SPI(0x0b);                                                         //read command 
+ 422   1          SENDBYTE_SPI(((StarAddr & 0xFFFFFF) >> 16));                                //send 3 address bytes  
+ 423   1          SENDBYTE_SPI(((StarAddr & 0xFFFF) >> 8));
+ 424   1          SENDBYTE_SPI(StarAddr & 0xFF);
+ 425   1        SENDBYTE_SPI(0x00);
+ 426   1        for(i=0; i<Len; i++)                                                        /*½ÓÊÕÊý¾Ý*/
+ 427   1          {
+ 428   2          RECVBYTE_SPI(RcvBuffer[i]);                                                            /*¶ÁÈ¡ÏÂÒ»µØÖ·*/
+ 429   2          }
+ 430   1          CHIP_SELECT = 1 ;                                                           //disable device   
+ 431   1      }
+ 432          
+ 433          /*******************************************************************************
+ 434          * Function Name  : BlukWriteExternalFlash_SPI
+ 435          * Description    : ½«Êý¾ÝÐ´ÈëÍâ²¿Flash
+ 436          * Input          : StarAddr  -Destination Address 000000H - 1FFFFFH
+ 437                             Len ·¢ËÍÊý¾Ý³¤¶È
+ 438          *                  SendBuffer -·¢ËÍÊý¾Ý»º³åÇø
+ 439          * Output         : None
+ 440          * Return         : None
+ 441          *******************************************************************************/
+ 442          void BlukWriteExternalFlash_SPI(UINT32 StarAddr,UINT16 Len,PUINT8 SendBuffer)
+ 443          {
+ 444   1        unsigned int timeout = 0;
+ 445   1        unsigned int i = 0;
+ 446   1        
+ 447   1          WriteExternalFlashStatusReg_SPI( 0x00 ); //ÉèÖÃÐ¾Æ¬ÎªÎÞ±£»¤
+ 448   1        WriteExternalFlashEnable_SPI();//Ð´Ê¹ÄÜ
+ 449   1        
+ 450   1        CHIP_SELECT = 0 ;
+ 451   1        SENDBYTE_SPI(0xad);             //×Ô¶¯µØÖ·Ôö¼Ó×Ö(2byte)±à³ÌÄ£Ê½
+ 452   1        
+ 453   1          SENDBYTE_SPI(((StarAddr & 0xFFFFFF) >> 16));                                    //·¢ËÍ3×Ö½ÚµØÖ· 
+ 454   1          SENDBYTE_SPI(((StarAddr & 0xFFFF) >> 8));
+ 455   1          SENDBYTE_SPI(StarAddr & 0xFF);
+ 456   1        
+ 457   1        SENDBYTE_SPI(SendBuffer[i]);
+ 458   1        SENDBYTE_SPI(SendBuffer[i+1]);  
+ 459   1        CHIP_SELECT = 1 ;   
+ 460   1        
+ 461   1        WaitExternalFlashIfBusy();    //µÈ´ý×Ö±à³ÌÍê³É
+ 462   1      
+ 463   1        for(i = 2; i < Len-1; i++)
+ 464   1        {
+ 465   2          CHIP_SELECT = 0 ;
+ 466   2          SENDBYTE_SPI(0xad); //×Ô¶¯µØÖ·Ôö¼Ó×Ö(2byte)±à³ÌÄ£Ê½
+ 467   2          SENDBYTE_SPI(SendBuffer[i++]);
+ 468   2            SENDBYTE_SPI(SendBuffer[i]);  
+ 469   2            CHIP_SELECT = 1 ;
+ 470   2          
+ 471   2          WaitExternalFlashIfBusy();    //µÈ´ý×Ö±à³ÌÍê³É
+ 472   2          } 
+ 473   1        
+ 474   1        WriteFlashForbidden();//Ð´½ûÖ¹
+ 475   1        WaitExternalFlashIfBusy();    //µÈ´ý×Ö±à³ÌÍê³É
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 9   
+
+ 476   1        
+ 477   1        
+ 478   1      }
+ 479          
+ 480          void main( ) 
+ 481          {
+ 482   1          mDelaymS(30);                                                                  //ÉÏµçÑÓÊ±,µÈ´ýÄÚ²¿¾§Õñ
+             -ÎÈ¶¨,±Ø¼Ó 
+ 483   1          mInitSTDIO( );                                                                 /* ÎªÁËÈÃ¼ÆËã»úÍ¨¹ý´®¿Ú
+             -¼à¿ØÑÝÊ¾¹ý³Ì */
+ 484   1          printf( "Start SPI FLASH @ChipID=%02X\n", (UINT16)CHIP_ID );
+ 485   1      
+ 486   1          InitHostSPI0( );
+ 487   1          WriteExternalFlashEnable_SPI( );                                               //FLASHÐ´Ê¹ÄÜ
+ 488   1          WriteExternalFlashStatusReg_SPI( 0x00 );                                       //Ð´¼Ä´æÆ÷ 
+ 489   1        
+ 490   1        InitUSB_Device();
+ 491   1        
+ 492   1        while(1);
+ 493   1      }
+ 494          
+ 495          //BLOCK ONLY  The Thirteen Cases
+ 496          
+ 497          void  BulkThirteen(unsigned char Case)
+ 498          {
+ 499   1        switch(Case)
+ 500   1        {
+ 501   2        case CASEOK:
+ 502   2        case CASE1:                       /* Hn=Dn*/
+ 503   2        case CASE6:                       /* Hi=Di*/
+ 504   2          BcswStatus = 0;
+ 505   2          break;
+ 506   2        case CASE12:                      /* Ho=Do*/
+ 507   2          BcswStatus = 0;
+ 508   2          break;
+ 509   2      
+ 510   2        case CASE2:                       /* Hn<Di*/
+ 511   2        case CASE3:                       /* Hn<Do*/
+ 512   2      
+ 513   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 514   2          FSTALL=1;
+ 515   2                                  //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô // may or may-not
+ 516   2          BcswStatus =2;
+ 517   2          break;
+ 518   2      
+ 519   2        case CASE4:                       /* Hi>Dn*/
+ 520   2        case CASE5:                       /* Hi>Di*/
+ 521   2      
+ 522   2      
+ 523   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 524   2          FSTALL=1;
+ 525   2                                  //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+ 526   2          BcswStatus= 1;                  //CSW_GOOD or CSW_FAIL
+ 527   2          break;
+ 528   2      
+ 529   2      
+ 530   2        case CASE7:                        /* Hi<Di*/
+ 531   2        case CASE8:                       /* Hi<>Do */
+ 532   2      
+ 533   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 534   2            FSTALL=1;
+ 535   2                                //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 10  
+
+ 536   2          BcswStatus = 2;
+ 537   2          break;
+ 538   2      
+ 539   2        case CASE9:                         /* Ho>Dn*/
+ 540   2        case CASE11:                      /* Ho>Do*/
+ 541   2      
+ 542   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_R_RES ;
+ 543   2          FSTALL=1;
+ 544   2                                //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+ 545   2        BcswStatus =1;                  //CSW_GOOD or CSW_FAIL
+ 546   2          break;
+ 547   2      
+ 548   2        case CASE10:                    /* Ho<>Di */
+ 549   2        case CASE13:                    /* Ho<Do*/
+ 550   2      
+ 551   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 552   2          FSTALL=1;
+ 553   2                                //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+ 554   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_R_RES ;
+ 555   2                                //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+ 556   2          BcswStatus = 2;
+ 557   2          break;
+ 558   2      
+ 559   2        case CASECBW:                   /* invalid CBW */
+ 560   2      
+ 561   2            UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 562   2          FSTALL=1;
+ 563   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_R_RES ;
+ 564   2                            //ÕâÀï¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+ 565   2          BcswStatus = 2;
+ 566   2          break;
+ 567   2      
+ 568   2        case CASECMDFAIL:
+ 569   2      
+ 570   2          UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 571   2          FSTALL=1;
+ 572   2                              //ÕâÀïÉÏ´«¶ËµãÉèÖÃÒ»¸öSTALL£¬´ýÖ÷»úÇåµô
+ 573   2          BcswStatus= 1;
+ 574   2          break;
+ 575   2      
+ 576   2        default:
+ 577   2          break;
+ 578   2        }
+ 579   1      }
+ 580          
+ 581          
+ 582          
+ 583                  
+ 584          void  UFI_readCapacity(void ){
+ 585   1        
+ 586   1          if ( LEN.mDataLength > sizeof(DBCAPACITY) ) LEN.mDataLength = sizeof(DBCAPACITY);
+ 587   1          pBuf=(unsigned char*)DBCAPACITY;  
+ 588   1          BcswStatus=0;
+ 589   1          mSenseKey=0;
+ 590   1          mASC=0;
+ 591   1      }
+ 592          
+ 593          void  UFI_inquiry(void ){
+ 594   1          pBuf = DBINQUITY;         ////²éÑ¯UÅÌÐÅÏ¢
+ 595   1          if(LEN.mDataLength>36) LEN.mDataLength=36;
+ 596   1          BcswStatus=0;
+ 597   1          mSenseKey=0;
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 11  
+
+ 598   1          mASC=0;
+ 599   1        
+ 600   1      }
+ 601          void  UFI_read10(void){
+ 602   1                                //¶ÁÈ¡Êý¾Ý
+ 603   1          LEN.mDataLength=(((UINT32)MassPara.cbw.cbwcb.buf1[7]<<8) | (UINT32)MassPara.cbw.cbwcb.buf1[8])*DISK_SEC_
+             -LEN;
+ 604   1          Locate_Addr = ((UINT32)MassPara.cbw.cbwcb.buf1[2]<<24) | ((UINT32)MassPara.cbw.cbwcb.buf1[3]<<16) | ((UI
+             -NT32)MassPara.cbw.cbwcb.buf1[4]<<8) | (UINT32)MassPara.cbw.cbwcb.buf1[5];
+ 605   1        
+ 606   1          Locate_Addr = Locate_Addr*DISK_SEC_LEN;
+ 607   1        
+ 608   1        //  printf("Read addr:%ld  len:%ld \n",Locate_Addr,LEN.mDataLength);
+ 609   1        
+ 610   1          BcswStatus=0;
+ 611   1          mSenseKey=0;
+ 612   1          mASC=0;
+ 613   1        
+ 614   1          pBuf_ReSelect = 1;
+ 615   1      
+ 616   1      }
+ 617          
+ 618          void  UFI_modeSense(void ){
+ 619   1                          //Ä£Ê½ÈÏÊ¶
+ 620   1          if(MassPara.cbw.cbwcb.buf1[2]==0x3F){
+ 621   2            if ( LEN.mDataLength > sizeof(modesense3F) ) LEN.mDataLength = sizeof(modesense3F);
+ 622   2            pBuf=modesense3F;
+ 623   2            BcswStatus=0;
+ 624   2            mSenseKey=0;
+ 625   2            mASC=0;
+ 626   2          }
+ 627   1          else {
+ 628   2            CH375BULKUP=0;
+ 629   2            mSenseKey=5;
+ 630   2            mASC=0x20;
+ 631   2      
+ 632   2            BcswStatus=1;
+ 633   2            BulkThirteen(CASECMDFAIL);
+ 634   2            }
+ 635   1      }
+ 636          
+ 637          void  UFI_requestSense(void ){
+ 638   1                            //ÇëÇóÈÏÊ¶
+ 639   1        if ( FSTALL | lastFSTALL ) {
+ 640   2          lastFSTALL=FSTALL;
+ 641   2          FSTALL=0;
+ 642   2          MassPara.Sense.ErrorCode=0x70;
+ 643   2          MassPara.Sense.Reserved1=0;
+ 644   2          MassPara.Sense.SenseKey=mSenseKey;
+ 645   2          MassPara.Sense.Information[0]=0;
+ 646   2          MassPara.Sense.Information[1]=0;
+ 647   2          MassPara.Sense.Information[2]=0;
+ 648   2          MassPara.Sense.Information[3]=0;
+ 649   2          MassPara.Sense.AddSenseLength=0x0a;
+ 650   2          MassPara.Sense.Reserved2[0]=0;
+ 651   2          MassPara.Sense.Reserved2[1]=0;
+ 652   2          MassPara.Sense.Reserved2[2]=0;
+ 653   2          MassPara.Sense.Reserved2[3]=0;
+ 654   2          MassPara.Sense.AddSenseCode=mASC;
+ 655   2          MassPara.Sense.AddSenseCodeQua=00;
+ 656   2          MassPara.Sense.Reserved3[0]=0;
+ 657   2          MassPara.Sense.Reserved3[1]=0;
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 12  
+
+ 658   2          MassPara.Sense.Reserved3[2]=0;
+ 659   2          MassPara.Sense.Reserved3[3]=0;
+ 660   2          pBuf=MassPara.buf;
+ 661   2          BcswStatus=0;
+ 662   2        }
+ 663   1        else {
+ 664   2          lastFSTALL=FSTALL;
+ 665   2          FSTALL=0;
+ 666   2          MassPara.Sense.ErrorCode=0x70;
+ 667   2          MassPara.Sense.Reserved1=0;
+ 668   2          MassPara.Sense.SenseKey=0x00;
+ 669   2          MassPara.Sense.Information[0]=0;
+ 670   2          MassPara.Sense.Information[1]=0;
+ 671   2          MassPara.Sense.Information[2]=0;
+ 672   2          MassPara.Sense.Information[3]=0;
+ 673   2          MassPara.Sense.AddSenseLength=0x0a;
+ 674   2          MassPara.Sense.Reserved2[0]=0;
+ 675   2          MassPara.Sense.Reserved2[1]=0;
+ 676   2          MassPara.Sense.Reserved2[2]=0;
+ 677   2          MassPara.Sense.Reserved2[3]=0;
+ 678   2          MassPara.Sense.AddSenseCode=0x00;
+ 679   2          MassPara.Sense.AddSenseCodeQua=00;
+ 680   2          MassPara.Sense.Reserved3[0]=0;
+ 681   2          MassPara.Sense.Reserved3[1]=0;
+ 682   2          MassPara.Sense.Reserved3[2]=0;
+ 683   2          MassPara.Sense.Reserved3[3]=0;
+ 684   2          pBuf=MassPara.buf;
+ 685   2          BcswStatus=0;
+ 686   2        }
+ 687   1      }
+ 688          void  UFI_testUnit(void ){
+ 689   1          CH375BULKDOWN=0;
+ 690   1          CH375BULKUP=0;
+ 691   1          BcswStatus=0;     //²âÊÔUÅÌÊÇ·ñ×¼±¸ºÃ
+ 692   1          mSenseKey=0;
+ 693   1          mASC=0;
+ 694   1      }
+ 695          void  UFI_perOrMed(void ){        //ÔÊÐíÒÆ³ö´ÅÅÌ
+ 696   1          BcswStatus=0;
+ 697   1          mSenseKey=0;
+ 698   1          mASC=0;
+ 699   1      }
+ 700          void  UFI_write(void ){
+ 701   1          UINT8 i,num;
+ 702   1          LEN.mDataLength=(((UINT32)MassPara.cbw.cbwcb.buf1[7]<<8) | (UINT32)MassPara.cbw.cbwcb.buf1[8])*DISK_SEC_
+             -LEN;    //Ð´Êý¾Ý³¤¶È
+ 703   1          Locate_Addr = ((UINT32)MassPara.cbw.cbwcb.buf1[2]<<24) | ((UINT32)MassPara.cbw.cbwcb.buf1[3]<<16) | ((UI
+             -NT32)MassPara.cbw.cbwcb.buf1[4]<<8) | (UINT32)MassPara.cbw.cbwcb.buf1[5];
+ 704   1          Locate_Addr = Locate_Addr*DISK_SEC_LEN;
+ 705   1        //²Á³ý
+ 706   1          num = MassPara.cbw.cbwcb.buf1[8];   //´ýÐ´ÉÈÇøÊý
+ 707   1          for(i=0;i<num;i++)
+ 708   1            EraseExternalFlash_SPI(Locate_Addr + i*DISK_SEC_LEN);  
+ 709   1      
+ 710   1          BcswStatus=0;
+ 711   1          mSenseKey=0;
+ 712   1          mASC=0;
+ 713   1        
+ 714   1      }
+ 715          void  UFI_staStoUnit(void ){     //ÇëÇó×°ÔØÐ¶ÔØÉè±¸
+ 716   1          CH375BULKDOWN=0;
+ 717   1          CH375BULKUP=0;
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 13  
+
+ 718   1          BcswStatus=0;
+ 719   1            mSenseKey=0;
+ 720   1            mASC=0;
+ 721   1      }
+ 722          void  UFI_verify(void ){
+ 723   1          BcswStatus=0;   //Ð£Ñé´æ´¢Æ÷¿Õ¼ä
+ 724   1          mSenseKey=0;
+ 725   1          mASC=0;
+ 726   1                //ÕâÀïÕâÀïÖ»ÊÇ×÷ÎªÑÝÊ¾ËùÒÔÃ»ÓÐÕæÕý¼ì²âÎïÀí´æ´¢Æ÷
+ 727   1                //µ«Êµ¼ÊÉÏÕâÒ»²½Ò»¶¨Òª´¦Àí
+ 728   1      }
+ 729          void  UFI_modeSense5(void ){
+ 730   1      
+ 731   1          if(MassPara.cbw.cbwcb.buf1[2]==0x3F){
+ 732   2            if ( LEN.mDataLength > sizeof(mode5sense3F) ) LEN.mDataLength = sizeof(mode5sense3F);
+ 733   2            pBuf=mode5sense3F;
+ 734   2            BcswStatus=0;
+ 735   2            mSenseKey=0;
+ 736   2            mASC=0;
+ 737   2          }
+ 738   1          else {
+ 739   2            CH375BULKUP=0;
+ 740   2            mSenseKey=5;
+ 741   2            mASC=0x20;
+ 742   2            BcswStatus=1;
+ 743   2            BulkThirteen(CASECMDFAIL);
+ 744   2            }
+ 745   1      }
+ 746          //UFI  CMD
+ 747          void UFI_Hunding(void ){    
+ 748   1          switch(MassPara.cbw.cbwcb.buf1[0]){
+ 749   2            case INQUIRY:
+ 750   2              UFI_inquiry();
+ 751   2            break;
+ 752   2            case WRITE:
+ 753   2              
+ 754   2              //printf("%2x\n",(UINT16)MassPara.cbw.cbwcb.buf1[0]);     
+ 755   2                     UFI_write();
+ 756   2            break;
+ 757   2            case TES_UNIT:
+ 758   2              UFI_testUnit();
+ 759   2            break;
+ 760   2            case READ:
+ 761   2              UFI_read10();
+ 762   2            break;
+ 763   2            case REQUEST_SENSE:
+ 764   2              UFI_requestSense();
+ 765   2            break;
+ 766   2            case READ_CAPACITY:
+ 767   2                      UFI_readCapacity();
+ 768   2            break;
+ 769   2            case VERIFY:
+ 770   2              UFI_verify();
+ 771   2              break;
+ 772   2      //    //  case 0x23:
+ 773   2      
+ 774   2      //    //  break;
+ 775   2      //    //  case MODE_SELECT:
+ 776   2      //      //  UFI_modeSlect();
+ 777   2      //    //  break;
+ 778   2            case MODE_SENSE:
+ 779   2              UFI_modeSense();
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 14  
+
+ 780   2            break;
+ 781   2            case MODE_SENSE5:
+ 782   2              UFI_modeSense5();
+ 783   2            break;
+ 784   2      //    //  case WRITE_BUFFER:
+ 785   2      //    //    UFI_writeBuf();
+ 786   2      //  //    break;
+ 787   2      //  //    case PREVENT:
+ 788   2      //    //  break;
+ 789   2      //  //    case FORMAT_UNIT:
+ 790   2      //    //    UFI_format();
+ 791   2      //  //    break;
+ 792   2      //  //    case RELEASE:
+ 793   2      //  //    break;
+ 794   2            case STA_STO_UNIT:
+ 795   2              UFI_staStoUnit();
+ 796   2            break;
+ 797   2            case PRE_OR_MED:
+ 798   2              UFI_perOrMed();
+ 799   2            break;
+ 800   2            default:
+ 801   2              
+ 802   2            //printf("%2x\n",(UINT16)MassPara.cbw.cbwcb.buf1[0]);
+ 803   2            
+ 804   2              mSenseKey=5;
+ 805   2              mASC=0x20;
+ 806   2              BcswStatus=1;
+ 807   2              CH375BULKUP=0;
+ 808   2              BulkThirteen(CASECBW);
+ 809   2              break;
+ 810   2            }
+ 811   1      }
+ 812          
+ 813          void mCH375BulkOnly(){
+ 814   1            if(MassPara.buf[0]==0x55){
+ 815   2              if(MassPara.buf[1]==0x53){
+ 816   3                 if(MassPara.buf[2]==0x42){
+ 817   4                    if(MassPara.buf[3]==0x43){
+ 818   5      //              LEN.mDataLength=BIG_ENDIAN(MassPara.cbw.dCBWDatL);      //×öBOÐ­Òé´¦Àí
+ 819   5                    LEN.mdataLen[3] = *(unsigned char *)(&MassPara.cbw.dCBWDatL);  /* ½«PC»úµÄµÍ×Ö½ÚÔÚÇ°µÄ16Î»×ÖÊý¾Ý×ª»
+             -»ÎªC51µÄ¸ß×Ö½ÚÔÚÇ°µÄÊý¾Ý */
+ 820   5                    LEN.mdataLen[2] = *( (unsigned char *)(&MassPara.cbw.dCBWDatL) + 1 );
+ 821   5                    LEN.mdataLen[1] = *( (unsigned char *)(&MassPara.cbw.dCBWDatL) + 2 );
+ 822   5                    LEN.mdataLen[0] = *( (unsigned char *)(&MassPara.cbw.dCBWDatL) + 3 );
+ 823   5                    mdCBWTag[0]=MassPara.buf[4];
+ 824   5                                   mdCBWTag[1]=MassPara.buf[5];
+ 825   5                                    mdCBWTag[2]=MassPara.buf[6];
+ 826   5                                  mdCBWTag[3]=MassPara.buf[7];                            //È¡³öÊý¾Ý³¤¶È
+ 827   5                    if(LEN.mDataLength){
+ 828   6                        CH375BULKDOWN=(MassPara.cbw.bmCBWFlags&0X80)?0:1; //ÅÐ¶ÏÊÇÉÏ´«»¹ÊÇÏÂ´«Êý¾Ý
+ 829   6                        CH375BULKUP=(MassPara.cbw.bmCBWFlags&0X80)?1:0;
+ 830   6                      }
+ 831   5                    // if(!CBWLUN){         //Ö»Ö§³ÖÒ»¸öÎïÀíÅÌ
+ 832   5                      CH375CSW=1;
+ 833   5                      UFI_Hunding();
+ 834   5                    //µ÷ÓÃUFIÐ­Òé´¦Àí
+ 835   5                  //  }
+ 836   5                    //  else ;//´Ë´¦Ó¦×ö´íÎó´¦Àí
+ 837   5                   }
+ 838   4                  else
+ 839   4                  UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 840   4                }
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 15  
+
+ 841   3                 else
+ 842   3                UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 843   3                 }
+ 844   2              else
+ 845   2              UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 846   2             }
+ 847   1            else
+ 848   1            UEP1_CTRL = UEP1_CTRL | MASK_UEP_T_RES ;
+ 849   1      }
+ 850          
+ 851          void mCH375UpCsw()
+ 852          {
+ 853   1          unsigned char i;                          //Èç¹ûÊý¾ÝÎª0
+ 854   1          pBuf=&MassPara.buf[0];
+ 855   1          CH375CSW=0;                                 //ÉÏ´«CSW
+ 856   1          CH375BULKUP=0;                            //È¡ÏûÊý¾ÝÉÏ´«
+ 857   1          MassPara.buf[0]=0x55;                       //dCSWSignature
+ 858   1          MassPara.buf[1]=0x53;
+ 859   1          MassPara.buf[2]=0x42;
+ 860   1          MassPara.buf[3]=0x53;
+ 861   1          MassPara.buf[4]=mdCBWTag[0];
+ 862   1          MassPara.buf[5]=mdCBWTag[1];
+ 863   1          MassPara.buf[6]=mdCBWTag[2];
+ 864   1          MassPara.buf[7]=mdCBWTag[3];
+ 865   1          MassPara.buf[8]=0;
+ 866   1          MassPara.buf[9]=0;
+ 867   1          MassPara.buf[10]=LEN.mdataLen[1];
+ 868   1          MassPara.buf[11]=LEN.mdataLen[0];
+ 869   1          MassPara.buf[12]=BcswStatus;
+ 870   1          for(i = 0;i<13;i++)
+ 871   1          {
+ 872   2            Ep1Buffer[MAX_PACKET_SIZE+i] = *pBuf;
+ 873   2            pBuf++;
+ 874   2          }
+ 875   1          UEP1_T_LEN = 13;
+ 876   1          UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;  // ÔÊÐíÉÏ´«
+ 877   1      }
+ 878          
+ 879          //**********************************************************************************
+ 880          void CH375bulkUpData(){                     //µ÷ÓÃ¶Ëµã2ÉÏ´«Êý¾Ý
+ 881   1          unsigned char len,i;
+ 882   1          if(LEN.mDataLength>0x40){
+ 883   2            len=0x40;
+ 884   2            LEN.mDataLength-=0x40;
+ 885   2          }
+ 886   1          else {
+ 887   2            len= (unsigned char) LEN.mDataLength;
+ 888   2            LEN.mDataLength=0;
+ 889   2            CH375BULKUP=0;
+ 890   2          }
+ 891   1          
+ 892   1          if(pBuf_ReSelect)
+ 893   1          {
+ 894   2            BlukReadExternalFlash_SPI(Locate_Addr,len,&Ep1Buffer[MAX_PACKET_SIZE]);
+ 895   2            Locate_Addr += len;   
+ 896   2            if(LEN.mDataLength==0)
+ 897   2              pBuf_ReSelect = 0;
+ 898   2          }
+ 899   1          else
+ 900   1          {
+ 901   2            for(i = 0;i<len;i++)
+ 902   2            {
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 16  
+
+ 903   3              Ep1Buffer[MAX_PACKET_SIZE+i] = *pBuf;
+ 904   3              pBuf++;
+ 905   3            }
+ 906   2          }
+ 907   1          UEP1_T_LEN = len;
+ 908   1          UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;  // ÔÊÐíÉÏ´«
+ 909   1      }
+ 910          
+ 911          
+ 912          void mCH375BulkDownData(){
+ 913   1          unsigned char len,i;
+ 914   1        
+ 915   1          len = USB_RX_LEN;                                               
+ 916   1          for(i=0;i!=len;i++)           
+ 917   1            buffer[i]=Ep1Buffer[i]; //½«Êý¾Ý¶ÁÈëµ½»º³åÇø
+ 918   1        
+ 919   1          BlukWriteExternalFlash_SPI(Locate_Addr,len,&buffer[0]);
+ 920   1          Locate_Addr += len;
+ 921   1        
+ 922   1          LEN.mDataLength-=len;       //È«¾ÖÊý¾Ý³¤¶È¼õµôµ±Ç°»ñµÃµÄ³¤¶È
+ 923   1      
+ 924   1          if(LEN.mDataLength==0){                           //Èç¹ûÊý¾ÝÎª0,Ôò´«ËÍCSW
+ 925   2            CH375BULKDOWN=0;
+ 926   2            mCH375UpCsw();        //ÉÏ´«CSW
+ 927   2        }
+ 928   1      }
+ 929          
+ 930          /*******************************************************************************
+ 931          * Function Name  : USB_DeviceInterrupt()
+ 932          * Description    : CH559USBÄ£ÄâÉèÖÃÖÐ¶Ï´¦Àíº¯Êý
+ 933          *******************************************************************************/
+ 934          void    USB_DeviceInterrupt( void ) interrupt INT_NO_USB using 1               /* USBÖÐ¶Ï·þÎñ³ÌÐò,Ê¹ÓÃ¼Ä´æ
+             -Æ÷×é1 */
+ 935          {
+ 936   1          UINT8   len,length;
+ 937   1          static  UINT8   SetupReqCode, SetupLen;
+ 938   1          static  PUINT8  pDescr;
+ 939   1        
+ 940   1          if ( UIF_TRANSFER )                                                        // USB´«ÊäÍê³É
+ 941   1          {
+ 942   2              if ( U_IS_NAK )                                                        // not enable for this exam
+             -ple
+ 943   2              {
+ 944   3      //          switch ( USB_INT_ST & ( MASK_UIS_TOKEN | MASK_UIS_ENDP ) )         // ·ÖÎö²Ù×÷ÁîÅÆºÍ¶ËµãºÅ
+ 945   3      //          {  
+ 946   3      //              case UIS_TOKEN_OUT | 2:                                        // endpoint 2# ÅúÁ¿¶ËµãÏÂ´«
+ 947   3      //                  break;
+ 948   3      //              case UIS_TOKEN_IN | 2:                                         // endpoint 2# ÅúÁ¿¶ËµãÉÏ´«
+ 949   3      //                  break;
+ 950   3      //              case UIS_TOKEN_IN | 1:                                         // endpoint 1# ÖÐ¶Ï¶ËµãÉÏ´«
+ 951   3      //                  break;
+ 952   3      //              default:
+ 953   3      //                  break;
+ 954   3      //          }
+ 955   3                  printf("NAK INT,PrepareData\n");
+ 956   3              }
+ 957   2              else
+ 958   2              {
+ 959   3                  switch ( USB_INT_ST & ( MASK_UIS_TOKEN | MASK_UIS_ENDP ) )         // ·ÖÎö²Ù×÷ÁîÅÆºÍ¶ËµãºÅ
+ 960   3                  {
+ 961   4                  case UIS_TOKEN_IN | 1:                                             // endpoint 1# ÖÐ¶Ï¶ËµãÉÏ´«
+ 962   4              if(CH375BULKUP) CH375bulkUpData();                //µ÷ÓÃÊý¾ÝÉÏ´«
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 17  
+
+ 963   4              else if(CH375CSW) mCH375UpCsw();                  //ÉÏ´«CSW
+ 964   4              else
+ 965   4                      UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;      // ÔÝÍ£ÉÏ´«
+ 966   4                      break;
+ 967   4            case UIS_TOKEN_OUT | 1:
+ 968   4                      if ( U_TOG_OK )                                                // ²»Í¬²½µÄÊý¾Ý°ü½«¶ªÆú
+ 969   4                      {
+ 970   5                if(CH375BULKDOWN)  mCH375BulkDownData();                  //Èç¹ûÉÏ´«Êý¾Ý½×¶ÎÔòµ÷ÓÃÊý¾ÝÉÏ´«
+ 971   5                else{                     //²»ÊÇÊý¾ÝÏÂ´«ÔòÅÐ¶ÏÊÇ·ñ
+ 972   6                    length = USB_RX_LEN;
+ 973   6                    if(!length)break;               //Êý¾Ý°ü³¤¶ÈÎªÁãÔòÌø³ö                                    
+ 974   6                    for(len=0;len!=length;len++)            
+ 975   6                      MassPara.buf[len]=Ep1Buffer[len]; //½«Êý¾Ý¶ÁÈëµ½»º³åÇø
+ 976   6      
+ 977   6                    mCH375BulkOnly();
+ 978   6      
+ 979   6                    if(!CH375BULKDOWN){
+ 980   7                      if(CH375BULKUP) CH375bulkUpData();          //µ÷ÓÃÅúÁ¿Êý¾ÝÉÏ´«
+ 981   7                      else if(!FSTALL) mCH375UpCsw();               //Ã»ÓÐÊý¾ÝÉÏ´«µ÷ÓÃCSWÉÏ´«
+ 982   7                                              //ÔÚÕâÀï×öÉÏ´«Êý¾Ýµ÷ÓÃ
+ 983   7                    }
+ 984   6                } 
+ 985   5                      }       
+ 986   4            
+ 987   4              break;
+ 988   4                  case UIS_TOKEN_SETUP | 0:                                          // endpoint 0# SETUP
+ 989   4                      len = USB_RX_LEN;
+ 990   4                      if ( len == sizeof( USB_SETUP_REQ ) )                          // SETUP°ü³¤¶È
+ 991   4                      {
+ 992   5                          SetupLen = UsbSetupBuf->wLengthL;
+ 993   5                          if ( UsbSetupBuf->wLengthH || SetupLen > 0x7F )
+ 994   5                          {
+ 995   6                              SetupLen = 0x7F;                                       // ÏÞÖÆ×Ü³¤¶È
+ 996   6                          }
+ 997   5                          len = 0;                                                   // Ä¬ÈÏÎª³É¹¦²¢ÇÒÉÏ´«0³¤¶È
+ 998   5                          if ( ( UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK ) != USB_REQ_TYP_STANDARD )/* ÀàÇë
+             -Çó */
+ 999   5                          {                                                                  
+1000   6                              SetupReqCode = UsbSetupBuf->bRequest;
+1001   6                  if(SetupReqCode == 0xFE)   //GET MAX LUN
+1002   6                  {
+1003   7                    pDescr = (PUINT8)( &MAX_LUN[0] );               
+1004   7                    len = 1;
+1005   7                      if ( SetupLen > len )
+1006   7                                  {
+1007   8                                      SetupLen = len;                                 // ÏÞÖÆ×Ü³¤¶È
+1008   8                                  }
+1009   7                                  len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;  // ±¾´Î´«Êä³¤
+             -¶È
+1010   7                                  memcpy( Ep0Buffer, pDescr, len );                   /* ¼ÓÔØÉÏ´«Êý¾Ý */
+1011   7                                  SetupLen -= len;
+1012   7                                  pDescr += len;
+1013   7                    
+1014   7                  }
+1015   6                  
+1016   6                          }
+1017   5                          else                                                       // ±ê×¼ÇëÇó
+1018   5                          {
+1019   6                              SetupReqCode = UsbSetupBuf->bRequest;
+1020   6                              switch( SetupReqCode )                                 // ÇëÇóÂë
+1021   6                              {
+1022   7                              case USB_GET_DESCRIPTOR:
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 18  
+
+1023   7                                  switch( UsbSetupBuf->wValueH )
+1024   7                                  {
+1025   8                                  case 1:                                            // Éè±¸ÃèÊö·û
+1026   8                                      pDescr = (PUINT8)( &MyDevDescr[0] );
+1027   8                                      len = sizeof( MyDevDescr );
+1028   8                                      break;
+1029   8                                  case 2:                                            // ÅäÖÃÃèÊö·û
+1030   8                                      pDescr = (PUINT8)( &MyCfgDescr[0] );
+1031   8                                      len = sizeof( MyCfgDescr );
+1032   8                                      break;
+1033   8                                  case 3:                                            // ×Ö·û´®ÃèÊö·û
+1034   8                                      switch( UsbSetupBuf->wValueL )
+1035   8                                      {
+1036   9                                      case 1:
+1037   9                                          pDescr = (PUINT8)( &MyManuInfo[0] );       
+1038   9                                          len = sizeof( MyManuInfo );
+1039   9                                          break;
+1040   9                                      case 2:
+1041   9                                          pDescr = (PUINT8)( &MyProdInfo[0] );        
+1042   9                                          len = sizeof( MyProdInfo );
+1043   9                                          break;
+1044   9                                      case 0:
+1045   9                                          pDescr = (PUINT8)( &MyLangDescr[0] );
+1046   9                                          len = sizeof( MyLangDescr );
+1047   9                                          break;
+1048   9                                      default:
+1049   9                                          len = 0xFF;                                 // ²»Ö§³ÖµÄ×Ö·û´®ÃèÊö·û
+1050   9                                          break;
+1051   9                                      }
+1052   8                                      break;
+1053   8                                  default:
+1054   8                                      len = 0xFF;                                     // ²»Ö§³ÖµÄÃèÊö·ûÀàÐÍ
+1055   8                                      break;
+1056   8                                  }
+1057   7                                  if ( SetupLen > len )
+1058   7                                  {
+1059   8                                      SetupLen = len;                                 // ÏÞÖÆ×Ü³¤¶È
+1060   8                                  }
+1061   7                                  len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;  // ±¾´Î´«Êä³¤
+             -¶È
+1062   7                                  memcpy( Ep0Buffer, pDescr, len );                   /* ¼ÓÔØÉÏ´«Êý¾Ý */
+1063   7                                  SetupLen -= len;
+1064   7                                  pDescr += len;
+1065   7                                  break;
+1066   7                              case USB_SET_ADDRESS:
+1067   7                                  SetupLen = UsbSetupBuf->wValueL;                    // ÔÝ´æUSBÉè±¸µØÖ·
+1068   7                                  break;
+1069   7                              case USB_GET_CONFIGURATION:
+1070   7                                  Ep0Buffer[0] = UsbConfig;
+1071   7                                  if ( SetupLen >= 1 )
+1072   7                                  {
+1073   8                                      len = 1;
+1074   8                                  }
+1075   7                                  break;
+1076   7                              case USB_SET_CONFIGURATION:
+1077   7                                  UsbConfig = UsbSetupBuf->wValueL;
+1078   7                  
+1079   7                    printf("Config\n");
+1080   7                                  if ( UsbConfig )
+1081   7                                  {
+1082   8      //                                LED_CFG = 0;
+1083   8                                  }
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 19  
+
+1084   7                                  else
+1085   7                                  {
+1086   8      //                                LED_CFG = 1;
+1087   8                                  }
+1088   7                                  break;
+1089   7                              case USB_CLEAR_FEATURE:
+1090   7                                  if ( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP 
+             -)// ¶Ëµã
+1091   7                                  {
+1092   8                                      switch( UsbSetupBuf->wIndexL )
+1093   8                                      {
+1094   9                                      case 0x82:
+1095   9                                          UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_
+             -NAK;
+1096   9                                          break;
+1097   9                                      case 0x02:
+1098   9                                          UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_
+             -ACK;
+1099   9                                          break;
+1100   9                                      case 0x81:
+1101   9                                          UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_
+             -NAK;
+1102   9                        if(CH375CSW) mCH375UpCsw();
+1103   9                        lastFSTALL=FSTALL;
+1104   9                        FSTALL=0;
+1105   9                                          break;
+1106   9                                      case 0x01:
+1107   9                                          UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_
+             -ACK;            
+1108   9                        if(CH375CSW) mCH375UpCsw();
+1109   9                        lastFSTALL=FSTALL;
+1110   9                        FSTALL=0;
+1111   9                                          break;
+1112   9                                      default:
+1113   9                                          len = 0xFF;                                     // ²»Ö§³ÖµÄ¶Ëµã
+1114   9                                          break;
+1115   9                                      }
+1116   8                                  }
+1117   7                                  else
+1118   7                                  {
+1119   8                                      len = 0xFF;                                         // ²»ÊÇ¶Ëµã²»Ö§³Ö
+1120   8                                  }
+1121   7                                  break;
+1122   7                              case USB_GET_INTERFACE:
+1123   7                                  Ep0Buffer[0] = 0x00;
+1124   7                                  if ( SetupLen >= 1 )
+1125   7                                  {
+1126   8                                      len = 1;
+1127   8                                  }
+1128   7                                  break;
+1129   7                              case USB_GET_STATUS:
+1130   7                                  Ep0Buffer[0] = 0x00;
+1131   7                                  Ep0Buffer[1] = 0x00;
+1132   7                                  if ( SetupLen >= 2 )
+1133   7                                  {
+1134   8                                      len = 2;
+1135   8                                  }
+1136   7                                  else
+1137   7                                  {
+1138   8                                      len = SetupLen;
+1139   8                                  }
+1140   7                                  break;
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 20  
+
+1141   7                              default:
+1142   7                                  len = 0xFF;                                             // ²Ù×÷Ê§°Ü
+1143   7                                  printf("ErrEp0ReqCode=%02X\n",(UINT16)SetupReqCode);
+1144   7                                  break;
+1145   7                              }
+1146   6                          }
+1147   5                      }
+1148   4                      else
+1149   4                      {
+1150   5                          len = 0xFF;                                                    // SETUP°ü³¤¶È´íÎó
+1151   5                          printf("ErrEp0ReqSize\n");
+1152   5                      }
+1153   4                      if ( len == 0xFF )                                                 // ²Ù×÷Ê§°Ü
+1154   4                      {
+1155   5                          SetupReqCode = 0xFF;
+1156   5                          UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;// STALL
+1157   5                      }
+1158   4                      else if ( len <= THIS_ENDP0_SIZE )                                 // ÉÏ´«Êý¾Ý»òÕß×´Ì¬½×¶Î
+             -·µ»Ø0³¤¶È°ü
+1159   4                      {
+1160   5                          UEP0_T_LEN = len;
+1161   5                          UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;// Ä¬ÈÏÊý¾Ý°üÊÇDAT
+             -A1
+1162   5                      }
+1163   4                      else                                                               // ÏÂ´«Êý¾Ý»òÆäËü
+1164   4                      {
+1165   5                          UEP0_T_LEN = 0;                                                // ËäÈ»ÉÐÎ´µ½×´Ì¬½×¶Î£¬
+             -µ«ÊÇÌáÇ°Ô¤ÖÃÉÏ´«0³¤¶ÈÊý¾Ý°üÒÔ·ÀÖ÷»úÌáÇ°½øÈë×´Ì¬½×¶Î
+1166   5                          UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;// Ä¬ÈÏÊý¾Ý°üÊÇDAT
+             -A1
+1167   5                      }
+1168   4                      break;
+1169   4                  case UIS_TOKEN_IN | 0:                                                 // endpoint 0# IN
+1170   4                      switch( SetupReqCode )
+1171   4                      {
+1172   5                      case USB_GET_DESCRIPTOR:
+1173   5                          len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen; // ±¾´Î´«Êä³¤¶È
+1174   5                          memcpy( Ep0Buffer, pDescr, len );                               /* ¼ÓÔØÉÏ´«Êý¾Ý */
+1175   5                          SetupLen -= len;
+1176   5                          pDescr += len;
+1177   5                          UEP0_T_LEN = len;
+1178   5                          UEP0_CTRL ^= bUEP_T_TOG;                                        // ·­×ª
+1179   5                          break;
+1180   5                      case USB_SET_ADDRESS:
+1181   5                          USB_DEV_AD = USB_DEV_AD & bUDA_GP_BIT | SetupLen;
+1182   5                          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+1183   5                          break;
+1184   5                      default:
+1185   5                          UEP0_T_LEN = 0;                                                 // ×´Ì¬½×¶ÎÍê³ÉÖÐ¶Ï»òÕ
+             -ßÊÇÇ¿ÖÆÉÏ´«0³¤¶ÈÊý¾Ý°ü½áÊø¿ØÖÆ´«Êä
+1186   5                          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+1187   5                          break;
+1188   5                      }
+1189   4                      break;
+1190   4                  case UIS_TOKEN_OUT | 0:                                                 // endpoint 0# OUT
+1191   4                      switch( SetupReqCode )
+1192   4                      {
+1193   5      //                      case download:
+1194   5      //                          if ( U_TOG_OK ) {                                       // ²»Í¬²½µÄÊý¾Ý°ü½«¶ªÆ
+             -ú
+1195   5      //                              UEP0_CTRL ^= bUEP_R_TOG;                            // ·­×ª
+1196   5      //                              get_data;
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 21  
+
+1197   5      //                              //UEP0_CTRL = UEP0_CTRL & bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_
+             -RES_ACK;// Ô¤ÖÃÉÏ´«0³¤¶ÈÊý¾Ý°üDATA1ÒÔ·ÀÖ÷»úÌáÇ°½øÈë×´Ì¬½×¶Î
+1198   5      //                          }
+1199   5      //                          break;
+1200   5                      case USB_GET_DESCRIPTOR:
+1201   5                      default:
+1202   5                          if ( U_TOG_OK )                                                 // ²»Í¬²½µÄÊý¾Ý°ü½«¶ªÆ
+             -ú
+1203   5                          {
+1204   6      //                              if ( USB_RX_LEN ) control_status_error;
+1205   6      //                              else control_ok;                                    // ÊÕµ½0³¤¶È°ü±íÊ¾¿ØÖÆ
+             -¶Á²Ù×÷/ÉÏ´«OK
+1206   6                          }
+1207   5      //                          else control_status_error;
+1208   5                          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;                      // ×¼±¸ÏÂÒ»¿ØÖÆ´«Êä
+1209   5                          break;
+1210   5                      }
+1211   4                      break;
+1212   4                  default:
+1213   4                      printf("ErrEndp INT\n");
+1214   4                      break;
+1215   4                  }
+1216   3              }
+1217   2              UIF_TRANSFER = 0;                                                           // ÇåÖÐ¶Ï±êÖ¾
+1218   2          }
+1219   1          else if ( UIF_BUS_RST )                                                         // USB×ÜÏß¸´Î»
+1220   1          {
+1221   2          printf("Reset\n");
+1222   2              UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+1223   2              UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+1224   2              USB_DEV_AD = 0x00;
+1225   2              UIF_SUSPEND = 0;
+1226   2              UIF_TRANSFER = 0;
+1227   2              UIF_BUS_RST = 0;                                                            // ÇåÖÐ¶Ï±êÖ¾
+1228   2          }
+1229   1          else if ( UIF_SUSPEND )                                                         // USB×ÜÏß¹ÒÆð/»½ÐÑÍê³
+             -É
+1230   1          {
+1231   2              UIF_SUSPEND = 0;
+1232   2              if ( USB_MIS_ST & bUMS_SUSPEND )                                            // ¹ÒÆð
+1233   2              {
+1234   3                  printf( "Suspend\n" );                                                        // Ë¯Ãß×´Ì¬
+1235   3                  while ( XBUS_AUX & bUART0_TX );                                         // µÈ´ý·¢ËÍÍê³É
+1236   3                  SAFE_MOD = 0x55;
+1237   3                  SAFE_MOD = 0xAA;
+1238   3                  WAKE_CTRL = bWAK_BY_USB | bWAK_RXD0_LO;                                 // USB»òÕßRXD0ÓÐÐÅºÅÊ±
+             -¿É±»»½ÐÑ
+1239   3                  PCON |= PD;                                                             // Ë¯Ãß
+1240   3                  SAFE_MOD = 0x55;
+1241   3                  SAFE_MOD = 0xAA;
+1242   3                  WAKE_CTRL = 0x00;
+1243   3              }
+1244   2              else                                                                        // »½ÐÑ
+1245   2              {
+1246   3                  printf( "Awake\n" ); 
+1247   3              }
+1248   2          }
+1249   1          else 
+1250   1          {                                                                               // ÒâÍâµÄÖÐ¶Ï,²»¿ÉÄÜ·¢
+             -ÉúµÄÇé¿ö
+1251   2              printf("Unknown INT\n");
+1252   2              USB_INT_FG = 0xFF;                                                          // ÇåÖÐ¶Ï±êÖ¾
+C51 COMPILER V9.51   SPI0FLASH                                                             09/18/2016 15:15:47 PAGE 22  
+
+1253   2          }
+1254   1        
+1255   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4267    ----
+   CONSTANT SIZE    =    296    ----
+   XDATA SIZE       =    152      45
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      6    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
