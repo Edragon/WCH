@@ -1,3 +1,0 @@
-".\Objects\SPI0Flash.obj" 
-TO ".\Objects\u_disk" 
-PRINT(".\Listings\u_disk.m51") RAMSIZE(256) 

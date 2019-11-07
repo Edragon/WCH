@@ -1,0 +1,116 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        01/09/2018  18:29:38  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+D:\KEIL\C51\BIN\BL51.EXE CH559_DEMO.obj TO CH559_DEMO RAMSIZE (256) CODE (0X0000-0XAFFF)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  CH559_DEMO.obj (CH559_DEMO)
+  D:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+  D:\KEIL\C51\LIB\C51S.LIB (?C?ICALL)
+
+
+LINK MAP OF MODULE:  CH559_DEMO (CH559_DEMO)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0003H     UNIT         ?DT?CH559_DEMO
+            DATA    000BH     0002H     UNIT         _DATA_GROUP_
+            IDATA   000DH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0038H     UNIT         ?PR?MAIN?CH559_DEMO
+            CODE    003BH     0018H     UNIT         ?PR?_MDELAY20US?CH559_DEMO
+            CODE    0053H     000CH     UNIT         ?C_C51STARTUP
+            CODE    005FH     0006H     UNIT         ?C?LIB_CODE
+
+
+
+OVERLAY MAP OF MODULE:   CH559_DEMO (CH559_DEMO)
+
+
+SEGMENT                              DATA_GROUP 
+  +--> CALLED SEGMENT              START    LENGTH
+--------------------------------------------------
+?C_C51STARTUP                      -----    -----
+  +--> ?PR?MAIN?CH559_DEMO
+
+?PR?MAIN?CH559_DEMO                000BH    0002H
+  +--> ?PR?_MDELAY20US?CH559_DEMO
+
+
+
+SYMBOL TABLE OF MODULE:  CH559_DEMO (CH559_DEMO)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        CH559_DEMO
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0090H         PUBLIC        P1
+  D:00B0H         PUBLIC        P3
+  D:00E8H         PUBLIC        IE_EX
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:29:38  PAGE 2
+
+
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        USB_INT_FG
+  B:0090H.3       PUBLIC        EnableIAP
+  C:0003H         PUBLIC        main
+  C:003BH         PUBLIC        _mDelay20us
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  D:00F8H         PUBLIC        SPI0_STAT
+  D:0008H         PUBLIC        tasksArr
+  D:0080H         PUBLIC        ADC_CTRL
+  D:00C0H         PUBLIC        SCON1
+  D:00C8H         PUBLIC        T2CON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          _MDELAY20US
+  D:0006H         SYMBOL        n
+  C:003BH         LINE#         30
+  C:003BH         LINE#         31
+  C:003BH         LINE#         32
+  C:004AH         LINE#         33
+  C:004BH         LINE#         34
+  C:0052H         LINE#         35
+  -------         ENDPROC       _MDELAY20US
+  -------         PROC          MAIN
+  -------         DO            
+  D:000BH         SYMBOL        i
+  -------         ENDDO         
+  C:0003H         LINE#         44
+  C:0003H         LINE#         45
+  C:0003H         LINE#         46
+  C:0008H         LINE#         48
+  C:000FH         LINE#         49
+  C:000FH         LINE#         50
+  C:000FH         LINE#         51
+  C:0012H         LINE#         52
+  C:0012H         LINE#         53
+  C:0019H         LINE#         54
+  C:0020H         LINE#         55
+  C:0020H         LINE#         56
+  C:0028H         LINE#         57
+  C:0032H         LINE#         58
+  C:0039H         LINE#         59
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        CH559_DEMO
+
+  -------         MODULE        ?C?ICALL
+  C:005FH         PUBLIC        ?C?ICALL
+  C:0063H         PUBLIC        ?C?ICALL2
+  -------         ENDMOD        ?C?ICALL
+
+Program Size: data=14.0 xdata=0 code=101
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,1108 @@
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE USBHOST_IF
+OBJECT MODULE PLACED IN .\Objects\USBHOST_IF.obj
+COMPILER INVOKED BY: D:\Keil\Install\C51\BIN\C51.EXE USBHOST_IF.C LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Public) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Listings\USBHOST_IF.lst) OBJECT(.\Objects\USBHOST_IF.obj)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT *******************************
+   3          * File Name          : USBHOST_IF.C
+   4          * Author             : WCH
+   5          * Version            : V1.0
+   6          * Date               : 2017/01/20
+   7          * Description        : CH554 USB Ö÷»ú½Ó¿Úº¯Êý
+   8          *******************************************************************************/
+   9          
+  10          #include "CH554.H"                                                          //µ÷ÊÔÐÅÏ¢´òÓ¡
+  11          #include "DEBUG.H"
+  12          #include "stdio.h"
+  13          #include "string.h"
+  14          #include "USBHOST_IF.H"
+  15          
+  16          #define CH34x_VENDOR_ID_O               0x4348
+  17          #define CH34x_VENDOR_ID_N               0x1A86
+  18          #define CH340_PRODUCT_ID            0x7523
+  19          #define CH341_PRODUCT_ID            0x5523
+  20          
+  21          #define PL2303_VENDOR_ID                0x067B
+  22          #define PL2303_PRODUCT_ID           0x2303
+  23          
+  24          //#define CP2102_VENDOR_ID              0x10C4
+  25          //#define CP2102_PRODUCT_ID         0xEA60
+  26          
+  27          
+  28          const UINT16 CH34X_ID_Table[]={CH34x_VENDOR_ID_O,CH340_PRODUCT_ID,
+  29                                                                          CH34x_VENDOR_ID_O,CH341_PRODUCT_ID,
+  30                                                                          CH34x_VENDOR_ID_N,CH340_PRODUCT_ID,
+  31                                                                          CH34x_VENDOR_ID_N,CH341_PRODUCT_ID,};
+  32          
+  33          const UINT16 PL2303_ID_Table[]={PL2303_VENDOR_ID,PL2303_PRODUCT_ID,};                                                           
+  34          
+  35          const UINT16 CP210x_ID_Table[]={
+  36                   0x045B, 0x0053,   /* Renesas RX610 RX-Stick */
+  37                   0x0471, 0x066A , /* AKTAKOM ACE-1001 cable */
+  38                   0x0489, 0xE000 , /* Pirelli Broadband S.p.A, DP-L10 SIP/GSM Mobile */
+  39                   0x0489, 0xE003 , /* Pirelli Broadband S.p.A, DP-L10 SIP/GSM Mobile */
+  40                   0x0745, 0x1000 , /* CipherLab USB CCD Barcode Scanner 1000 */
+  41                   0x0846, 0x1100 , /* NetGear Managed Switch M4100 series, M5300 series, M7100 series */
+  42                   0x08e6, 0x5501 , /* Gemalto Prox-PU/CU contactless smartcard reader */
+  43                   0x08FD, 0x000A , /* Digianswer A/S , ZigBee/802.15.4 MAC Device */
+  44                   0x0BED, 0x1100 , /* MEI (TM) Cashflow-SC Bill/Voucher Acceptor */
+  45                   0x0BED, 0x1101 , /* MEI series 2000 Combo Acceptor */
+  46                   0x0FCF, 0x1003 , /* Dynastream ANT development board */
+  47                   0x0FCF, 0x1004 , /* Dynastream ANT2USB */
+  48                   0x0FCF, 0x1006 , /* Dynastream ANT development board */
+  49                   0x0FDE, 0xCA05 , /* OWL Wireless Electricity Monitor CM-160 */
+  50                   0x10A6, 0xAA26 , /* Knock-off DCU-11 cable */
+  51                   0x10AB, 0x10C5 , /* Siemens MC60 Cable */
+  52                   0x10B5, 0xAC70 , /* Nokia CA-42 USB */
+  53                   0x10C4, 0x0F91 , /* Vstabi */
+  54                   0x10C4, 0x1101 , /* Arkham Technology DS101 Bus Monitor */
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 2   
+
+  55                   0x10C4, 0x1601 , /* Arkham Technology DS101 Adapter */
+  56                   0x10C4, 0x800A , /* SPORTident BSM7-D-USB main station */
+  57                   0x10C4, 0x803B , /* Pololu USB-serial converter */
+  58                   0x10C4, 0x8044 , /* Cygnal Debug Adapter */
+  59                   0x10C4, 0x804E , /* Software Bisque Paramount ME build-in converter */
+  60                   0x10C4, 0x8053 , /* Enfora EDG1228 */
+  61                   0x10C4, 0x8054 , /* Enfora GSM2228 */
+  62                   0x10C4, 0x8066 , /* Argussoft In-System Programmer */
+  63                   0x10C4, 0x806F , /* IMS USB to RS422 Converter Cable */
+  64                   0x10C4, 0x807A , /* Crumb128 board */
+  65                   0x10C4, 0x80C4 , /* Cygnal Integrated Products, Inc., Optris infrared thermometer */
+  66                   0x10C4, 0x80CA , /* Degree Controls Inc */
+  67                   0x10C4, 0x80DD , /* Tracient RFID */
+  68                   0x10C4, 0x80F6 , /* Suunto sports instrument */
+  69                   0x10C4, 0x8115 , /* Arygon NFC/Mifare Reader */
+  70                   0x10C4, 0x813D , /* Burnside Telecom Deskmobile */
+  71                   0x10C4, 0x813F , /* Tams Master Easy Control */
+  72                   0x10C4, 0x814A , /* West Mountain Radio RIGblaster P&P */
+  73                   0x10C4, 0x814B , /* West Mountain Radio RIGtalk */
+  74                   0x2405, 0x0003 , /* West Mountain Radio RIGblaster Advantage */
+  75                   0x10C4, 0x8156 , /* B&G H3000 link cable */
+  76                   0x10C4, 0x815E , /* Helicomm IP-Link 1220-DVM */
+  77                   0x10C4, 0x815F , /* Timewave HamLinkUSB */
+  78                   0x10C4, 0x818B , /* AVIT Research USB to TTL */
+  79                   0x10C4, 0x819F , /* MJS USB Toslink Switcher */
+  80                   0x10C4, 0x81A6 , /* ThinkOptics WavIt */
+  81                   0x10C4, 0x81A9 , /* Multiplex RC Interface */
+  82                   0x10C4, 0x81AC , /* MSD Dash Hawk */
+  83                   0x10C4, 0x81AD , /* INSYS USB Modem */
+  84                   0x10C4, 0x81C8 , /* Lipowsky Industrie Elektronik GmbH, Baby-JTAG */
+  85                   0x10C4, 0x81E2 , /* Lipowsky Industrie Elektronik GmbH, Baby-LIN */
+  86                   0x10C4, 0x81E7 , /* Aerocomm Radio */
+  87                   0x10C4, 0x81E8 , /* Zephyr Bioharness */
+  88                   0x10C4, 0x81F2 , /* C1007 HF band RFID controller */
+  89                   0x10C4, 0x8218 , /* Lipowsky Industrie Elektronik GmbH, HARP-1 */
+  90                   0x10C4, 0x822B , /* Modem EDGE(GSM) Comander 2 */
+  91                   0x10C4, 0x826B , /* Cygnal Integrated Products, Inc., Fasttrax GPS demonstration module */
+  92                   0x10C4, 0x8293 , /* Telegesis ETRX2USB */
+  93                   0x10C4, 0x82F9 , /* Procyon AVS */
+  94                   0x10C4, 0x8341 , /* Siemens MC35PU GPRS Modem */
+  95                   0x10C4, 0x8382 , /* Cygnal Integrated Products, Inc. */
+  96                   0x10C4, 0x83A8 , /* Amber Wireless AMB2560 */
+  97                   0x10C4, 0x83D8 , /* DekTec DTA Plus VHF/UHF Booster/Attenuator */
+  98                   0x10C4, 0x8411 , /* Kyocera GPS Module */
+  99                   0x10C4, 0x8418 , /* IRZ Automation Teleport SG-10 GSM/GPRS Modem */
+ 100                   0x10C4, 0x846E , /* BEI USB Sensor Interface (VCP) */
+ 101                   0x10C4, 0x8477 , /* Balluff RFID */
+ 102                   0x10C4, 0x85EA , /* AC-Services IBUS-IF */
+ 103                   0x10C4, 0x85EB , /* AC-Services CIS-IBUS */
+ 104                   0x10C4, 0x85F8 , /* Virtenio Preon32 */
+ 105                   0x10C4, 0x8664 , /* AC-Services CAN-IF */
+ 106                   0x10C4, 0x8665 , /* AC-Services OBD-IF */
+ 107                   0x10C4, 0x88A4 , /* MMB Networks ZigBee USB Device */
+ 108                   0x10C4, 0x88A5 , /* Planet Innovation Ingeni ZigBee USB Device */
+ 109                   0x10C4, 0xEA60 , /* Silicon Labs factory default */
+ 110                   0x10C4, 0xEA61 , /* Silicon Labs factory default */
+ 111                   0x10C4, 0xEA70 , /* Silicon Labs factory default */
+ 112                   0x10C4, 0xEA80 , /* Silicon Labs factory default */
+ 113                   0x10C4, 0xEA71 , /* Infinity GPS-MIC-1 Radio Monophone */
+ 114                   0x10C4, 0xF001 , /* Elan Digital Systems USBscope50 */
+ 115                   0x10C4, 0xF002 , /* Elan Digital Systems USBwave12 */
+ 116                   0x10C4, 0xF003 , /* Elan Digital Systems USBpulse100 */
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 3   
+
+ 117                   0x10C4, 0xF004 , /* Elan Digital Systems USBcount50 */
+ 118                   0x10C5, 0xEA61 , /* Silicon Labs MobiData GPRS USB Modem */
+ 119                   0x10CE, 0xEA6A , /* Silicon Labs MobiData GPRS USB Modem 100EU */
+ 120                   0x13AD, 0x9999 , /* Baltech card reader */
+ 121                   0x1555, 0x0004 , /* Owen AC4 USB-RS485 Converter */
+ 122                   0x166A, 0x0201 , /* Clipsal 5500PACA C-Bus Pascal Automation Controller */
+ 123                   0x166A, 0x0301 , /* Clipsal 5800PC C-Bus Wireless PC Interface */
+ 124                   0x166A, 0x0303 , /* Clipsal 5500PCU C-Bus USB interface */
+ 125                   0x166A, 0x0304 , /* Clipsal 5000CT2 C-Bus Black and White Touchscreen */
+ 126                   0x166A, 0x0305 , /* Clipsal C-5000CT2 C-Bus Spectrum Colour Touchscreen */
+ 127                   0x166A, 0x0401 , /* Clipsal L51xx C-Bus Architectural Dimmer */
+ 128                   0x166A, 0x0101 , /* Clipsal 5560884 C-Bus Multi-room Audio Matrix Switcher */
+ 129                   0x16D6, 0x0001 , /* Jablotron serial interface */
+ 130                   0x16DC, 0x0010 , /* W-IE-NE-R Plein & Baus GmbH PL512 Power Supply */
+ 131                   0x16DC, 0x0011 , /* W-IE-NE-R Plein & Baus GmbH RCM Remote Control for MARATON Power Supply */
+ 132                   0x16DC, 0x0012 , /* W-IE-NE-R Plein & Baus GmbH MPOD Multi Channel Power Supply */
+ 133                   0x16DC, 0x0015 , /* W-IE-NE-R Plein & Baus GmbH CML Control, Monitoring and Data Logger */
+ 134                   0x17A8, 0x0001 , /* Kamstrup Optical Eye/3-wire */
+ 135                   0x17A8, 0x0005 , /* Kamstrup M-Bus Master MultiPort 250D */
+ 136                   0x17F4, 0xAAAA , /* Wavesense Jazz blood glucose meter */
+ 137                   0x1843, 0x0200 , /* Vaisala USB Instrument Cable */
+ 138                   0x18EF, 0xE00F , /* ELV USB-I2C-Interface */
+ 139                   0x1ADB, 0x0001 , /* Schweitzer Engineering C662 Cable */
+ 140                   0x1BE3, 0x07A6 , /* WAGO 750-923 USB Service Cable */
+ 141                   0x1E29, 0x0102 , /* Festo CPX-USB */
+ 142                   0x1E29, 0x0501 , /* Festo CMSP */
+ 143                   0x1FB9, 0x0100 , /* Lake Shore Model 121 Current Source */
+ 144                   0x1FB9, 0x0200 , /* Lake Shore Model 218A Temperature Monitor */
+ 145                   0x1FB9, 0x0201 , /* Lake Shore Model 219 Temperature Monitor */
+ 146                   0x1FB9, 0x0202 , /* Lake Shore Model 233 Temperature Transmitter */
+ 147                   0x1FB9, 0x0203 , /* Lake Shore Model 235 Temperature Transmitter */
+ 148                   0x1FB9, 0x0300 , /* Lake Shore Model 335 Temperature Controller */
+ 149                   0x1FB9, 0x0301 , /* Lake Shore Model 336 Temperature Controller */
+ 150                   0x1FB9, 0x0302 , /* Lake Shore Model 350 Temperature Controller */
+ 151                   0x1FB9, 0x0303 , /* Lake Shore Model 371 AC Bridge */
+ 152                   0x1FB9, 0x0400 , /* Lake Shore Model 411 Handheld Gaussmeter */
+ 153                   0x1FB9, 0x0401 , /* Lake Shore Model 425 Gaussmeter */
+ 154                   0x1FB9, 0x0402 , /* Lake Shore Model 455A Gaussmeter */
+ 155                   0x1FB9, 0x0403 , /* Lake Shore Model 475A Gaussmeter */
+ 156                   0x1FB9, 0x0404 , /* Lake Shore Model 465 Three Axis Gaussmeter */
+ 157                   0x1FB9, 0x0600 , /* Lake Shore Model 625A Superconducting MPS */
+ 158                   0x1FB9, 0x0601 , /* Lake Shore Model 642A Magnet Power Supply */
+ 159                   0x1FB9, 0x0602 , /* Lake Shore Model 648 Magnet Power Supply */
+ 160                   0x1FB9, 0x0700 , /* Lake Shore Model 737 VSM Controller */
+ 161                   0x1FB9, 0x0701 , /* Lake Shore Model 776 Hall Matrix */
+ 162                   0x3195, 0xF190 , /* Link Instruments MSO-19 */
+ 163                   0x3195, 0xF280 , /* Link Instruments MSO-28 */
+ 164                   0x3195, 0xF281 , /* Link Instruments MSO-28 */
+ 165                   0x413C, 0x9500 , /* DW700 GPS USB interface */
+ 166           };
+ 167          
+ 168                                                                          
+ 169          //Æ¥ÅäVID PID
+ 170          UINT8 MatchID(UINT16 vid,UINT16 pid,const UINT16 *id_table,UINT16 element_count)
+ 171          {
+ 172   1              UINT16 i;
+ 173   1              if(element_count%2)
+ 174   1                      element_count--;   //±ä³ÉÅ¼Êý
+ 175   1              for(i=0;i<element_count;i+=2)
+ 176   1              {
+ 177   2                      if(vid==id_table[i] && pid==id_table[i+1])
+ 178   2                              break;
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 4   
+
+ 179   2              }
+ 180   1              if(i<element_count) return 1;   //³É¹¦Æ¥Åä
+ 181   1              else return 0;
+ 182   1      }
+ 183          /*******************************************************************************
+ 184          * Function Name  : DisableRootHubPort( )
+ 185          * Description    : ¹Ø±ÕHUB¶Ë¿Ú
+ 186          * Input          : None
+ 187          * Output         : None
+ 188          * Return         : None
+ 189          *******************************************************************************/
+ 190          void    DisableRootHubPort( )          
+ 191          {
+ 192   1              ThisUsbDev.DeviceStatus = ROOT_DEV_DISCONNECT;
+ 193   1              ThisUsbDev.DeviceAddress = 0x00;
+ 194   1              ThisUsbDev.DeviceType = 0;
+ 195   1              ThisUsbDev.GpVar0 = 0;
+ 196   1              ThisUsbDev.GpVar1 = 0;
+ 197   1              ThisUsbDev.GpVar2 = 0;
+ 198   1              UHOST_CTRL &= ~bUH_PORT_EN;                  //¶Ë¿ÚÊ§ÄÜ
+ 199   1      }
+ 200          /*******************************************************************************
+ 201          * Function Name  : AnalyzeRootHub(void)
+ 202          * Description    : ·ÖÎöROOT-HUB×´Ì¬,´¦ÀíROOT-HUB¶Ë¿ÚµÄÉè±¸²å°ÎÊÂ¼þ
+ 203                             Èç¹ûÉè±¸°Î³ö,º¯ÊýÖÐµ÷ÓÃDisableRootHubPort()º¯Êý,½«¶Ë¿Ú¹Ø±Õ,²åÈëÊÂ¼þ,ÖÃÏàÓ¦¶Ë¿ÚµÄ×´Ì¬Î»
+ 204          * Input          : None
+ 205          * Output         : None
+ 206          * Return         : ·µ»ØERR_SUCCESSÎªÃ»ÓÐÇé¿ö,·µ»ØERR_USB_CONNECTÎª¼ì²âµ½ÐÂÁ¬½Ó,·µ»ØERR_USB_DISCONÎª¼ì²âµ½¶
+             -Ï¿ª
+ 207          *******************************************************************************/
+ 208          UINT8   AnalyzeRootHub( void )
+ 209          { 
+ 210   1              UINT8   s;
+ 211   1              s = ERR_SUCCESS;
+ 212   1              if ( USB_MIS_ST & bUMS_DEV_ATTACH ) {                                        // Éè±¸´æÔÚ
+ 213   2                      if ( ThisUsbDev.DeviceStatus == ROOT_DEV_DISCONNECT || ( UHOST_CTRL & bUH_PORT_EN ) == 0x00 )  // ¼ì²âµ½
+             -ÓÐÉè±¸²åÈë,µ«ÉÐÎ´ÔÊÐí,ËµÃ÷ÊÇ¸Õ²åÈë
+ 214   2                      {                                                                                            
+ 215   3                              DisableRootHubPort( );                                                   // ¹Ø±Õ¶Ë¿Ú
+ 216   3                              ThisUsbDev.DeviceStatus = ROOT_DEV_CONNECTED;                            //ÖÃÁ¬½Ó±êÖ¾
+ 217   3      #if DE_PRINTF
+                                      printf( "USB dev in\n" );
+              #endif
+ 220   3                              s = ERR_USB_CONNECT;
+ 221   3                      }
+ 222   2              }
+ 223   1              else if ( ThisUsbDev.DeviceStatus >= ROOT_DEV_CONNECTED )                      //¼ì²âµ½Éè±¸°Î³ö 
+ 224   1              {                  
+ 225   2                      DisableRootHubPort( );                                                     // ¹Ø±Õ¶Ë¿Ú
+ 226   2      #if DE_PRINTF           
+                              printf( "USB dev out\n" );
+              #endif
+ 229   2                      if ( s == ERR_SUCCESS ) s = ERR_USB_DISCON;
+ 230   2              }
+ 231   1              return( s );
+ 232   1      }
+ 233          /*******************************************************************************
+ 234          * Function Name  : SetHostUsbAddr
+ 235          * Description    : ÉèÖÃUSBÖ÷»úµ±Ç°²Ù×÷µÄUSBÉè±¸µØÖ·
+ 236          * Input          : UINT8 addr
+ 237          * Output         : None
+ 238          * Return         : None
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 5   
+
+ 239          *******************************************************************************/
+ 240          void    SetHostUsbAddr( UINT8 addr )
+ 241          {
+ 242   1              USB_DEV_AD = 0;
+ 243   1              USB_DEV_AD |= (bUDA_GP_BIT + addr);
+ 244   1      }
+ 245          
+ 246          #ifndef FOR_ROOT_UDISK_ONLY
+ 247          /*******************************************************************************
+ 248          * Function Name  : SetUsbSpeed
+ 249          * Description    : ÉèÖÃµ±Ç°USBËÙ¶È
+ 250          * Input          : UINT8 FullSpeed
+ 251          * Output         : None
+ 252          * Return         : None
+ 253          *******************************************************************************/
+ 254          void    SetUsbSpeed( UINT8 FullSpeed )  
+ 255          {
+ 256   1          if ( FullSpeed )                                                           // È«ËÙ
+ 257   1          {
+ 258   2              USB_CTRL &= ~ bUC_LOW_SPEED;                                           // È«ËÙ
+ 259   2                      UHOST_CTRL &= ~bUH_LOW_SPEED;
+ 260   2              UH_SETUP &= ~ bUH_PRE_PID_EN;                                          // ½ûÖ¹PRE PID
+ 261   2          }
+ 262   1          else
+ 263   1          {
+ 264   2              USB_CTRL |= bUC_LOW_SPEED;                                             // µÍËÙ
+ 265   2                      UHOST_CTRL |= bUH_LOW_SPEED;
+ 266   2          }
+ 267   1      }
+ 268          #endif
+ 269          
+ 270          /*******************************************************************************
+ 271          * Function Name  : ResetRootHubPort( )
+ 272          * Description    : ¼ì²âµ½Éè±¸ºó,¸´Î»×ÜÏß,ÎªÃ¶¾ÙÉè±¸×¼±¸,ÉèÖÃÎªÄ¬ÈÏÎªÈ«ËÙ
+ 273          * Input          : None   
+ 274          * Output         : None
+ 275          * Return         : None
+ 276          *******************************************************************************/
+ 277          void    ResetRootHubPort( )
+ 278          {
+ 279   1          UsbDevEndp0Size = DEFAULT_ENDP0_SIZE;                                      //USBÉè±¸µÄ¶Ëµã0µÄ×î´ó°ü³ß´
+             -ç
+ 280   1          SetHostUsbAddr( 0x00 );
+ 281   1              UHOST_CTRL = UHOST_CTRL | bUH_BUS_RESET;                                   //¿ªÊ¼¸´Î»
+ 282   1          mDelaymS( 15 );                                                            // ¸´Î»Ê±¼ä10mSµ½20mS
+ 283   1          UHOST_CTRL = UHOST_CTRL & ~ bUH_BUS_RESET;                                 // ½áÊø¸´Î»
+ 284   1          mDelayuS( 250 );
+ 285   1          UIF_DETECT = 0;                                                            // ÇåÖÐ¶Ï±êÖ¾
+ 286   1      }
+ 287          /*******************************************************************************
+ 288          * Function Name  : EnableRootHubPort( )
+ 289          * Description    : Ê¹ÄÜROOT-HUB¶Ë¿Ú,ÏàÓ¦µÄbUH_PORT_ENÖÃ1¿ªÆô¶Ë¿Ú,Éè±¸¶Ï¿ª¿ÉÄÜµ¼ÖÂ·µ»ØÊ§°Ü
+ 290          * Input          : None
+ 291          * Output         : None
+ 292          * Return         : ·µ»ØERR_SUCCESSÎª¼ì²âµ½ÐÂÁ¬½Ó,·µ»ØERR_USB_DISCONÎªÎÞÁ¬½Ó
+ 293          *******************************************************************************/
+ 294          UINT8   EnableRootHubPort( )
+ 295          {
+ 296   1      #ifdef DISK_BASE_BUF_LEN
+                      if ( CH554DiskStatus < DISK_CONNECT ) CH554DiskStatus = DISK_CONNECT;
+              #else
+ 299   1              if ( ThisUsbDev.DeviceStatus < ROOT_DEV_CONNECTED ) ThisUsbDev.DeviceStatus = ROOT_DEV_CONNECTED;
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 6   
+
+ 300   1      #endif
+ 301   1              if ( USB_MIS_ST & bUMS_DEV_ATTACH ) {                                        // ÓÐÉè±¸
+ 302   2      #ifndef DISK_BASE_BUF_LEN
+ 303   2                      if ( ( UHOST_CTRL & bUH_PORT_EN ) == 0x00 ) {                              // ÉÐÎ´Ê¹ÄÜ
+ 304   3                              ThisUsbDev.DeviceSpeed = USB_MIS_ST & bUMS_DM_LEVEL ? 0 : 1; 
+ 305   3                              SetUsbSpeed( ThisUsbDev.DeviceSpeed );
+ 306   3                      }
+ 307   2      #endif
+ 308   2                      UHOST_CTRL |= bUH_PORT_EN;                                                 //Ê¹ÄÜHUB¶Ë¿Ú
+ 309   2                      return( ERR_SUCCESS );
+ 310   2              }
+ 311   1              return( ERR_USB_DISCON );
+ 312   1      }
+ 313          
+ 314          /*******************************************************************************
+ 315          * Function Name  : WaitUSB_Interrupt
+ 316          * Description    : µÈ´ýUSBÖÐ¶Ï
+ 317          * Input          : None
+ 318          * Output         : None
+ 319          * Return         : ·µ»ØERR_SUCCESS Êý¾Ý½ÓÊÕ»òÕß·¢ËÍ³É¹¦
+ 320                             ERR_USB_UNKNOWN Êý¾Ý½ÓÊÕ»òÕß·¢ËÍÊ§°Ü
+ 321          *******************************************************************************/
+ 322          UINT8   WaitUSB_Interrupt( void )
+ 323          {
+ 324   1          UINT16  i;
+ 325   1          for ( i = WAIT_USB_TOUT_200US; i != 0 && UIF_TRANSFER == 0; i -- ){;}
+ 326   1          return( UIF_TRANSFER ? ERR_SUCCESS : ERR_USB_UNKNOWN );
+ 327   1      }
+ 328          /*******************************************************************************
+ 329          * Function Name  : USBHostTransact
+ 330          * Description    : CH554´«ÊäÊÂÎñ,ÊäÈëÄ¿µÄ¶ËµãµØÖ·/PIDÁîÅÆ,Í¬²½±êÖ¾,ÒÔ20uSÎªµ¥Î»µÄNAKÖØÊÔ×ÜÊ±¼ä(0Ôò²»ÖØÊÔ,0
+             -xFFFFÎÞÏÞÖØÊÔ),·µ»Ø0³É¹¦,³¬Ê±/³ö´íÖØÊÔ
+ 331                             ±¾×Ó³ÌÐò×ÅÖØÓÚÒ×Àí½â,¶øÔÚÊµ¼ÊÓ¦ÓÃÖÐ,ÎªÁËÌá¹©ÔËÐÐËÙ¶È,Ó¦¸Ã¶Ô±¾×Ó³ÌÐò´úÂë½øÐÐÓÅ»¯
+ 332          * Input          : UINT8 endp_pid ÁîÅÆºÍµØÖ·  endp_pid: ¸ß4Î»ÊÇtoken_pidÁîÅÆ, µÍ4Î»ÊÇ¶ËµãµØÖ·
+ 333                             UINT8 tog      Í¬²½±êÖ¾
+ 334                             UINT16 timeout ³¬Ê±Ê±¼ä
+ 335          * Output         : None
+ 336          * Return         : ERR_USB_UNKNOWN ³¬Ê±£¬¿ÉÄÜÓ²¼þÒì³£
+ 337                             ERR_USB_DISCON  Éè±¸¶Ï¿ª
+ 338                             ERR_USB_CONNECT Éè±¸Á¬½Ó
+ 339                             ERR_SUCCESS     ´«ÊäÍê³É
+ 340          *******************************************************************************/
+ 341          UINT8   USBHostTransact( UINT8 endp_pid, UINT8 tog, UINT16 timeout )
+ 342          {
+ 343   1      #define TransRetry      UEP0_T_LEN                                                     // ½ÚÔ¼ÄÚ´æ
+ 344   1              UINT8   s, r;
+ 345   1              UINT16  i;
+ 346   1              UH_RX_CTRL = UH_TX_CTRL = tog;
+ 347   1              TransRetry = 3;                                                               //³¬Ê±ÖØÊÔ´ÎÊý
+ 348   1              do {
+ 349   2                      UH_EP_PID = endp_pid;                                                      // Ö¸¶¨ÁîÅÆPIDºÍÄ¿µÄ¶ËµãºÅ
+ 350   2                      UIF_TRANSFER = 0;                                                          // Çå³ý´«ÊäÍê³É±êÖ¾
+ 351   2                      for ( i = WAIT_USB_TOUT_200US; i != 0 && UIF_TRANSFER == 0; i -- );
+ 352   2                      UH_EP_PID = 0x00;                                                          // Í£Ö¹USB´«Êä
+ 353   2                      if ( UIF_TRANSFER == 0 ) return( ERR_USB_UNKNOWN );
+ 354   2                      if ( UIF_DETECT ) {                                                        // USBÉè±¸²å°ÎÊÂ¼þ
+ 355   3                              UIF_DETECT = 0;                                                          // ÇåÖÐ¶Ï±êÖ¾
+ 356   3                              s = AnalyzeRootHub( );                                                   // ·ÖÎöROOT-HUB×´Ì¬
+ 357   3                              if ( s == ERR_USB_CONNECT ) FoundNewDev = 1;
+ 358   3      #ifdef DISK_BASE_BUF_LEN
+                                      if ( CH554DiskStatus == DISK_DISCONNECT ) return( ERR_USB_DISCON );      // USBÉè±¸¶Ï¿ªÊÂ¼þ
+              #else
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 7   
+
+ 361   3                              if ( ThisUsbDev.DeviceStatus == ROOT_DEV_DISCONNECT ) return( ERR_USB_DISCON );// USBÉè±¸¶Ï¿ªÊÂ¼þ
+ 362   3      #endif
+ 363   3                      }
+ 364   2                      if ( UIF_TRANSFER ) {  // ´«ÊäÍê³É
+ 365   3                              UIF_TRANSFER = 0;                                                          // Çå³ý´«ÊäÍê³É±êÖ¾
+ 366   3                              if ( U_TOG_OK ) return( ERR_SUCCESS );                                     //·µ»ØACK£¬Í¬Ê±°ü·­×ªÍ¬²½
+ 367   3                              r = USB_INT_ST & MASK_UIS_H_RES;  // USBÉè±¸Ó¦´ð×´Ì¬
+ 368   3                              if ( r == USB_PID_STALL ) return( r | ERR_USB_TRANSFER );
+ 369   3                              if ( r == USB_PID_NAK ) {
+ 370   4                                      if ( timeout == 0 ) return( r | ERR_USB_TRANSFER );
+ 371   4                                      if ( timeout < 0xFFFF ) timeout --;
+ 372   4                                      TransRetry++;
+ 373   4                              }
+ 374   3                              else switch ( endp_pid >> 4 ) {
+ 375   4                                      case USB_PID_SETUP:
+ 376   4                                      case USB_PID_OUT:
+ 377   4                                              if ( r ) return( r | ERR_USB_TRANSFER );  // ·Ç0²»ÊÇ³¬Ê±/³ö´í,ÒâÍâÓ¦´ð
+ 378   4                                              break;  // ³¬Ê±ÖØÊÔ
+ 379   4                                      case USB_PID_IN:
+ 380   4                                              if ( r == USB_PID_DATA0 && r == USB_PID_DATA1 ) {  // ²»Í¬²½ÔòÐè¶ªÆúºóÖØÊÔ
+ 381   5                                              }  // ²»Í¬²½ÖØÊÔ
+ 382   4                                              else if ( r ) return( r | ERR_USB_TRANSFER );  // ²»ÊÇ³¬Ê±/³ö´í,ÒâÍâÓ¦´ð
+ 383   4                                              break;  // ³¬Ê±ÖØÊÔ
+ 384   4                                      default:
+ 385   4                                              return( ERR_USB_UNKNOWN );  // ²»¿ÉÄÜµÄÇé¿ö
+ 386   4                                              break;
+ 387   4                              }
+ 388   3                      }
+ 389   2                      else {  // ÆäËüÖÐ¶Ï,²»Ó¦¸Ã·¢ÉúµÄÇé¿ö
+ 390   3                              USB_INT_FG = 0xFF;  /* ÇåÖÐ¶Ï±êÖ¾ */
+ 391   3                      }
+ 392   2                      mDelayuS( 10 );
+ 393   2                      
+ 394   2                      //OUT°üÐèÒª¶à¼ÓµãÑÓÊ±
+ 395   2                      if((endp_pid >> 4) == USB_PID_OUT)  mDelayuS( 80 );
+ 396   2                      
+ 397   2              } while ( --TransRetry );
+ 398   1              return( ERR_USB_TRANSFER );  // Ó¦´ð³¬Ê±
+ 399   1      }
+ 400          /*******************************************************************************
+ 401          * Function Name  : HostCtrlTransfer
+ 402          * Description    : Ö´ÐÐ¿ØÖÆ´«Êä,8×Ö½ÚÇëÇóÂëÔÚpSetupReqÖÐ,DataBufÎª¿ÉÑ¡µÄÊÕ·¢»º³åÇø
+ 403          * Input          : PUINT8X DataBuf Èç¹ûÐèÒª½ÓÊÕºÍ·¢ËÍÊý¾Ý,ÄÇÃ´DataBufÐèÖ¸ÏòÓÐÐ§»º³åÇøÓÃÓÚ´æ·ÅºóÐøÊý¾Ý
+ 404                             PUINT8 RetLen  Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È±£´æÔÚRetLenÖ¸ÏòµÄ×Ö½Ú±äÁ¿ÖÐ
+ 405          * Output         : None
+ 406          * Return         : ERR_USB_BUF_OVER IN×´Ì¬½×¶Î³ö´í
+ 407                             ERR_SUCCESS     Êý¾Ý½»»»³É¹¦
+ 408                             ÆäËû´íÎó×´Ì¬
+ 409          *******************************************************************************/
+ 410          UINT8   HostCtrlTransfer( PUINT8X DataBuf, PUINT8 RetLen )  
+ 411          {
+ 412   1          UINT16  RemLen  = 0;
+ 413   1          UINT8   s, RxLen, RxCnt, TxCnt;
+ 414   1          PUINT8  xdata   pBuf;
+ 415   1          PUINT8  xdata   pLen;
+ 416   1          pBuf = DataBuf;
+ 417   1          pLen = RetLen;
+ 418   1          mDelayuS( 200 );
+ 419   1          if ( pLen )
+ 420   1          {
+ 421   2              *pLen = 0;                                                              // Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È
+ 422   2          }
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 8   
+
+ 423   1          UH_TX_LEN = sizeof( USB_SETUP_REQ );
+ 424   1          s = USBHostTransact( USB_PID_SETUP << 4 | 0x00, 0x00, 200000/20 );          // SETUP½×¶Î,200mS³¬Ê±
+ 425   1          if ( s != ERR_SUCCESS )
+ 426   1          {
+ 427   2              return( s );
+ 428   2          }
+ 429   1              
+ 430   1              UH_RX_CTRL = bUH_R_TOG | bUH_R_AUTO_TOG;                                    // Ä¬ÈÏDATA1
+ 431   1              UH_TX_CTRL = bUH_T_TOG | bUH_T_AUTO_TOG;
+ 432   1          RemLen = (pSetupReq -> wLengthH << 8)|( pSetupReq -> wLengthL);
+ 433   1          if ( RemLen && pBuf )                                                       // ÐèÒªÊÕ·¢Êý¾Ý
+ 434   1          {
+ 435   2              if ( pSetupReq -> bRequestType & USB_REQ_TYP_IN )                       // ÊÕ
+ 436   2              {
+ 437   3                  while ( RemLen )
+ 438   3                  {
+ 439   4                      mDelayuS( 200 );
+ 440   4                      s = USBHostTransact( USB_PID_IN << 4 | 0x00, UH_RX_CTRL, 200000/20 );// INÊý¾Ý
+ 441   4                      if ( s != ERR_SUCCESS )
+ 442   4                      {
+ 443   5                          return( s );
+ 444   5                      }
+ 445   4                      RxLen = USB_RX_LEN < RemLen ? USB_RX_LEN : RemLen;
+ 446   4                      RemLen -= RxLen;
+ 447   4                      if ( pLen )
+ 448   4                      {
+ 449   5                          *pLen += RxLen;                                              // Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È
+ 450   5                      }
+ 451   4      
+ 452   4                      for ( RxCnt = 0; RxCnt != RxLen; RxCnt ++ )
+ 453   4                      {
+ 454   5                          *pBuf = RxBuffer[ RxCnt ];
+ 455   5                          pBuf ++;
+ 456   5                      }
+ 457   4                      if ( USB_RX_LEN == 0 || ( USB_RX_LEN & ( UsbDevEndp0Size - 1 ) ) )
+ 458   4                      {
+ 459   5                          break;                                                       // ¶Ì°ü
+ 460   5                      }
+ 461   4                  }
+ 462   3                  UH_TX_LEN = 0x00;                                                    // ×´Ì¬½×¶ÎÎªOUT
+ 463   3              }
+ 464   2              else                                                                     // ·¢
+ 465   2              {
+ 466   3                  while ( RemLen )
+ 467   3                  {
+ 468   4                      mDelayuS( 200 );
+ 469   4                      UH_TX_LEN = RemLen >= UsbDevEndp0Size ? UsbDevEndp0Size : RemLen;
+ 470   4                      for ( TxCnt = 0; TxCnt != UH_TX_LEN; TxCnt ++ )
+ 471   4                      {
+ 472   5                          TxBuffer[ TxCnt ] = *pBuf;
+ 473   5                          pBuf ++;
+ 474   5                      }
+ 475   4                      s = USBHostTransact( USB_PID_OUT << 4 | 0x00, UH_TX_CTRL, 200000/20 );// OUTÊý¾Ý
+ 476   4                      if ( s != ERR_SUCCESS )
+ 477   4                      {
+ 478   5                          return( s );
+ 479   5                      }
+ 480   4                      RemLen -= UH_TX_LEN;
+ 481   4                      if ( pLen )
+ 482   4                      {
+ 483   5                          *pLen += UH_TX_LEN;                                           // Êµ¼Ê³É¹¦ÊÕ·¢µÄ×Ü³¤¶È
+ 484   5                      }
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 9   
+
+ 485   4                  }
+ 486   3                  UH_TX_LEN = 0x01;                                                     // ×´Ì¬½×¶ÎÎªIN
+ 487   3              }
+ 488   2          }
+ 489   1          mDelayuS( 200 );
+ 490   1          s = USBHostTransact( ( UH_TX_LEN ? USB_PID_IN << 4 | 0x00: USB_PID_OUT << 4 | 0x00 ), bUH_R_TOG | bUH_
+             -T_TOG, 200000/20 );  // STATUS½×¶Î
+ 491   1          if ( s != ERR_SUCCESS )
+ 492   1          {
+ 493   2              return( s );
+ 494   2          }
+ 495   1          if ( UH_TX_LEN == 0 )
+ 496   1          {
+ 497   2              return( ERR_SUCCESS );                                                    // ×´Ì¬OUT
+ 498   2          }
+ 499   1          if ( USB_RX_LEN == 0 )
+ 500   1          {
+ 501   2              return( ERR_SUCCESS );                                                    // ×´Ì¬IN,¼ì²éIN×´Ì¬·µ»Ø
+             -Êý¾Ý³¤¶È
+ 502   2          }
+ 503   1          return( ERR_USB_BUF_OVER );                                                   // IN×´Ì¬½×¶Î´íÎó
+ 504   1      }
+ 505          /*******************************************************************************
+ 506          * Function Name  : CopySetupReqPkg
+ 507          * Description    : ¸´ÖÆ¿ØÖÆ´«ÊäµÄÇëÇó°ü
+ 508          * Input          : PUINT8C pReqPkt ¿ØÖÆÇëÇó°üµØÖ·
+ 509          * Output         : None
+ 510          * Return         : None
+ 511          *******************************************************************************/
+ 512          void    CopySetupReqPkg( PUINT8C pReqPkt )                                        // ¸´ÖÆ¿ØÖÆ´«ÊäµÄÇëÇó°ü
+ 513          {
+ 514   1          UINT8   i;
+ 515   1          for ( i = 0; i != sizeof( USB_SETUP_REQ ); i ++ )
+ 516   1          {
+ 517   2              ((PUINT8X)pSetupReq)[ i ] = *pReqPkt;
+ 518   2              pReqPkt ++;
+ 519   2          }
+ 520   1      }
+ 521          /*******************************************************************************
+ 522          * Function Name  : CtrlGetDeviceDescr
+ 523          * Description    : »ñÈ¡Éè±¸ÃèÊö·û,·µ»ØÔÚTxBufferÖÐ
+ 524          * Input          : None
+ 525          * Output         : None
+ 526          * Return         : ERR_USB_BUF_OVER ÃèÊö·û³¤¶È´íÎó
+ 527                             ERR_SUCCESS      ³É¹¦
+ 528                             ÆäËû
+ 529          *******************************************************************************/
+ 530          UINT8   CtrlGetDeviceDescr( void )  
+ 531          {
+ 532   1          UINT8   s;
+ 533   1          UINT8   len;
+ 534   1          UsbDevEndp0Size = DEFAULT_ENDP0_SIZE;
+ 535   1          CopySetupReqPkg( SetupGetDevDescr );
+ 536   1              pSetupReq -> wLengthL = 8;
+ 537   1          s = HostCtrlTransfer( Receive_USB_Buf, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖ
+             -Æ´«Êä
+ 538   1          if ( s != ERR_SUCCESS )
+ 539   1          {
+ 540   2              return( s );
+ 541   2          }
+ 542   1          UsbDevEndp0Size = ( (PXUSB_DEV_DESCR)Receive_USB_Buf ) -> bMaxPacketSize0;          // ¶Ëµã0×î´ó°ü³¤¶È
+             -,ÕâÊÇ¼ò»¯´¦Àí,Õý³£Ó¦¸ÃÏÈ»ñÈ¡Ç°8×Ö½ÚºóÁ¢¼´¸üÐÂUsbDevEndp0SizeÔÙ¼ÌÐø
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 10  
+
+ 543   1          CopySetupReqPkg( SetupGetDevDescr );
+ 544   1          s = HostCtrlTransfer( Receive_USB_Buf, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖ
+             -Æ´«Êä
+ 545   1          if ( s != ERR_SUCCESS )
+ 546   1          {
+ 547   2              return( s );
+ 548   2          }   
+ 549   1              if ( len < ( (PUSB_SETUP_REQ)SetupGetDevDescr ) -> wLengthL )
+ 550   1          {
+ 551   2              return( ERR_USB_BUF_OVER );                                              // ÃèÊö·û³¤¶È´íÎó
+ 552   2          }
+ 553   1          return( ERR_SUCCESS );
+ 554   1      }
+ 555          /*******************************************************************************
+ 556          * Function Name  : CtrlGetConfigDescr
+ 557          * Description    : »ñÈ¡ÅäÖÃÃèÊö·û,·µ»ØÔÚTxBufferÖÐ
+ 558          * Input          : None
+ 559          * Output         : None
+ 560          * Return         : ERR_USB_BUF_OVER ÃèÊö·û³¤¶È´íÎó
+ 561                             ERR_SUCCESS      ³É¹¦
+ 562                             ÆäËû
+ 563          *******************************************************************************/
+ 564          UINT8   CtrlGetConfigDescr( void )
+ 565          {
+ 566   1          UINT8   s;
+ 567   1          UINT8  len;
+ 568   1          CopySetupReqPkg( SetupGetCfgDescr );
+ 569   1          s = HostCtrlTransfer( Receive_USB_Buf, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖ
+             -Æ´«Êä
+ 570   1          if ( s != ERR_SUCCESS )
+ 571   1          {
+ 572   2              return( s );
+ 573   2          }
+ 574   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetCfgDescr ) -> wLengthL )
+ 575   1          {
+ 576   2              return( ERR_USB_BUF_OVER );                                              // ·µ»Ø³¤¶È´íÎó
+ 577   2          }
+ 578   1          len = ( (PXUSB_CFG_DESCR)Receive_USB_Buf ) -> wTotalLengthL;
+ 579   1          CopySetupReqPkg( SetupGetCfgDescr );
+ 580   1          pSetupReq -> wLengthL = len;                                                 // ÍêÕûÅäÖÃÃèÊö·ûµÄ×Ü³¤¶È
+ 581   1          s = HostCtrlTransfer( Receive_USB_Buf, (PUINT8)&len );                                      // Ö´ÐÐ¿ØÖ
+             -Æ´«Êä
+ 582   1          if ( s != ERR_SUCCESS )
+ 583   1          {
+ 584   2              return( s );
+ 585   2          }
+ 586   1          if ( len < ( (PUSB_SETUP_REQ)SetupGetCfgDescr ) -> wLengthL || len < ( (PXUSB_CFG_DESCR)Receive_USB_Bu
+             -f ) -> wTotalLengthL )
+ 587   1          {
+ 588   2              return( ERR_USB_BUF_OVER );                                              // ÃèÊö·û³¤¶È´íÎó
+ 589   2          }
+ 590   1          return( ERR_SUCCESS );
+ 591   1      }
+ 592          /*******************************************************************************
+ 593          * Function Name  : CtrlSetUsbAddress
+ 594          * Description    : ÉèÖÃUSBÉè±¸µØÖ·
+ 595          * Input          : UINT8 addr Éè±¸µØÖ·
+ 596          * Output         : None
+ 597          * Return         : ERR_SUCCESS      ³É¹¦
+ 598                             ÆäËû
+ 599          *******************************************************************************/
+ 600          UINT8   CtrlSetUsbAddress( UINT8 addr ) 
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 11  
+
+ 601          {
+ 602   1          UINT8   s;
+ 603   1          CopySetupReqPkg( SetupSetUsbAddr );
+ 604   1          pSetupReq -> wValueL = addr;                                                // USBÉè±¸µØÖ·
+ 605   1          s = HostCtrlTransfer( NULL, (PUINT8)NULL );                                         // Ö´ÐÐ¿ØÖÆ´«Êä
+ 606   1          if ( s != ERR_SUCCESS )
+ 607   1          {
+ 608   2              return( s );
+ 609   2          }
+ 610   1          SetHostUsbAddr( addr );                                                     // ÉèÖÃUSBÖ÷»úµ±Ç°²Ù×÷µÄUS
+             -BÉè±¸µØÖ·
+ 611   1          mDelaymS( 10 );                                                             // µÈ´ýUSBÉè±¸Íê³É²Ù×÷
+ 612   1          return( ERR_SUCCESS );
+ 613   1      }
+ 614          /*******************************************************************************
+ 615          * Function Name  : CtrlSetUsbConfig
+ 616          * Description    : ÉèÖÃUSBÉè±¸ÅäÖÃ
+ 617          * Input          : UINT8 cfg       ÅäÖÃÖµ
+ 618          * Output         : None
+ 619          * Return         : ERR_SUCCESS      ³É¹¦
+ 620                             ÆäËû
+ 621          *******************************************************************************/
+ 622          UINT8   CtrlSetUsbConfig( UINT8 cfg )                   
+ 623          {
+ 624   1          CopySetupReqPkg( SetupSetUsbConfig );
+ 625   1          pSetupReq -> wValueL = cfg;                                                // USBÉè±¸ÅäÖÃ
+ 626   1          return( HostCtrlTransfer( NULL, (PUINT8)NULL ) );                                  // Ö´ÐÐ¿ØÖÆ´«Êä
+ 627   1      }
+ 628          /*******************************************************************************
+ 629          * Function Name  : CtrlClearEndpStall
+ 630          * Description    : Çå³ý¶ËµãSTALL
+ 631          * Input          : UINT8 endp       ¶ËµãµØÖ·
+ 632          * Output         : None
+ 633          * Return         : ERR_SUCCESS      ³É¹¦
+ 634                             ÆäËû
+ 635          *******************************************************************************/
+ 636          UINT8   CtrlClearEndpStall( UINT8 endp )  
+ 637          {
+ 638   1          CopySetupReqPkg( SetupClrEndpStall );                                      // Çå³ý¶ËµãµÄ´íÎó
+ 639   1          pSetupReq -> wIndexL = endp;                                               // ¶ËµãµØÖ·
+ 640   1          return( HostCtrlTransfer( NULL, (PUINT8)NULL ) );                                  // Ö´ÐÐ¿ØÖÆ´«Êä
+ 641   1      }
+ 642          
+ 643          #ifndef DISK_BASE_BUF_LEN
+ 644          /*******************************************************************************
+ 645          * Function Name  : AnalyzeEndp
+ 646          * Description    : ´ÓÃèÊö·ûÖÐ·ÖÎö³ö¶ËµãµÄµØÖ·£¬ÕÒÖÐ¶ÏºÍÅúÁ¿¶Ëµã
+ 647          * Input          : PUINT8X buf       ´ý·ÖÎöÊý¾Ý»º³åÇøµØÖ·
+ 648          * Output         : None
+ 649          * Return         : 
+ 650          *******************************************************************************/
+ 651          void   AnalyzeEndp( PUINT8X buf ) 
+ 652          {
+ 653   1          UINT8   i, l;
+ 654   1          for ( i = 0; i < ( (PXUSB_CFG_DESCR)buf ) -> wTotalLengthL; i += l )       // ËÑË÷¶ËµãÃèÊö·û,Ìø¹ýÅäÖÃÃ
+             -èÊö·ûºÍ½Ó¿ÚÃèÊö·û
+ 655   1          {
+ 656   2              if ( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bDescriptorType == USB_DESCR_TYP_ENDP)   // ¶ËµãÃèÊö·û 
+ 657   2              {
+ 658   3                              if(( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bmAttributes & USB_ENDP_TYPE_MASK ) == USB_ENDP_TYPE_INTER )   //
+             - ÖÐ¶Ï¶ËµãÃèÊö·û 
+ 659   3                              {
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 12  
+
+ 660   4                                      if(( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_DIR_MASK ))                   //IN
+ 661   4                                              ThisUsbDev.GpVar2 = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_ADDR_MASK;
+ 662   4                              }
+ 663   3                              else if(( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bmAttributes & USB_ENDP_TYPE_MASK ) == USB_ENDP_TYPE_BULK )
+ 664   3                              {
+ 665   4                                      if(( ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_DIR_MASK ))                   //IN
+ 666   4                                      {
+ 667   5                                              ThisUsbDev.GpVar1 = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_ADDR_MASK;     
+ 668   5                                              ThisUsbDev.GpVar1_Lenth = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> wMaxPacketSizeL;
+ 669   5                                      }
+ 670   4                                      else                                                                                            //OUT
+ 671   4                                      {
+ 672   5                                              ThisUsbDev.GpVar0 = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bEndpointAddress & USB_ENDP_ADDR_MASK;     
+ 673   5                                              ThisUsbDev.GpVar0_Lenth = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> wMaxPacketSizeL;
+ 674   5                                      }
+ 675   4                              }                                                          
+ 676   3              }
+ 677   2              l = ( (PXUSB_ENDP_DESCR)(buf+i) ) -> bLength;                          // µ±Ç°ÃèÊö·û³¤¶È,Ìø¹ý
+ 678   2          }
+ 679   1      }
+ 680          //ÅäÖÃ341²¨ÌØÂÊ ,³É¹¦·µ»Ø0
+ 681          UINT8 CH34X_Baud_Config(UINT32 baud)
+ 682          {
+ 683   1              UINT8 s=0;
+ 684   1              UINT8 divisor = 0; 
+ 685   1              UINT8 factor = 0;
+ 686   1              UINT8 reg_value=0;
+ 687   1              UINT32 tmp;
+ 688   1              
+ 689   1              reg_value|=0x03;           //Êý¾ÝÎ»8Î»
+ 690   1              tmp=(1532620800/baud);
+ 691   1              divisor=3; 
+ 692   1              while((tmp>0xfff0)&&divisor){
+ 693   2                      tmp>>=3;
+ 694   2                      divisor --;
+ 695   2              }       
+ 696   1              if(tmp>0xfff0)
+ 697   1                      return ERR_USB_UNKNOWN; 
+ 698   1              tmp=0x10000-tmp;                    
+ 699   1              tmp=(tmp&0xff00)>>8;                   
+ 700   1              factor=tmp;
+ 701   1              reg_value|=0xc0; 
+ 702   1              
+ 703   1              TxBuffer[0] = 0x40;
+ 704   1              TxBuffer[1] = 0xa1;     
+ 705   1              TxBuffer[2] = 0x9c;
+ 706   1              TxBuffer[3] = reg_value;  
+ 707   1              TxBuffer[4] = 0x80|divisor; 
+ 708   1              TxBuffer[5] = factor;
+ 709   1              TxBuffer[6] = 0x00;
+ 710   1              TxBuffer[7] = 0x00;
+ 711   1              s = HostCtrlTransfer( NULL, NULL ); 
+ 712   1              return( s );            
+ 713   1      }
+ 714          //ÅäÖÃ2303²¨ÌØÂÊ ,³É¹¦·µ»Ø0
+ 715          UINT8 PL2303_Baud_Config(UINT32 baud)
+ 716          {
+ 717   1              UINT8 s=0;
+ 718   1      #define VENDOR_READ_REQUEST_TYPE        0xc0
+ 719   1      #define VENDOR_READ_REQUEST                 0x01
+ 720   1      #define VENDOR_WRITE_REQUEST_TYPE       0x40
+ 721   1      #define VENDOR_WRITE_REQUEST            0x01
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 13  
+
+ 722   1      #define GET_LINE_REQUEST_TYPE           0xa1
+ 723   1      #define GET_LINE_REQUEST                    0x21
+ 724   1      #define SET_LINE_REQUEST_TYPE           0x21
+ 725   1      #define SET_LINE_REQUEST                    0x20
+ 726   1      #define SET_CONTROL_REQUEST_TYPE        0x21
+ 727   1      #define SET_CONTROL_REQUEST                 0x22
+ 728   1              
+ 729   1      #define READ(a,b,c,d,e)  {TxBuffer[0]=a;TxBuffer[1]=b;TxBuffer[2]=(UINT8)c;TxBuffer[3]=(UINT8)(c>>8);  \
+ 730   1                                                      TxBuffer[4]=(UINT8)d;TxBuffer[5]=(UINT8)(d>>8);TxBuffer[6]=e;TxBuffer[7]=0;  \
+ 731   1                                                      HostCtrlTransfer( Receive_USB_Buf, NULL );}
+ 732   1      #define WRITE(a,b,c,d,e)  {TxBuffer[0]=a;TxBuffer[1]=b;TxBuffer[2]=(UINT8)c;TxBuffer[3]=(UINT8)(c>>8); \
+ 733   1                                                      TxBuffer[4]=(UINT8)d;TxBuffer[5]=(UINT8)(d>>8);TxBuffer[6]=e;TxBuffer[7]=0; \
+ 734   1                                                      HostCtrlTransfer( Receive_USB_Buf, NULL );}                             
+ 735   1                                                      
+ 736   1              
+ 737   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8484, 0,1);
+ 738   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 0x0404, 0,0);
+ 739   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8484, 0,1);
+ 740   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8383, 0,1);
+ 741   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8484, 0,1);
+ 742   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 0x0404, 1,0);
+ 743   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8484, 0,1);
+ 744   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8383, 0,1);
+ 745   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 0, 1,0);
+ 746   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 1, 0,0);                                                
+ 747   1              
+ 748   1              WRITE (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 2, 0x44,0);
+ 749   1              WRITE (USB_REQ_TYP_OUT, USB_CLEAR_FEATURE, 1, 0,0);
+ 750   1              
+ 751   1                                                      
+ 752   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x80, 0,2);
+ 753   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 0, 1,0);
+ 754   1      //      WRITE (SET_CONTROL_REQUEST_TYPE,SET_CONTROL_REQUEST, 1, 0,0);   
+ 755   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x80, 0,2);
+ 756   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0, 1,0);
+ 757   1      //      WRITE (SET_CONTROL_REQUEST_TYPE,SET_CONTROL_REQUEST, 3, 0,0);
+ 758   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x80, 0,2);
+ 759   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0, 1,0);
+ 760   1      //      READ (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x80, 0,2);
+ 761   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0, 1,0);
+ 762   1      
+ 763   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0x0B0B, 2,0);
+ 764   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0x0909, 0,0);
+ 765   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0x0808, 0,0);
+ 766   1      
+ 767   1      //      WRITE (SET_CONTROL_REQUEST_TYPE,SET_CONTROL_REQUEST, 3, 0,0);
+ 768   1      //      WRITE (SET_CONTROL_REQUEST_TYPE,SET_CONTROL_REQUEST, 3, 0,0);
+ 769   1              Receive_USB_Buf[0] = (UINT8)baud;
+ 770   1              Receive_USB_Buf[1] = (UINT8)(baud>>8);
+ 771   1              Receive_USB_Buf[2] = (UINT8)(baud>>16);
+ 772   1              Receive_USB_Buf[3] = (UINT8)(baud>>24);
+ 773   1              Receive_USB_Buf[4] = 0;
+ 774   1              Receive_USB_Buf[5] = 0;
+ 775   1              Receive_USB_Buf[6] = 8;             //Êý¾ÝÎ»³¤¶È        
+ 776   1              WRITE (SET_LINE_REQUEST_TYPE,SET_LINE_REQUEST, 0, 0,7); 
+ 777   1      //      WRITE (VENDOR_WRITE_REQUEST_TYPE,VENDOR_WRITE_REQUEST, 0x0505, 0x1311,0);
+ 778   1              return( s );    
+ 779   1      }
+ 780          //ÅäÖÃ2102²¨ÌØÂÊ ,³É¹¦·µ»Ø0
+ 781          UINT8 CP2102_Baud_Config(UINT32 baud)
+ 782          {
+ 783   1              UINT8 s;
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 14  
+
+ 784   1              UINT16 tmp;
+ 785   1              TxBuffer[0] = 0x41;
+ 786   1              TxBuffer[1] = 0x00;     
+ 787   1              TxBuffer[2] = 0x01;   //Îª1¿ªÆô£¬Îª0¹Ø±Õ
+ 788   1              TxBuffer[3] = 0x00;  
+ 789   1              TxBuffer[4] = 0x00; 
+ 790   1              TxBuffer[5] = 0x00;
+ 791   1              TxBuffer[6] = 0x00;
+ 792   1              TxBuffer[7] = 0x00;
+ 793   1              s = HostCtrlTransfer( NULL, NULL );
+ 794   1              
+ 795   1              tmp=(3686400/baud);
+ 796   1              TxBuffer[0] = 0x41;
+ 797   1              TxBuffer[1] = 0x01;     
+ 798   1              TxBuffer[2] = (UINT8)(tmp&0Xff);  
+ 799   1              TxBuffer[3] = (UINT8)((tmp>>8)&0xff);
+ 800   1              TxBuffer[4] = 0x00; 
+ 801   1              TxBuffer[5] = 0x00;
+ 802   1              TxBuffer[6] = 0x00;
+ 803   1              TxBuffer[7] = 0x00;     
+ 804   1              s = HostCtrlTransfer( NULL, NULL ); 
+ 805   1              
+ 806   1              TxBuffer[0] = 0x41;
+ 807   1              TxBuffer[1] = 0x03;     
+ 808   1              TxBuffer[2] = 0x00;   //Í£Ö¹Î» 1Î»
+ 809   1              TxBuffer[3] = 0x08;   //Êý¾ÝÎ»
+ 810   1              TxBuffer[4] = 0x00; 
+ 811   1              TxBuffer[5] = 0x00;
+ 812   1              TxBuffer[6] = 0x00;
+ 813   1              TxBuffer[7] = 0x00;     
+ 814   1              s = HostCtrlTransfer( NULL, NULL );     
+ 815   1              
+ 816   1              return s;
+ 817   1      }
+ 818          
+ 819          UINT8 code SetLineCode[8] = {0x21,0x20,0x00,0x00,0x00,0x00,0x07,0x00};
+ 820          //ÅäÖÃCDCÀàÉè±¸²¨ÌØÂÊ
+ 821          UINT8 CDC_Baud_Config(UINT32 baud)
+ 822          {
+ 823   1              UINT8 s;
+ 824   1          CopySetupReqPkg( SetLineCode );
+ 825   1              Receive_USB_Buf[0] = (UINT8)baud;
+ 826   1              Receive_USB_Buf[1] = (UINT8)(baud>>8);
+ 827   1              Receive_USB_Buf[2] = (UINT8)(baud>>16);
+ 828   1              Receive_USB_Buf[3] = (UINT8)(baud>>24); 
+ 829   1              Receive_USB_Buf[4] = 0;
+ 830   1              Receive_USB_Buf[5] = 0;
+ 831   1              Receive_USB_Buf[6] = 8;                    //8×Ö½Ú      
+ 832   1          s = HostCtrlTransfer( Receive_USB_Buf, NULL);       
+ 833   1              return s;
+ 834   1      }
+ 835          /*******************************************************************************
+ 836          * Function Name  : InitRootDevice
+ 837          * Description    : ³õÊ¼»¯Ö¸¶¨ROOT-HUB¶Ë¿ÚµÄUSBÉè±¸
+ 838          * Input          : UINT8 RootHubIndex Ö¸¶¨¶Ë¿Ú£¬ÄÚÖÃHUB¶Ë¿ÚºÅ0/1
+ 839          * Output         : None
+ 840          * Return         :
+ 841          *******************************************************************************/
+ 842          UINT8   InitRootDevice( UINT8 RootHubIndex ) 
+ 843          {
+ 844   1          UINT8   i, s, cfg, dv_cls, if_cls, if_ptl;
+ 845   1              UINT16 dev_vid,dev_pid;
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 15  
+
+ 846   1      #if DE_PRINTF   
+                  printf( "Reset root hub %1d# port\n", (UINT16)RootHubIndex );
+              #endif
+ 849   1          ResetRootHubPort( );                                                    // ¼ì²âµ½Éè±¸ºó,¸´Î»ÏàÓ¦¶Ë¿ÚµÄ
+             -USB×ÜÏß
+ 850   1          for ( i = 0, s = 0; i < 100; i ++ )                                     // µÈ´ýUSBÉè±¸¸´Î»ºóÖØÐÂÁ¬½Ó,1
+             -00mS³¬Ê±
+ 851   1          {
+ 852   2              mDelaymS( 1 );
+ 853   2              if ( EnableRootHubPort( ) == ERR_SUCCESS )                          // Ê¹ÄÜROOT-HUB¶Ë¿Ú
+ 854   2              {
+ 855   3                  i = 0;
+ 856   3                  s ++;                                                           // ¼ÆÊ±µÈ´ýUSBÉè±¸Á¬½ÓºóÎÈ¶¨
+ 857   3                  if ( s > 20 )
+ 858   3                  {
+ 859   4                      break;                                                      // ÒÑ¾­ÎÈ¶¨Á¬½Ó15mS
+ 860   4                  }
+ 861   3              }
+ 862   2          }   
+ 863   1          if ( i )                                                                 // ¸´Î»ºóÉè±¸Ã»ÓÐÁ¬½Ó
+ 864   1          {
+ 865   2              DisableRootHubPort( );
+ 866   2      #if DE_PRINTF                   
+                      printf( "Disable root hub %1d# port because of disconnect\n", (UINT16)RootHubIndex );
+              #endif  
+ 869   2              return( ERR_USB_DISCON );
+ 870   2          }
+ 871   1      #if DE_PRINTF           
+                  printf( "GetDevDescr: " );
+              #endif
+ 874   1          s = CtrlGetDeviceDescr( );                                               // »ñÈ¡Éè±¸ÃèÊö·û
+ 875   1          if ( s == ERR_SUCCESS )
+ 876   1          {
+ 877   2      #if DE_PRINTF   
+                      for ( i = 0; i < ( (PUSB_SETUP_REQ)SetupGetDevDescr ) -> wLengthL; i ++ )
+                      {                               
+                          printf( "x%02X ", (UINT16)( Receive_USB_Buf[i] ) );                         
+                      }
+                      printf( "\n" );                                                       // ÏÔÊ¾³öÃèÊö·û
+              #endif                          
+ 884   2              dv_cls = ( (PXUSB_DEV_DESCR)Receive_USB_Buf ) -> bDeviceClass;               // Éè±¸Àà´úÂë
+ 885   2                      
+ 886   2                      *(UINT8 *)&dev_vid = ( (PXUSB_DEV_DESCR)Receive_USB_Buf ) -> idVendorH;        // PID
+ 887   2                      *((UINT8 *)&dev_vid+1) = ( (PXUSB_DEV_DESCR)Receive_USB_Buf ) -> idVendorL;             
+ 888   2                      *(UINT8 *)&dev_pid = ( (PXUSB_DEV_DESCR)Receive_USB_Buf ) -> idProductH;        // PID
+ 889   2                      *((UINT8 *)&dev_pid+1) = ( (PXUSB_DEV_DESCR)Receive_USB_Buf ) -> idProductL;
+ 890   2                      
+ 891   2              s = CtrlSetUsbAddress( RootHubIndex + ( (PUSB_SETUP_REQ)SetupSetUsbAddr ) -> wValueL );// ÉèÖÃUSBÉ
+             -è±¸µØÖ·,¼ÓÉÏRootHubIndex¿ÉÒÔ±£Ö¤2¸öHUB¶Ë¿Ú·ÖÅä²»Í¬µÄµØÖ·
+ 892   2              if ( s == ERR_SUCCESS )
+ 893   2              {
+ 894   3                  ThisUsbDev.DeviceAddress = RootHubIndex + ( (PUSB_SETUP_REQ)SetupSetUsbAddr ) -> wValueL;  // 
+             -±£´æUSBµØÖ·
+ 895   3      #if DE_PRINTF                                           
+                          printf( "GetCfgDescr: " );
+              #endif                                  
+ 898   3                  s = CtrlGetConfigDescr( );                                        // »ñÈ¡ÅäÖÃÃèÊö·û
+ 899   3                  if ( s == ERR_SUCCESS )
+ 900   3                  {
+ 901   4                      cfg = ( (PXUSB_CFG_DESCR)Receive_USB_Buf ) -> bConfigurationValue;
+ 902   4      #if DE_PRINTF                                                   
+                              for ( i = 0; i < ( (PXUSB_CFG_DESCR)Receive_USB_Buf ) -> wTotalLengthL; i ++ )
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 16  
+
+                              {
+                                  printf( "x%02X ", (UINT16)( Receive_USB_Buf[i] ) );
+                              }
+                              printf("\n");
+              #endif                  
+ 909   4                                      AnalyzeEndp( Receive_USB_Buf );                                                      //·ÖÎö³ö¶Ëµã                               
+ 910   4                      if_cls = ( (PXUSB_CFG_DESCR_LONG)Receive_USB_Buf ) -> itf_descr.bInterfaceClass;     // ½Ó
+             -¿ÚÀà´úÂë                                                                // ¿ÉÒÔ½øÒ»²½·ÖÎö
+ 911   4                                      if_ptl = ( (PXUSB_CFG_DESCR_LONG)Receive_USB_Buf ) -> itf_descr.bInterfaceProtocol;  // ½Ó¿ÚÐ­ÒéÂë
+ 912   4      
+ 913   4                                      s = CtrlSetUsbConfig( cfg );                                                 // ÉèÖÃUSBÉè±¸ÅäÖÃ       
+             -     
+ 914   4                                      if ( s != ERR_SUCCESS )
+ 915   4                                              return s;       
+ 916   4                                      
+ 917   4                                      if( MatchID(dev_vid,dev_pid,CH34X_ID_Table,sizeof(CH34X_ID_Table)/sizeof(UINT16)) )   //CH34X   
+ 918   4                                      {
+ 919   5                                              ThisUsbDev.DeviceType = DEV_TYPE_CH34X;
+ 920   5                                              //³õÊ¼»¯²¨ÌØÂÊ²ÎÊý(ÀàÃüÁî)
+ 921   5                                              s = CH34X_Baud_Config(Comm_Baud);
+ 922   5                                              if(s==ERR_SUCCESS)
+ 923   5                                              {
+ 924   6                                                      ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;                        //Éè±¸³õÊ¼»¯³É¹¦
+ 925   6                                                      return ERR_SUCCESS;
+ 926   6                                              }
+ 927   5                      }       
+ 928   4                                      else if( MatchID(dev_vid,dev_pid,PL2303_ID_Table,sizeof(PL2303_ID_Table)/sizeof(UINT16)) )  //PL2303
+ 929   4                                      {
+ 930   5                                              ThisUsbDev.DeviceType = DEV_TYPE_PL2303; 
+ 931   5                                              s = PL2303_Baud_Config(Comm_Baud);
+ 932   5                                              if(s==ERR_SUCCESS)
+ 933   5                                              {
+ 934   6                                                      ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;                        //Éè±¸³õÊ¼»¯³É¹¦
+ 935   6                                                      return ERR_SUCCESS;     
+ 936   6                                              }                                               
+ 937   5                                      }
+ 938   4                                      else if(MatchID(dev_vid,dev_pid,CP210x_ID_Table,sizeof(CP210x_ID_Table)/sizeof(UINT16)))  //CP2102
+ 939   4                                      {
+ 940   5                                              
+ 941   5                                              ThisUsbDev.DeviceType = DEV_TYPE_CP210x;
+ 942   5                                              s = CP2102_Baud_Config(Comm_Baud);
+ 943   5                                              if(s==ERR_SUCCESS)
+ 944   5                                              {
+ 945   6                                                      ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;                        //Éè±¸³õÊ¼»¯³É¹¦
+ 946   6                                                      return ERR_SUCCESS;     
+ 947   6                                              }                                       
+ 948   5                                      }
+ 949   4                                      else if(dv_cls == USB_DEV_CLASS_COMMUNIC)                                  //Í¨Ñ¶Àà Ä¬ÈÏÎªCDCÉè±¸
+ 950   4                                      {
+ 951   5                                              ThisUsbDev.DeviceType = DEV_TYPE_CDC;
+ 952   5                                              s = CDC_Baud_Config(Comm_Baud);
+ 953   5                                              if(s==ERR_SUCCESS)
+ 954   5                                              {
+ 955   6                                                      ThisUsbDev.DeviceStatus = ROOT_DEV_SUCCESS;                        //Éè±¸³õÊ¼»¯³É¹¦
+ 956   6                                                      return ERR_SUCCESS;     
+ 957   6                                              }                                               
+ 958   5                                      }
+ 959   4                                      else return DEV_TYPE_UNKNOWN;
+ 960   4                                      
+ 961   4                  }
+ 962   3              }
+ 963   2          }
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 17  
+
+ 964   1      #if DE_PRINTF                   
+                  printf( "InitRootDev Err = %02X\n", (UINT16)s );
+              #endif          
+ 967   1          ThisUsbDev.DeviceStatus = ROOT_DEV_FAILED;
+ 968   1          SetUsbSpeed( 1 );                                                                 // Ä¬ÈÏÎªÈ«ËÙ
+ 969   1          return( s );
+ 970   1      }
+ 971          /*******************************************************************************
+ 972          * Function Name  : EnumAllRootDevice
+ 973          * Description    : Ã¶¾ÙËùÓÐROOT-HUB¶Ë¿ÚµÄUSBÉè±¸
+ 974          * Input          : None
+ 975          * Output         : None
+ 976          * Return         : None
+ 977          *******************************************************************************/
+ 978          UINT8   EnumAllRootDevice( void )   
+ 979          {
+ 980   1          UINT8I   s, RootHubIndex;
+ 981   1      #if DE_PRINTF   
+                  printf( "EnumAllRootDev\n" );
+              #endif
+ 984   1          for ( RootHubIndex = 0; RootHubIndex < 1; RootHubIndex ++ )
+ 985   1          {
+ 986   2      #if DE_PRINTF                   
+                      printf( "RootHubIndex %02x\n",(UINT16)RootHubIndex );
+              #endif          
+ 989   2              if ( ThisUsbDev.DeviceStatus == ROOT_DEV_CONNECTED )                         // ¸Õ²åÈëÉè±¸ÉÐÎ´³õÊ¼
+             -»¯
+ 990   2              {
+ 991   3                  s = InitRootDevice( RootHubIndex );                                      // ³õÊ¼»¯/Ã¶¾ÙÖ¸¶¨HUB
+             -¶Ë¿ÚµÄUSBÉè±¸
+ 992   3                  if ( s != ERR_SUCCESS )
+ 993   3                  {
+ 994   4                      return( s );
+ 995   4                  }
+ 996   3              }
+ 997   2          }
+ 998   1          return( ERR_SUCCESS );
+ 999   1      }
+1000          
+1001          #endif
+1002          
+1003          /*******************************************************************************
+1004          * Function Name  : InitUSB_Host
+1005          * Description    : ³õÊ¼»¯USBÖ÷»ú
+1006          * Input          : None
+1007          * Output         : None
+1008          * Return         : None
+1009          *******************************************************************************/
+1010          void    InitUSB_Host( void )
+1011          {
+1012   1          IE_USB = 0;                                                                     //²éÑ¯·½Ê½
+1013   1          USB_CTRL = bUC_HOST_MODE;                                                       // ÏÈÉè¶¨Ä£Ê½
+1014   1          USB_DEV_AD = 0x00;
+1015   1          UH_EP_MOD = bUH_EP_TX_EN | bUH_EP_RX_EN ;                                       //µ¥64×Ö½ÚÊÕ·¢»º³åÇø
+1016   1          UH_RX_DMA = RxBuffer;
+1017   1          UH_TX_DMA = TxBuffer;
+1018   1          UH_RX_CTRL = 0x00;
+1019   1          UH_TX_CTRL = 0x00;
+1020   1          USB_CTRL = bUC_HOST_MODE | bUC_INT_BUSY | bUC_DMA_EN;                           // Æô¶¯USBÖ÷»ú¼°DMA,ÔÚ
+             -ÖÐ¶Ï±êÖ¾Î´Çå³ýÇ°×Ô¶¯ÔÝÍ£    
+1021   1              UHOST_CTRL = 0;
+1022   1              UH_SETUP = bUH_SOF_EN;
+C51 COMPILER V9.53.0.0   USBHOST_IF                                                        04/28/2018 17:12:38 PAGE 18  
+
+1023   1          USB_INT_FG = 0xFF;                                                              // ÇåÖÐ¶Ï±êÖ¾
+1024   1          DisableRootHubPort( );                                                          // Çå¿Õ
+1025   1          USB_INT_EN = bUIE_TRANSFER | bUIE_DETECT;
+1026   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2979    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =    540      65
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----       2
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
