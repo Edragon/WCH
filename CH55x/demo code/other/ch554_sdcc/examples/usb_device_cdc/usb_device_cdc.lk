@@ -1,0 +1,21 @@
+-muwx
+-i usb_device_cdc.ihx
+-M
+-Y
+-X 0x0300
+-C 0x2800
+-b HOME = 0x0000
+-b XSEG = 0x0100
+-b PSEG = 0x0100
+-b ISEG = 0x0000
+-b BSEG = 0x0000
+-k D:\Program Files\SDCC\bin\..\lib\small
+-l mcs51
+-l libsdcc
+-l libint
+-l liblong
+-l libfloat
+main.rel
+debug.rel
+
+-e
