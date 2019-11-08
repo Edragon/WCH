@@ -1,0 +1,5 @@
+".\Objects\Main.obj",
+".\Objects\UART1.obj",
+".\Objects\Debug.obj" 
+TO ".\Objects\CDC" 
+PRINT(".\Listings\CDC.m51") RAMSIZE(256) 

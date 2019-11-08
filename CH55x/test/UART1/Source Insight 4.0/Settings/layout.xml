@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SourceInsightLayout
+	AppVer="4.00.0089"
+	AppVerMinReader="4.00.0030"
+	>
+	<!-- This is a Source Insight desktop layout file. -->
+	<!-- www.sourceinsight.com -->
+	<MainWindow
+		IsMaximized="1"
+		IsFullScreen="0"
+		>
+		<WindowRect Left="-8" Top="-8" Right="1928" Bottom="950" />
+		<NormalWindowRect Left="30" Top="30" Right="1890" Bottom="1015" />
+	</MainWindow>
+	<Options>
+		<WindowTabOptions IsVisible="1" ShowPathInfo="1" SortOrder="Usage" />
+	</Options>
+	<PanelArea>
+		<WorkArea Left="0" Top="91" Right="1920" Bottom="916" />
+		<TabTray IsVisible="0" />
+		<DockZones>
+			<Left>
+				<Rect Left="0" Top="95" Right="4" Bottom="631" />
+				<Contents/>
+			</Left>
+			<Top>
+				<Rect Left="0" Top="91" Right="1920" Bottom="95" />
+				<Contents/>
+			</Top>
+			<Right>
+				<Rect Left="1916" Top="95" Right="1920" Bottom="631" />
+				<Contents/>
+			</Right>
+			<Bottom>
+				<Rect Left="0" Top="631" Right="1920" Bottom="916" />
+				<Contents>
+					<PanelHost
+						Title="Context"
+						id="ContextPanelHost"
+						IsHidden="0"
+						PctTrans="0"
+						IsMinimized="0"
+						PanelCount="1"
+						idPalActive="ContextPanel"
+						>
+						<WindowRect Left="0" Top="635" Right="1920" Bottom="916" />
+						<PredockRect Left="785" Top="341" Right="1135" Bottom="641" />
+						<Panels>
+							<Panel id="ContextPanel" IsHidden="0" ViewToolbar="1" />
+						</Panels>
+					</PanelHost>
+				</Contents>
+			</Bottom>
+		</DockZones>
+		<Floating>
+			<PanelHost
+				Title="Bookmarks"
+				id="BookmarkPanelHost"
+				IsHidden="1"
+				PctTrans="0"
+				IsMinimized="0"
+				PanelCount="1"
+				idPalActive="BookmarkPanel"
+				>
+				<WindowRect Left="100" Top="210" Right="500" Bottom="400" />
+				<PredockRect Left="100" Top="210" Right="500" Bottom="400" />
+				<Panels>
+					<Panel id="BookmarkPanel" IsHidden="0" ViewToolbar="1" />
+				</Panels>
+			</PanelHost>
+		</Floating>
+	</PanelArea>
+	<RelationWindowGlobalOptions ShowAll="0" />
+</SourceInsightLayout>

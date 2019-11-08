@@ -1,0 +1,372 @@
+C51 COMPILER V9.56.0.0   VENDORDEFINEDDEV                                                  11/08/2019 16:56:36 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE VENDORDEFINEDDEV
+OBJECT MODULE PLACED IN VendorDefinedDev.OBJ
+COMPILER INVOKED BY: C:\Keil_v5_c51\C51\BIN\C51.EXE VendorDefinedDev.C LARGE OPTIMIZE(8,SPEED) BROWSE NOAREGS INCDIR(..\
+                    -VendorDefinedDev) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT *******************************
+   3          * File Name          : VendorDefinedDev.C
+   4          * Author             : WCH
+   5          * Version            : V1.0
+   6          * Date               : 2017/01/20
+   7          * Description        : CH554模拟USB Module(CH554),厂商自定义接口设备，需要安装驱动，
+   8          驱动搜索CH37XDRV或者安装ISPTool会自动安装该设备类驱动，该设备类除了控制传输�
+             -��，还是直插端点2批量上下传和端点1
+   9          中断上传，可以通过372DEBUG.EXE获取其他USB调试工具进行收发数据演示
+  10          
+  11          *******************************************************************************/
+  12          
+  13          #include "CH554.H"
+  14          #include "Debug.H"
+  15          #include <stdio.h>
+  16          #include <string.h>
+  17          
+  18          #define THIS_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
+  19          
+  20          // 设备描述符
+  21          UINT8C  MyDevDescr[] = { 0x12, 0x01, 0x10, 0x01,
+  22                                   0xFF, 0x80, 0x55, THIS_ENDP0_SIZE,
+  23                                   0x48, 0x43, 0x37, 0x55,  // 厂商ID和产品ID
+  24                                   0x00, 0x01, 0x01, 0x02,
+  25                                   0x00, 0x01
+  26                                };
+  27          // 配置描述符
+  28          UINT8C  MyCfgDescr[] = { 0x09, 0x02, 0x27, 0x00, 0x01, 0x01, 0x00, 0x80, 0x32,
+  29                                   0x09, 0x04, 0x00, 0x00, 0x03, 0xFF, 0x80, 0x55, 0x00,
+  30                                   0x07, 0x05, 0x82, 0x02, 0x40, 0x00, 0x00,
+  31                                   0x07, 0x05, 0x02, 0x02, 0x40, 0x00, 0x00,
+  32                                   0x07, 0x05, 0x81, 0x03, 0x40, 0x00, 0x00
+  33                                };
+  34          // 语言描述符
+  35          UINT8C  MyLangDescr[] = { 0x04, 0x03, 0x09, 0x04 };
+  36          // 厂家信息
+  37          UINT8C  MyManuInfo[] = { 0x0E, 0x03, 'w', 0, 'c', 0, 'h', 0, '.', 0, 'c', 0, 'n', 0 };
+  38          // 产品信息
+  39          UINT8C  MyProdInfo[] = { 0x0C, 0x03, 'C', 0, 'H', 0, '5', 0, '5', 0, '4', 0 };
+  40          
+  41          UINT8 UsbConfig = 0;  // USB配置标志
+  42          
+  43          UINT8X  Ep0Buffer[THIS_ENDP0_SIZE+2 >= MAX_PACKET_SIZE ? MAX_PACKET_SIZE : THIS_ENDP0_SIZE+2];  // OUT&IN
+  44          UINT8X  Ep1Buffer[MAX_PACKET_SIZE];                                                             // IN
+  45          UINT8X  Ep2Buffer[2*MAX_PACKET_SIZE];                                                           // OUT+IN
+  46          
+  47          #define UsbSetupBuf     ((PUSB_SETUP_REQ)Ep0Buffer)
+  48          
+  49          #pragma NOAREGS
+  50          
+  51          void  USB_DeviceInterrupt( void ) interrupt INT_NO_USB using 1 {      /* USB中断服务程序,使用寄存
+             -器组1 */
+  52   1        UINT8 i, len;
+C51 COMPILER V9.56.0.0   VENDORDEFINEDDEV                                                  11/08/2019 16:56:36 PAGE 2   
+
+  53   1        static  UINT8 SetupReqCode, SetupLen;
+  54   1        static  PUINT8  pDescr;
+  55   1        if ( UIF_TRANSFER ) {                                               // USB传输完成
+  56   2          if ( U_IS_NAK ) {                                                 // not enable for this example
+  57   3      //      switch ( USB_INT_ST & ( MASK_UIS_TOKEN | MASK_UIS_ENDP ) ) {  // 分析操作令牌和端点号
+  58   3      //        case UIS_TOKEN_OUT | 2:                                     // endpoint 2# 批量端点下传
+  59   3      //          break;
+  60   3      //        case UIS_TOKEN_IN | 2:                                      // endpoint 2# 批量端点上传
+  61   3      //          break;
+  62   3      //        case UIS_TOKEN_IN | 1:                                      // endpoint 1# 中断端点上传
+  63   3      //          break;
+  64   3      //        default:
+  65   3      //          break;
+  66   3      //      }
+  67   3          } else {
+  68   3            switch ( USB_INT_ST & ( MASK_UIS_TOKEN | MASK_UIS_ENDP ) ) {   // 分析操作令牌和端点号
+  69   4            case UIS_TOKEN_OUT | 2:                                      // endpoint 2# 批量端点下传
+  70   4              if ( U_TOG_OK ) {                                          // 不同步的数据包将丢弃
+  71   5      //            UEP2_CTRL ^= bUEP_R_TOG;                               // 已自动翻转
+  72   5                len = USB_RX_LEN;
+  73   5                for ( i = 0; i < len; i ++ ) {
+  74   6                  Ep2Buffer[MAX_PACKET_SIZE+i] = Ep2Buffer[i] ^ 0xFF;    // OUT数据取反到IN由计算机验证
+  75   6                }
+  76   5                UEP2_T_LEN = len;
+  77   5                UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;// 允许上传
+  78   5              }
+  79   4              break;
+  80   4            case UIS_TOKEN_IN | 2:                                       // endpoint 2# 批量端点上传
+  81   4      //          UEP2_CTRL ^= bUEP_T_TOG;                                 // 已自动翻转
+  82   4              UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;  // 暂停上传
+  83   4              break;
+  84   4            case UIS_TOKEN_IN | 1:                                       // endpoint 1# 中断端点上传
+  85   4      //          UEP1_CTRL ^= bUEP_T_TOG;                                 // 已自动翻转
+  86   4              UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;  // 暂停上传
+  87   4              break;
+  88   4            case UIS_TOKEN_SETUP | 0:                                    // endpoint 0# SETUP
+  89   4              len = USB_RX_LEN;
+  90   4              if ( len == sizeof( USB_SETUP_REQ ) ) {                    // SETUP包长度
+  91   5                SetupLen = UsbSetupBuf->wLengthL;
+  92   5                if ( UsbSetupBuf->wLengthH || SetupLen > 0x7F ) SetupLen = 0x7F;// 限制总长度
+  93   5                len = 0;                                                 // 默认为成功并且上传0长度
+  94   5                SetupReqCode = UsbSetupBuf->bRequest;
+  95   5                if ( ( UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK ) != USB_REQ_TYP_STANDARD ) { /* 非标准请求 
+             -*/
+  96   6                  len = 0xFF;
+  97   6                } else {                                                 // 标准请求
+  98   6                  switch( SetupReqCode ) {                               // 请求码
+  99   7                  case USB_GET_DESCRIPTOR:
+ 100   7                    switch( UsbSetupBuf->wValueH ) {
+ 101   8                    case 1:                                          // 设备描述符
+ 102   8                      pDescr = (PUINT8)( &MyDevDescr[0] );
+ 103   8                      len = sizeof( MyDevDescr );
+ 104   8                      break;
+ 105   8                    case 2:                                          // 配置描述符
+ 106   8                      pDescr = (PUINT8)( &MyCfgDescr[0] );
+ 107   8                      len = sizeof( MyCfgDescr );
+ 108   8                      break;
+ 109   8                    case 3:                                          // 字符串描述符
+ 110   8                      switch( UsbSetupBuf->wValueL ) {
+ 111   9                      case 1:
+ 112   9                        pDescr = (PUINT8)( &MyManuInfo[0] );
+ 113   9                        len = sizeof( MyManuInfo );
+C51 COMPILER V9.56.0.0   VENDORDEFINEDDEV                                                  11/08/2019 16:56:36 PAGE 3   
+
+ 114   9                        break;
+ 115   9                      case 2:
+ 116   9                        pDescr = (PUINT8)( &MyProdInfo[0] );
+ 117   9                        len = sizeof( MyProdInfo );
+ 118   9                        break;
+ 119   9                      case 0:
+ 120   9                        pDescr = (PUINT8)( &MyLangDescr[0] );
+ 121   9                        len = sizeof( MyLangDescr );
+ 122   9                        break;
+ 123   9                      default:
+ 124   9                        len = 0xFF;                               // 不支持的字符串描述符
+ 125   9                        break;
+ 126   9                      }
+ 127   8                      break;
+ 128   8                    default:
+ 129   8                      len = 0xFF;                                  // 不支持的描述符类型
+ 130   8                      break;
+ 131   8                    }
+ 132   7                    if ( SetupLen > len ) SetupLen = len;            // 限制总长度
+ 133   7                    len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;  // 本次传输长度
+ 134   7                    memcpy( Ep0Buffer, pDescr, len );                 /* 加载上传数据 */
+ 135   7                    SetupLen -= len;
+ 136   7                    pDescr += len;
+ 137   7                    break;
+ 138   7                  case USB_SET_ADDRESS:
+ 139   7                    SetupLen = UsbSetupBuf->wValueL;                  // 暂存USB设备地址
+ 140   7                    break;
+ 141   7                  case USB_GET_CONFIGURATION:
+ 142   7                    Ep0Buffer[0] = UsbConfig;
+ 143   7                    if ( SetupLen >= 1 ) len = 1;
+ 144   7                    break;
+ 145   7                  case USB_SET_CONFIGURATION:
+ 146   7                    UsbConfig = UsbSetupBuf->wValueL;
+ 147   7                    break;
+ 148   7                  case USB_CLEAR_FEATURE:
+ 149   7                    if ( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP ) {  // 端点
+ 150   8                      switch( UsbSetupBuf->wIndexL ) {
+ 151   9                      case 0x82:
+ 152   9                        UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+ 153   9                        break;
+ 154   9                      case 0x02:
+ 155   9                        UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
+ 156   9                        break;
+ 157   9                      case 0x81:
+ 158   9                        UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+ 159   9                        break;
+ 160   9                      case 0x01:
+ 161   9                        UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
+ 162   9                        break;
+ 163   9                      default:
+ 164   9                        len = 0xFF;                                 // 不支持的端点
+ 165   9                        break;
+ 166   9                      }
+ 167   8                    } else len = 0xFF;                                // 不是端点不支持
+ 168   7                    break;
+ 169   7                  case USB_GET_INTERFACE:
+ 170   7                    Ep0Buffer[0] = 0x00;
+ 171   7                    if ( SetupLen >= 1 ) len = 1;
+ 172   7                    break;
+ 173   7                  case USB_GET_STATUS:
+ 174   7                    Ep0Buffer[0] = 0x00;
+ 175   7                    Ep0Buffer[1] = 0x00;
+C51 COMPILER V9.56.0.0   VENDORDEFINEDDEV                                                  11/08/2019 16:56:36 PAGE 4   
+
+ 176   7                    if ( SetupLen >= 2 ) len = 2;
+ 177   7                    else len = SetupLen;
+ 178   7                    break;
+ 179   7                  default:
+ 180   7                    len = 0xFF;                                       // 操作失败
+ 181   7      #ifdef DE_PRINTF
+ 182   7                    printf("ErrEp0ReqCode=%02X\n",(UINT16)SetupReqCode);
+ 183   7      #endif
+ 184   7                    break;
+ 185   7                  }
+ 186   6                }
+ 187   5              } else {
+ 188   5                len = 0xFF;                                            // SETUP包长度错误
+ 189   5      #ifdef DE_PRINTF
+ 190   5                printf("ErrEp0ReqSize\n");
+ 191   5      #endif
+ 192   5              }
+ 193   4              if ( len == 0xFF ) {                                     // 操作失败
+ 194   5                SetupReqCode = 0xFF;
+ 195   5                UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;  // STALL
+ 196   5              } else if ( len <= THIS_ENDP0_SIZE ) {                   // 上传数据或者状态阶段返回0长�
+             -�包
+ 197   5                UEP0_T_LEN = len;
+ 198   5                UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  // 默认数据包是DATA1
+ 199   5              } else {                                                 // 下传数据或其它
+ 200   5                UEP0_T_LEN = 0;  // 虽然尚未到状态阶段，但是提前预置上传0长度数据包以防主�
+             -�提前进入状态阶段
+ 201   5                UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  // 默认数据包是DATA1
+ 202   5              }
+ 203   4              break;
+ 204   4            case UIS_TOKEN_IN | 0:                                     // endpoint 0# IN
+ 205   4              switch( SetupReqCode ) {
+ 206   5              case USB_GET_DESCRIPTOR:
+ 207   5                len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;  // 本次传输长度
+ 208   5                memcpy( Ep0Buffer, pDescr, len );                    /* 加载上传数据 */
+ 209   5                SetupLen -= len;
+ 210   5                pDescr += len;
+ 211   5                UEP0_T_LEN = len;
+ 212   5                UEP0_CTRL ^= bUEP_T_TOG;                             // 翻转
+ 213   5                break;
+ 214   5              case USB_SET_ADDRESS:
+ 215   5                USB_DEV_AD = USB_DEV_AD & bUDA_GP_BIT | SetupLen;
+ 216   5                UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 217   5                break;
+ 218   5              default:
+ 219   5                UEP0_T_LEN = 0;                                      // 状态阶段完成中断或者是强制上传
+             -0长度数据包结束控制传输
+ 220   5                UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 221   5                break;
+ 222   5              }
+ 223   4              break;
+ 224   4            case UIS_TOKEN_OUT | 0:                                    // endpoint 0# OUT
+ 225   4              switch( SetupReqCode ) {
+ 226   5      //            case download:
+ 227   5      //              if ( U_TOG_OK ) {                                  // 不同步的数据包将丢弃
+ 228   5      //                UEP0_CTRL ^= bUEP_R_TOG;                         // 翻转
+ 229   5      //                                                                 //获取下传数据;
+ 230   5      //                //UEP0_CTRL = UEP0_CTRL & bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK; // 预置上�
+             -��0长度数据包DATA1以防主机提前进入状态阶段
+ 231   5      //              }
+ 232   5      //              break;
+ 233   5              case USB_GET_DESCRIPTOR:
+C51 COMPILER V9.56.0.0   VENDORDEFINEDDEV                                                  11/08/2019 16:56:36 PAGE 5   
+
+ 234   5              default:
+ 235   5                if ( U_TOG_OK ) {                                    // 不同步的数据包将丢弃
+ 236   6      //                if ( USB_RX_LEN ) control_status_error;
+ 237   6      //                else control_ok;                                 // 收到0长度包表示控制读操作/上传
+             -OK
+ 238   6                }
+ 239   5      //              else control_status_error;
+ 240   5                UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;           // 准备下一控制传输
+ 241   5                break;
+ 242   5              }
+ 243   4              break;
+ 244   4            default:
+ 245   4              break;
+ 246   4            }
+ 247   3          }
+ 248   2          UIF_TRANSFER = 0;                                              // 清中断标志
+ 249   2        } else if ( UIF_BUS_RST ) {                                      // USB总线复位
+ 250   2          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 251   2          UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+ 252   2          UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 253   2          USB_DEV_AD = 0x00;
+ 254   2          UIF_SUSPEND = 0;
+ 255   2          UIF_TRANSFER = 0;
+ 256   2          UIF_BUS_RST = 0;                                              // 清中断标志
+ 257   2        } else if ( UIF_SUSPEND ) {                                     // USB总线挂起/唤醒完成
+ 258   2          UIF_SUSPEND = 0;
+ 259   2          if ( USB_MIS_ST & bUMS_SUSPEND ) {                            // 挂起
+ 260   3      #ifdef DE_PRINTF
+ 261   3            printf( "zz" );                                             // 睡眠状态
+ 262   3      #endif
+ 263   3            while ( XBUS_AUX & bUART0_TX );                             // 等待发送完成
+ 264   3            SAFE_MOD = 0x55;
+ 265   3            SAFE_MOD = 0xAA;
+ 266   3            WAKE_CTRL = bWAK_BY_USB | bWAK_RXD0_LO;                     // USB或者RXD0有信号时可被唤醒
+ 267   3            PCON |= PD;                                                 // 睡眠
+ 268   3            SAFE_MOD = 0x55;
+ 269   3            SAFE_MOD = 0xAA;
+ 270   3            WAKE_CTRL = 0x00;
+ 271   3          } else {                                                      // 唤醒
+ 272   3          }
+ 273   2        } else {                                                        // 意外的中断,不可能发生的情�
+             -��
+ 274   2      
+ 275   2          USB_INT_FG = 0xFF;                                            // 清中断标志
+ 276   2        }
+ 277   1      }
+ 278          
+ 279          /*******************************************************************************
+ 280          * Function Name  : InitUSB_Device()
+ 281          * Description    : USB设备模式配置,设备模式启动，收发端点配置，中断开启
+ 282          * Input          : None
+ 283          * Output         : None
+ 284          * Return         : None
+ 285          *******************************************************************************/
+ 286          void  InitUSB_Device( void ) {                                    // 初始化USB设备
+ 287   1        IE_USB = 0;
+ 288   1        USB_CTRL = 0x00;                                                // 先设定模式
+ 289   1        UEP4_1_MOD = bUEP1_TX_EN;                                       // 端点1上传IN
+ 290   1        UEP2_3_MOD = bUEP2_RX_EN | bUEP2_TX_EN;                         // 端点2下传OUT和上传IN
+ 291   1        UEP0_DMA = Ep0Buffer;
+ 292   1        UEP1_DMA = Ep1Buffer;
+ 293   1        UEP2_DMA = Ep2Buffer;
+C51 COMPILER V9.56.0.0   VENDORDEFINEDDEV                                                  11/08/2019 16:56:36 PAGE 6   
+
+ 294   1        UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 295   1        UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+ 296   1        UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 297   1        USB_DEV_AD = 0x00;
+ 298   1        UDEV_CTRL = bUD_PD_DIS;                                         // 禁止DP/DM下拉电阻
+ 299   1        USB_CTRL = bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;           // 启动USB设备及DMA，在中断期�
+             -�中断标志未清除前自动返回NAK
+ 300   1        UDEV_CTRL |= bUD_PORT_EN;                                       // 允许USB端口
+ 301   1        USB_INT_FG = 0xFF;                                              // 清中断标志
+ 302   1        USB_INT_EN = bUIE_SUSPEND | bUIE_TRANSFER | bUIE_BUS_RST;
+ 303   1        IE_USB = 1;
+ 304   1      }
+ 305          
+ 306          main( ) {
+ 307   1        UINT8 i;
+ 308   1        CfgFsys();
+ 309   1        mDelaymS(5);                                                   //修改主频，稍加延时等待主频�
+             -��定
+ 310   1        mInitSTDIO( );                                                 /* 初始化串口0为了让计算机通�
+             -�串口监控演示过程 */
+ 311   1      #ifdef DE_PRINTF
+ 312   1        printf( "Start @ChipID=%02X\n", (UINT16)CHIP_ID );
+ 313   1      #endif
+ 314   1        InitUSB_Device( );
+ 315   1        EA = 1;
+ 316   1        while ( 1 ) {
+ 317   2          i = getkey( );
+ 318   2          printf( "%c", (UINT8)i );
+ 319   2          
+ 320   2          if ( i >= '0' && i <= 'z' ) {
+ 321   3            memcpy( Ep1Buffer, (PUINT8C)(i-'0'), MAX_PACKET_SIZE );     /* 加载上传数据 */
+ 322   3            UEP1_T_LEN = i-'0' > 8 ? 8 : i-'0';
+ 323   3            UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;
+ 324   3          }
+ 325   2        }
+ 326   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1113    ----
+   CONSTANT SIZE    =    148    ----
+   XDATA SIZE       =    208       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

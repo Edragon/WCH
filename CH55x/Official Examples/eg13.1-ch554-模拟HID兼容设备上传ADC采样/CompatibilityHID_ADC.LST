@@ -1,0 +1,551 @@
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE COMPATIBILITYHID_ADC
+OBJECT MODULE PLACED IN CompatibilityHID_ADC.OBJ
+COMPILER INVOKED BY: C:\Keil_v5_c51\C51\BIN\C51.EXE CompatibilityHID_ADC.C LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEX
+                    -TEND TABS(2)
+
+line level    source
+
+   1          /********************************** (C) COPYRIGHT *******************************
+   2          * File Name          :Compound_Dev.C
+   3          * Author             : WCH
+   4          * Version            : V1.3
+   5          * Date               : 2016/1/15
+   6          * Description        : CH559Ä£ÄâHID¼æÈÝÉè±¸£¬ÉÏ´«ADC²É¼¯Êý¾Ý
+   7          *******************************************************************************/
+   8          #include "DEBUG.C"                                                       //µ÷ÊÔÐÅÏ¢´òÓ¡
+   9          #include "DEBUG.H"
+  10          #include <string.h>
+  11          #define THIS_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
+  12          UINT8X  Ep0Buffer[8<(THIS_ENDP0_SIZE+2)?8:(THIS_ENDP0_SIZE+2)] _at_ 0x0000;    //¶Ëµã0 OUT&IN»º³åÇø£¬±ØÐëÊ
+             -ÇÅ¼µØÖ·
+  13          UINT8X  Ep2Buffer[128<(2*MAX_PACKET_SIZE+4)?128:(2*MAX_PACKET_SIZE+4)] _at_ 0x0010;//¶Ëµã2 IN&OUT»º³åÇø,±Ø
+             -ÐëÊÇÅ¼µØÖ·
+  14          UINT8   SetupReq,SetupLen,Ready,Count,FLAG,UsbConfig;
+  15          PUINT8  pDescr;                                                                //USBÅäÖÃ±êÖ¾
+  16          USB_SETUP_REQ   SetupReqBuf;                                                   //ÔÝ´æSetup°ü
+  17          UINT16 ADC_DATA;
+*** ERROR C231 IN LINE 17 OF CompatibilityHID_ADC.C: 'ADC_DATA': redefinition
+  18          
+  19          #define UsbSetupBuf     ((PUSB_SETUP_REQ)Ep0Buffer)
+  20          #define DEBUG 0
+  21          sbit Ep2InKey = P0^0;                                                          //K3°´¼ü
+*** ERROR C202 IN LINE 21 OF CompatibilityHID_ADC.C: 'P0': undefined identifier
+  22          #pragma  NOAREGS
+  23          /*Éè±¸ÃèÊö·û*/
+  24          UINT8C DevDesc[18] = {0x12,0x01,0x10,0x01,0x00,0x00,0x00,0x08,
+  25                                0x31,0x51,0x07,0x20,0x00,0x00,0x00,0x00,
+  26                                0x00,0x01
+  27                               };
+  28          UINT8C CfgDesc[41] =
+  29          {
+  30              0x09,0x02,0x29,0x00,0x01,0x01,0x04,0xA0,0x23,             //ÅäÖÃÃèÊö·û
+  31              0x09,0x04,0x00,0x00,0x02,0x03,0x00,0x00,0x05,             //½Ó¿ÚÃèÊö·û,¼üÅÌ
+  32              0x09,0x21,0x00,0x01,0x00,0x01,0x22,0x22,0x00,             //HIDÀàÃèÊö·û
+  33              0x07,0x05,0x82,0x03,0x40,0x00,0x18,                       //¶ËµãÃèÊö·û
+  34              0x07,0x05,0x02,0x03,0x40,0x00,0x18,                       //¶ËµãÃèÊö·û
+  35          };
+  36          /*×Ö·û´®ÃèÊö·û*/
+  37          /*HIDÀà±¨±íÃèÊö·û*/
+  38          UINT8C HIDRepDesc[ ] =
+  39          {
+  40              0x06, 0x00,0xff,
+  41              0x09, 0x01,
+  42              0xa1, 0x01,                                                 //¼¯ºÏ¿ªÊ¼
+  43              0x09, 0x02,                                                   //Usage Page  ÓÃ·¨
+  44              0x15, 0x00,                                                 //Logical  Minimun
+  45              0x26, 0x00,0xff,                                              //Logical  Maximun
+  46              0x75, 0x08,                                                   //Report Size
+  47              0x95, 0x40,                                                   //Report Counet
+  48              0x81, 0x06,                                                   //Input
+  49              0x09, 0x02,                                                   //Usage Page  ÓÃ·¨
+  50              0x15, 0x00,                                                   //Logical  Minimun
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 2   
+
+  51              0x26, 0x00,0xff,                                              //Logical  Maximun
+  52              0x75, 0x08,                                                   //Report Size
+  53              0x95, 0x40,                                                   //Report Counet
+  54              0x91, 0x06,                                                   //Output
+  55              0xC0
+  56          };
+  57          // unsigned char  code LangDes[]={0x04,0x03,0x09,0x04};           //ÓïÑÔÃèÊö·û
+  58          // unsigned char  code SerDes[]={
+  59          //                0x28,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  60          //                0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  61          //                           0x00,0x00,0x00,0x00,0x00,0x49,0x00,0x43,0x00,0x42,
+  62          //                           0x00,0x43,0x00,0x31,0x00,0x00,0x00,0x00,0x00,0x00
+  63          //                           };                                               //×Ö·û´®ÃèÊö·û
+  64          UINT8X UserEp2Buf[64] _at_ 0x0090;
+  65          /*******************************************************************************
+  66          * Function Name  : USBDeviceCfg()
+  67          * Description    : USBÉè±¸Ä£Ê½ÅäÖÃ
+  68          * Input          : None
+  69          * Output         : None
+  70          * Return         : None
+  71          *******************************************************************************/
+  72          void USBDeviceCfg()
+  73          {
+  74   1          USB_CTRL = 0x00;                                                           //Çå¿ÕUSB¿ØÖÆ¼Ä´æÆ÷
+  75   1          USB_CTRL &= ~bUC_HOST_MODE;                                                //¸ÃÎ»ÎªÑ¡ÔñÉè±¸Ä£Ê½
+  76   1          USB_CTRL |=  bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;                    //USBÉè±¸ºÍÄÚ²¿ÉÏÀ­Ê¹ÄÜ,ÔÚÖ
+             -Ð¶ÏÆÚ¼äÖÐ¶Ï±êÖ¾Î´Çå³ýÇ°×Ô¶¯·µ»ØNAK
+  77   1          USB_DEV_AD = 0x00;                                                         //Éè±¸µØÖ·³õÊ¼»¯
+  78   1          UDEV_CTRL &= ~bUD_RECV_DIS;                                                //Ê¹ÄÜ½ÓÊÕÆ÷
+*** ERROR C202 IN LINE 78 OF CompatibilityHID_ADC.C: 'bUD_RECV_DIS': undefined identifier
+  79   1      //     USB_CTRL |= bUC_LOW_SPEED;
+  80   1      //     UDEV_CTRL |= bUD_LOW_SPEED;                                                //Ñ¡ÔñµÍËÙ1.5MÄ£Ê½
+  81   1          USB_CTRL &= ~bUC_LOW_SPEED;
+  82   1          UDEV_CTRL &= ~bUD_LOW_SPEED;                                             //Ñ¡ÔñÈ«ËÙ12MÄ£Ê½£¬Ä¬ÈÏ·½Ê½
+  83   1          UDEV_CTRL |= bUD_DP_PD_DIS | bUD_DM_PD_DIS;                                //½ûÖ¹DM¡¢DPÏÂÀ­µç×è
+*** ERROR C202 IN LINE 83 OF CompatibilityHID_ADC.C: 'bUD_DP_PD_DIS': undefined identifier
+  84   1          UDEV_CTRL |= bUD_PORT_EN;                                                  //Ê¹ÄÜÎïÀí¶Ë¿Ú
+  85   1      }
+  86          /*******************************************************************************
+  87          * Function Name  : USBDeviceIntCfg()
+  88          * Description    : USBÉè±¸Ä£Ê½ÖÐ¶Ï³õÊ¼»¯
+  89          * Input          : None
+  90          * Output         : None
+  91          * Return         : None
+  92          *******************************************************************************/
+  93          void USBDeviceIntCfg()
+  94          {
+  95   1          USB_INT_EN |= bUIE_SUSPEND;                                               //Ê¹ÄÜÉè±¸¹ÒÆðÖÐ¶Ï
+  96   1          USB_INT_EN |= bUIE_TRANSFER;                                              //Ê¹ÄÜUSB´«ÊäÍê³ÉÖÐ¶Ï
+  97   1          USB_INT_EN |= bUIE_BUS_RST;                                               //Ê¹ÄÜÉè±¸Ä£Ê½USB×ÜÏß¸´Î»ÖÐ¶
+             -Ï
+  98   1          USB_INT_FG |= 0x1F;                                                       //ÇåÖÐ¶Ï±êÖ¾
+  99   1          IE_USB = 1;                                                               //Ê¹ÄÜUSBÖÐ¶Ï
+ 100   1          EA = 1;                                                                   //ÔÊÐíµ¥Æ¬»úÖÐ¶Ï
+ 101   1      }
+ 102          /*******************************************************************************
+ 103          * Function Name  : USBDeviceEndPointCfg()
+ 104          * Description    : USBÉè±¸Ä£Ê½¶ËµãÅäÖÃ£¬Ä£Äâ¼æÈÝHIDÉè±¸£¬³ýÁË¶Ëµã0µÄ¿ØÖÆ´«Êä£¬»¹°üÀ¨¶Ëµã2ÅúÁ¿ÉÏÏÂ´«
+ 105          * Input          : None
+ 106          * Output         : None
+ 107          * Return         : None
+ 108          *******************************************************************************/
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 3   
+
+ 109          void USBDeviceEndPointCfg()
+ 110          {
+ 111   1          UEP2_DMA = Ep2Buffer;                                                      //¶Ëµã2Êý¾Ý´«ÊäµØÖ·
+ 112   1          UEP2_3_MOD |= bUEP2_TX_EN;                                                 //¶Ëµã2·¢ËÍÊ¹ÄÜ
+ 113   1          UEP2_3_MOD |= bUEP2_RX_EN;                                                 //¶Ëµã2½ÓÊÕÊ¹ÄÜ
+ 114   1          UEP2_3_MOD &= ~bUEP2_BUF_MOD;                                              //¶Ëµã2ÊÕ·¢¸÷64×Ö½Ú»º³åÇø
+ 115   1          UEP2_CTRL = bUEP_AUTO_TOG | UEP_T_RES_NAK | UEP_R_RES_ACK;                 //¶Ëµã2×Ô¶¯·­×ªÍ¬²½±êÖ¾Î»£¬
+             -INÊÂÎñ·µ»ØNAK£¬OUT·µ»ØACK
+ 116   1          UEP0_DMA = Ep0Buffer;                                                      //¶Ëµã0Êý¾Ý´«ÊäµØÖ·
+ 117   1          UEP4_1_MOD &= ~(bUEP4_RX_EN | bUEP4_TX_EN);                                //¶Ëµã0µ¥64×Ö½ÚÊÕ·¢»º³åÇø
+ 118   1          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;                                 //OUTÊÂÎñ·µ»ØACK£¬INÊÂÎñ·µ»
+             -ØNAK
+ 119   1      }
+ 120          /*******************************************************************************
+ 121          * Function Name  : enp2BlukIn()
+ 122          * Description    : USBÉè±¸Ä£Ê½¶Ëµã2µÄÅúÁ¿ÉÏ´«
+ 123          * Input          : None
+ 124          * Output         : None
+ 125          * Return         : None
+ 126          *******************************************************************************/
+ 127          void enp2BlukIn(UINT8 len )
+ 128          {
+ 129   1          memcpy( Ep2Buffer+MAX_PACKET_SIZE, UserEp2Buf, len);        //¼ÓÔØÉÏ´«Êý¾Ý
+ 130   1          UEP2_T_LEN = len;                                           //ÉÏ´«Êý¾Ý³¤¶È
+ 131   1          UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;                  //ÓÐÊý¾ÝÊ±ÉÏ´«Êý¾Ý²¢Ó¦´ðACK
+ 132   1      }
+ 133          /*******************************************************************************
+ 134          * Function Name  : DeviceInterrupt()
+ 135          * Description    : CH559USBÖÐ¶Ï´¦Àíº¯Êý
+ 136          *******************************************************************************/
+ 137          void    DeviceInterrupt( void ) interrupt INT_NO_USB using 1                      //USBÖÐ¶Ï·þÎñ³ÌÐò,Ê¹ÓÃ¼Ä
+             -´æÆ÷×é1
+ 138          {
+ 139   1          UINT8 len,i;
+ 140   1      #if DEBUG
+                  printf("%02X ",(UINT16)USB_INT_FG);
+              #endif
+ 143   1          if(UIF_TRANSFER)                                                            //USB´«ÊäÍê³É±êÖ¾
+ 144   1          {
+ 145   2              switch (USB_INT_ST & (MASK_UIS_TOKEN | MASK_UIS_ENDP))
+ 146   2              {
+ 147   3              case UIS_TOKEN_IN | 2:                                                  //endpoint 2# ¶ËµãÅúÁ¿ÉÏ´«
+ 148   3                  UEP2_T_LEN = 0;                                                    //Ô¤Ê¹ÓÃ·¢ËÍ³¤¶ÈÒ»¶¨ÒªÇå¿Õ
+ 149   3      //            UEP1_CTRL ^= bUEP_T_TOG;                                          //Èç¹û²»ÉèÖÃ×Ô¶¯·­×ªÔòÐèÒª
+             -ÊÖ¶¯·­×ª
+ 150   3                  UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //Ä¬ÈÏÓ¦´ðNAK
+ 151   3                  break;
+ 152   3              case UIS_TOKEN_OUT | 2:                                                 //endpoint 2# ¶ËµãÅúÁ¿ÏÂ´«
+ 153   3      //             if ( U_TOG_OK )                                                     // ²»Í¬²½µÄÊý¾Ý°ü½«¶ªÆú
+ 154   3      //             {
+ 155   3      //                 len = USB_RX_LEN;                                                 //½ÓÊÕÊý¾Ý³¤¶È£¬Êý¾Ý´
+             -ÓEp2BufferÊ×µØÖ·¿ªÊ¼´æ·Å
+ 156   3      //                 for ( i = 0; i < len; i ++ )
+ 157   3      //                 {
+ 158   3      //                     Ep2Buffer[MAX_PACKET_SIZE+i] = Ep2Buffer[i] ^ 0xFF;           // OUTÊý¾ÝÈ¡·´µ½INÓÉ¼
+             -ÆËã»úÑéÖ¤
+ 159   3      //                 }
+ 160   3      //                 UEP2_T_LEN = len;
+ 161   3      //                 UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;         // ÔÊÐíÉÏ´«
+ 162   3      //             }
+ 163   3                  break;
+ 164   3              case UIS_TOKEN_SETUP | 0:                                                //SETUPÊÂÎñ
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 4   
+
+ 165   3                  len = USB_RX_LEN;
+ 166   3                  if(len == (sizeof(USB_SETUP_REQ)))
+ 167   3                  {
+ 168   4                      SetupLen = UsbSetupBuf->wLengthL;
+ 169   4                      if(UsbSetupBuf->wLengthH || SetupLen > 0x7F )
+ 170   4                      {
+ 171   5                          SetupLen = 0x7F;    // ÏÞÖÆ×Ü³¤¶È
+ 172   5                      }
+ 173   4                      len = 0;                                                      // Ä¬ÈÏÎª³É¹¦²¢ÇÒÉÏ´«0³¤¶È
+ 174   4                      if ( ( UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK ) != USB_REQ_TYP_STANDARD )/* Ö»Ö§³Ö±ê
+             -×¼ÇëÇó */
+ 175   4                      {
+ 176   5                          len = 0xFF;                                            // ²Ù×÷Ê§°Ü
+ 177   5                          //printf("ErrEp0ReqType=%02X\n",(UINT16)UsbSetupBuf->bRequestType);
+ 178   5                      }
+ 179   4                      else
+ 180   4                      {
+ 181   5                          //±ê×¼ÇëÇó
+ 182   5                          SetupReq = UsbSetupBuf->bRequest;
+ 183   5      #if DEBUG
+                                  printf("REQ %02X ",(UINT16)SetupReq);
+              #endif
+ 186   5                          switch(SetupReq)                                                  //ÇëÇóÂë
+ 187   5                          {
+ 188   6                          case USB_GET_DESCRIPTOR:
+ 189   6                              switch(UsbSetupBuf->wValueH)
+ 190   6                              {
+ 191   7                              case 1:                                                       //Éè±¸ÃèÊö·û
+ 192   7                                  pDescr = DevDesc;                                         //°ÑÉè±¸ÃèÊö·ûËÍµ½Òª
+             -·¢ËÍµÄ»º³åÇø
+ 193   7                                  len = sizeof(DevDesc);
+ 194   7                                  break;
+ 195   7                              case 2:                                                        //ÅäÖÃÃèÊö·û
+ 196   7                                  pDescr = CfgDesc;                                          //°ÑÉè±¸ÃèÊö·ûËÍµ½Ò
+             -ª·¢ËÍµÄ»º³åÇø
+ 197   7                                  len = sizeof(CfgDesc);
+ 198   7                                  break;
+ 199   7                              case 0x22:                                                     //±¨±íÃèÊö·û
+ 200   7      #if DEBUG
+                                          printf("RREQ %02X ",(UINT16)SetupReq);
+              #endif
+ 203   7                                  pDescr = HIDRepDesc;                                       //Êý¾Ý×¼±¸ÉÏ´«
+ 204   7                                  len = sizeof(HIDRepDesc);
+ 205   7                                  Ready = 1;                                                 //Èç¹ûÓÐ¸ü¶à½Ó¿Ú£¬¸
+             -Ã±ê×¼Î»Ó¦¸ÃÔÚ×îºóÒ»¸ö½Ó¿ÚÅäÖÃÍê³ÉºóÓÐÐ§
+ 206   7                                  break;
+ 207   7                              default:
+ 208   7                                  len = 0xff;                                                //²»Ö§³ÖµÄÃüÁî»òÕß³
+             -ö´í
+ 209   7                                  break;
+ 210   7                              }
+ 211   6                              if ( SetupLen > len )
+ 212   6                              {
+ 213   7                                  SetupLen = len;    //ÏÞÖÆ×Ü³¤¶È
+ 214   7                              }
+ 215   6                              len = SetupLen >= 8 ? 8 : SetupLen;                            //±¾´Î´«Êä³¤¶È
+ 216   6                              memcpy(Ep0Buffer,pDescr,len);                                  //¼ÓÔØÉÏ´«Êý¾Ý
+ 217   6                              SetupLen -= len;
+ 218   6                              pDescr += len;
+ 219   6                              break;
+ 220   6                          case USB_SET_ADDRESS:
+ 221   6                              SetupLen = UsbSetupBuf->wValueL;                              //ÔÝ´æUSBÉè±¸µØÖ·
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 5   
+
+ 222   6                              break;
+ 223   6                          case USB_GET_CONFIGURATION:
+ 224   6                              Ep0Buffer[0] = UsbConfig;
+ 225   6                              if ( SetupLen >= 1 )
+ 226   6                              {
+ 227   7                                  len = 1;
+ 228   7                              }
+ 229   6                              break;
+ 230   6                          case USB_SET_CONFIGURATION:
+ 231   6                              UsbConfig = UsbSetupBuf->wValueL;
+ 232   6                              break;
+ 233   6                          case 0x0A:
+ 234   6                              break;
+ 235   6                          case USB_CLEAR_FEATURE:                                            //Clear Feature
+ 236   6                              if ( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )// 
+             -¶Ëµã
+ 237   6                              {
+ 238   7                                  switch( UsbSetupBuf->wIndexL )
+ 239   7                                  {
+ 240   8                                  case 0x82:
+ 241   8                                      UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+ 242   8                                      break;
+ 243   8                                  case 0x81:
+ 244   8                                      UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+ 245   8                                      break;
+ 246   8                                  case 0x02:
+ 247   8                                      UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
+ 248   8                                      break;
+ 249   8                                  default:
+ 250   8                                      len = 0xFF;                                         // ²»Ö§³ÖµÄ¶Ëµã
+ 251   8                                      break;
+ 252   8                                  }
+ 253   7                              }
+ 254   6                              else
+ 255   6                              {
+ 256   7                                  len = 0xFF;                                                // ²»ÊÇ¶Ëµã²»Ö§³Ö
+ 257   7                              }
+ 258   6                              break;
+ 259   6                          case USB_SET_FEATURE:                                          /* Set Feature */
+ 260   6                              if( ( UsbSetupBuf->bRequestType & 0x1F ) == 0x00 )                  /* ÉèÖÃÉè±¸ */
+ 261   6                              {
+ 262   7                                  if( ( ( ( UINT16 )UsbSetupBuf->wValueH << 8 ) | UsbSetupBuf->wValueL ) == 0x01
+             - )
+ 263   7                                  {
+ 264   8                                      if( CfgDesc[ 7 ] & 0x20 )
+ 265   8                                      {
+ 266   9                                          /* ÉèÖÃ»½ÐÑÊ¹ÄÜ±êÖ¾ */
+ 267   9                                      }
+ 268   8                                      else
+ 269   8                                      {
+ 270   9                                          len = 0xFF;                                        /* ²Ù×÷Ê§°Ü */
+ 271   9                                      }
+ 272   8                                  }
+ 273   7                                  else
+ 274   7                                  {
+ 275   8                                      len = 0xFF;                                            /* ²Ù×÷Ê§°Ü */
+ 276   8                                  }
+ 277   7                              }
+ 278   6                              else if( ( UsbSetupBuf->bRequestType & 0x1F ) == 0x02 )             /* ÉèÖÃ¶Ëµã */
+ 279   6                              {
+ 280   7                                  if( ( ( ( UINT16 )UsbSetupBuf->wValueH << 8 ) | UsbSetupBuf->wValueL ) == 0x00
+             - )
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 6   
+
+ 281   7                                  {
+ 282   8                                      switch( ( ( UINT16 )UsbSetupBuf->wIndexH << 8 ) | UsbSetupBuf->wIndexL )
+ 283   8                                      {
+ 284   9                                      case 0x82:
+ 285   9                                          UEP2_CTRL = UEP2_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* ÉèÖÃ¶Ëµã2 I
+             -N STALL */
+ 286   9                                          break;
+ 287   9                                      case 0x02:
+ 288   9                                          UEP2_CTRL = UEP2_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;/* ÉèÖÃ¶Ëµã2 O
+             -UT Stall */
+ 289   9                                          break;
+ 290   9                                      case 0x81:
+ 291   9                                          UEP1_CTRL = UEP1_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* ÉèÖÃ¶Ëµã1 I
+             -N STALL */
+ 292   9                                          break;
+ 293   9                                      default:
+ 294   9                                          len = 0xFF;                                    /* ²Ù×÷Ê§°Ü */
+ 295   9                                          break;
+ 296   9                                      }
+ 297   8                                  }
+ 298   7                                  else
+ 299   7                                  {
+ 300   8                                      len = 0xFF;                                      /* ²Ù×÷Ê§°Ü */
+ 301   8                                  }
+ 302   7                              }
+ 303   6                              else
+ 304   6                              {
+ 305   7                                  len = 0xFF;                                          /* ²Ù×÷Ê§°Ü */
+ 306   7                              }
+ 307   6                              break;
+ 308   6                          case USB_GET_STATUS:
+ 309   6                              Ep0Buffer[0] = 0x00;
+ 310   6                              Ep0Buffer[1] = 0x00;
+ 311   6                              if ( SetupLen >= 2 )
+ 312   6                              {
+ 313   7                                  len = 2;
+ 314   7                              }
+ 315   6                              else
+ 316   6                              {
+ 317   7                                  len = SetupLen;
+ 318   7                              }
+ 319   6                              break;
+ 320   6                          default:
+ 321   6                              len = 0xff;                                                    //²Ù×÷Ê§°Ü
+ 322   6                              break;
+ 323   6                          }
+ 324   5                      }
+ 325   4                  }
+ 326   3                  else
+ 327   3                  {
+ 328   4                      len = 0xff;                                                         //°ü³¤¶È´íÎó
+ 329   4                  }
+ 330   3                  if(len == 0xff)
+ 331   3                  {
+ 332   4                      SetupReq = 0xFF;
+ 333   4                      UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;//STALL
+ 334   4                  }
+ 335   3                  else if(len <= 8)                                                       //ÉÏ´«Êý¾Ý»òÕß×´Ì¬½×¶Î
+             -·µ»Ø0³¤¶È°ü
+ 336   3                  {
+ 337   4                      UEP0_T_LEN = len;
+ 338   4                      UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;//Ä¬ÈÏÊý¾Ý°üÊÇDATA1£¬·
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 7   
+
+             -µ»ØÓ¦´ðACK
+ 339   4      #if DEBUG
+                              printf("S_U\n");
+              #endif
+ 342   4                  }
+ 343   3                  else
+ 344   3                  {
+ 345   4                      UEP0_T_LEN = 0;  //ËäÈ»ÉÐÎ´µ½×´Ì¬½×¶Î£¬µ«ÊÇÌáÇ°Ô¤ÖÃÉÏ´«0³¤¶ÈÊý¾Ý°üÒÔ·ÀÖ÷»úÌáÇ°½øÈë×´Ì¬½×¶Î
+ 346   4                      UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;//Ä¬ÈÏÊý¾Ý°üÊÇDATA1,·µ
+             -»ØÓ¦´ðACK
+ 347   4                  }
+ 348   3                  break;
+ 349   3              case UIS_TOKEN_IN | 0:                                                      //endpoint0 IN
+ 350   3                  switch(SetupReq)
+ 351   3                  {
+ 352   4                  case USB_GET_DESCRIPTOR:
+ 353   4                      len = SetupLen >= 8 ? 8 : SetupLen;                                 //±¾´Î´«Êä³¤¶È
+ 354   4                      memcpy( Ep0Buffer, pDescr, len );                                   //¼ÓÔØÉÏ´«Êý¾Ý
+ 355   4                      SetupLen -= len;
+ 356   4                      pDescr += len;
+ 357   4                      UEP0_T_LEN = len;
+ 358   4                      UEP0_CTRL ^= bUEP_T_TOG;                                             //Í¬²½±êÖ¾Î»·­×ª
+ 359   4                      break;
+ 360   4                  case USB_SET_ADDRESS:
+ 361   4                      USB_DEV_AD = USB_DEV_AD & bUDA_GP_BIT | SetupLen;
+ 362   4                      UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 363   4                      break;
+ 364   4                  default:
+ 365   4                      UEP0_T_LEN = 0;                                                      //×´Ì¬½×¶ÎÍê³ÉÖÐ¶Ï»òÕ
+             -ßÊÇÇ¿ÖÆÉÏ´«0³¤¶ÈÊý¾Ý°ü½áÊø¿ØÖÆ´«Êä
+ 366   4                      UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 367   4                      break;
+ 368   4                  }
+ 369   3                  break;
+ 370   3              case UIS_TOKEN_OUT | 0:  // endpoint0 OUT
+ 371   3                  len = USB_RX_LEN;
+ 372   3                  if(SetupReq == 0x09)
+ 373   3                  {
+ 374   4                      if(Ep0Buffer[0])
+ 375   4                      {
+ 376   5                          //printf("Light on Num Lock LED!\n");
+ 377   5                      }
+ 378   4                      else if(Ep0Buffer[0] == 0)
+ 379   4                      {
+ 380   5                          //printf("Light off Num Lock LED!\n");
+ 381   5                      }
+ 382   4                  }
+ 383   3                  UEP0_T_LEN = 0;  //ËäÈ»ÉÐÎ´µ½×´Ì¬½×¶Î£¬µ«ÊÇÌáÇ°Ô¤ÖÃÉÏ´«0³¤¶ÈÊý¾Ý°üÒÔ·ÀÖ÷»úÌáÇ°½øÈë×´Ì¬½×¶Î
+ 384   3                  UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_ACK;//Ä¬ÈÏÊý¾Ý°üÊÇDATA0,·µ»ØÓ¦´ðACK
+ 385   3                  break;
+ 386   3              default:
+ 387   3                  break;
+ 388   3              }
+ 389   2              UIF_TRANSFER = 0;                                                           //Ð´0Çå¿ÕÖÐ¶Ï
+ 390   2          }
+ 391   1          else if(UIF_BUS_RST)                                                                 //Éè±¸Ä£Ê½USB×ÜÏß
+             -¸´Î»ÖÐ¶Ï
+ 392   1          {
+ 393   2              UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 394   2              UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+ 395   2              UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 396   2              USB_DEV_AD = 0x00;
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 8   
+
+ 397   2              UIF_SUSPEND = 0;
+ 398   2              UIF_TRANSFER = 0;
+ 399   2              UIF_BUS_RST = 0;                                                             //ÇåÖÐ¶Ï±êÖ¾
+ 400   2          }
+ 401   1          else if (UIF_SUSPEND)                                                                 //USB×ÜÏß¹ÒÆð/»½
+             -ÐÑÍê³É
+ 402   1          {
+ 403   2              UIF_SUSPEND = 0;
+ 404   2              if ( USB_MIS_ST & bUMS_SUSPEND )                                             //¹ÒÆð
+ 405   2              {
+ 406   3      #if DEBUG
+                          printf( "zz" );                                                             //Ë¯Ãß×´Ì¬
+              #endif
+ 409   3                  while ( XBUS_AUX & bUART0_TX )
+ 410   3                  {
+ 411   4                      ;    //µÈ´ý·¢ËÍÍê³É
+ 412   4                  }
+ 413   3                  SAFE_MOD = 0x55;
+ 414   3                  SAFE_MOD = 0xAA;
+ 415   3                  WAKE_CTRL = bWAK_BY_USB | bWAK_RXD0_LO;                                     //USB»òÕßRXD0ÓÐÐÅº
+             -ÅÊ±¿É±»»½ÐÑ
+ 416   3                  PCON |= PD;                                                                 //Ë¯Ãß
+ 417   3                  SAFE_MOD = 0x55;
+ 418   3                  SAFE_MOD = 0xAA;
+ 419   3                  WAKE_CTRL = 0x00;
+ 420   3              }
+ 421   2          }
+ 422   1          else {                                                                             //ÒâÍâµÄÖÐ¶Ï,²»¿ÉÄÜ
+             -·¢ÉúµÄÇé¿ö
+ 423   2              USB_INT_FG = 0xFF;                                                             //ÇåÖÐ¶Ï±êÖ¾
+ 424   2      //      printf("UnknownInt  N");
+ 425   2          }
+ 426   1      }
+ 427          
+ 428          void ADC_Init()
+ 429          {
+ 430   1        P1_IE=0X00;
+ 431   1        ADC_SETUP|=bADC_POWER_EN;
+ 432   1        ADC_CK_SE=0X02;
+ 433   1        ADC_CTRL &= ~MASK_ADC_CYCLE; 
+ 434   1        ADC_CTRL &= ~(bADC_CHANN_MOD1 | bADC_CHANN_MOD0);
+ 435   1        ADC_EX_SW |= bADC_RESOLUTION;                                              //²ÉÑùÎ»Êý11bit
+ 436   1        mDelayuS(100);   
+ 437   1      }
+ 438          void ADC_Change(UINT8 ADC_samlping)
+ 439          {
+ 440   1        ADC_CHANN=ADC_samlping;
+ 441   1      //  ADC_EX_SW |= bADC_RESOLUTION;
+ 442   1        mDelayuS(10);
+ 443   1        ADC_CTRL|=bADC_SAMPLE;
+ 444   1        mDelayuS(5);
+ 445   1        ADC_CTRL&=~bADC_SAMPLE; 
+ 446   1        while((ADC_STAT & bADC_IF_ACT) == 0);
+ 447   1        ADC_STAT |=bADC_IF_ACT;
+ 448   1        ADC_DATA=ADC_FIFO;
+ 449   1        UserEp2Buf[0] = ADC_DATA>>8;
+ 450   1        UserEp2Buf[1] = ADC_DATA;
+ 451   1      }
+ 452          
+ 453          
+ 454          main()
+ 455          {
+C51 COMPILER V9.56.0.0   COMPATIBILITYHID_ADC                                              11/08/2019 21:32:14 PAGE 9   
+
+ 456   1          mDelaymS(30);                                                         //ÉÏµçÑÓÊ±,µÈ´ýÄÚ²¿¾§ÕñÎÈ¶¨,±Ø¼Ó
+ 457   1      //  CfgFsys( );                                                           //CH559Ê±ÖÓÑ¡ÔñÅäÖÃ
+ 458   1          mInitSTDIO( );                                                        //´®¿Ú0,¿ÉÒÔÓÃÓÚµ÷ÊÔ
+ 459   1          printf("start ...\n");
+ 460   1         
+ 461   1          ADC_Init();
+ 462   1          ADC_DATA=ADC_FIFO;//ADC³õÊ¼»¯Ö®ºó£¬È¡³öFIFOÀïÃæµÄÎÞÐ§Êý¾Ý
+ 463   1        
+ 464   1          USBDeviceCfg();                                                       //Ä£ÄâÊó±ê
+ 465   1          USBDeviceEndPointCfg();                                               //¶ËµãÅäÖÃ
+ 466   1          USBDeviceIntCfg();                                                    //ÖÐ¶Ï³õÊ¼»¯
+ 467   1          UEP1_T_LEN = 0;                                                       //Ô¤Ê¹ÓÃ·¢ËÍ³¤¶ÈÒ»¶¨ÒªÇå¿Õ
+ 468   1          UEP2_T_LEN = 0;                                                       //Ô¤Ê¹ÓÃ·¢ËÍ³¤¶ÈÒ»¶¨ÒªÇå¿Õ
+ 469   1          FLAG = 0;
+ 470   1          Ready = 0;
+ 471   1          while(1)
+ 472   1          {
+ 473   2              if(Ready && (Ep2InKey==0))
+ 474   2              {
+ 475   3                  ADC_Change(1);//Í¨µÀ0
+ 476   3                  printf("%02X  ADC_DATA1 %04X  \n",(UINT16)(ADC_STAT&3),(UINT16)ADC_DATA);         
+ 477   3                  enp2BlukIn(2);          
+ 478   3      //             ADC_Change(2);//Í¨µÀ1
+ 479   3      //            printf("%02X  ADC_DATA1 %04X  \n",(UINT16)(ADC_STAT&3),(UINT16)ADC_DATA);         
+ 480   3      //             enp2BlukIn(2);//ÉÏ´«2×Ö½Ú
+ 481   3      //             ADC_Change(4);//Í¨µÀ2
+ 482   3      //            printf("%02X  ADC_DATA1 %04X  \n",(UINT16)(ADC_STAT&3),(UINT16)ADC_DATA);         
+ 483   3      //             enp2BlukIn(2); 
+ 484   3      //             ADC_Change(8);//Í¨µÀ3
+ 485   3      //            printf("%02X  ADC_DATA1 %04X  \n",(UINT16)(ADC_STAT&3),(UINT16)ADC_DATA);         
+ 486   3      //             enp2BlukIn(2);
+ 487   3                    mDelaymS(100);
+ 488   3              }
+ 489   2          }
+ 490   1      }
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  4 ERROR(S)

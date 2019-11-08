@@ -1,0 +1,5 @@
+".\Objects\Main.obj",
+".\Objects\UART1.obj",
+".\Objects\Debug.obj" 
+TO ".\Objects\uart-test" 
+PRINT(".\Listings\uart-test.m51") RAMSIZE(256) 
