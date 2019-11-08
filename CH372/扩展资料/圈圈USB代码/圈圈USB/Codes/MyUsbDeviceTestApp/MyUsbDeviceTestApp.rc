@@ -1,0 +1,272 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (P.R.C.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#pragma code_page(936)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\MyUsbDeviceTestApp.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""l.chs\\afxres.rc""          // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\MyUsbDeviceTestApp.ico"
+IDI_LED_OFF             ICON    DISCARDABLE     "res\\led_off.ico"
+IDI_LED_ON              ICON    DISCARDABLE     "res\\led_on.ico"
+IDI_ICON1               ICON    DISCARDABLE     "res\\icon1.ico"
+IDI_ICON2               ICON    DISCARDABLE     "res\\icon2.ico"
+IDI_ICON3               ICON    DISCARDABLE     "res\\icon3.ico"
+IDI_ICON4               ICON    DISCARDABLE     "res\\icon4.ico"
+IDI_ICON5               ICON    DISCARDABLE     "res\\icon5.ico"
+IDI_ICON6               ICON    DISCARDABLE     "res\\icon6.ico"
+IDI_ICON7               ICON    DISCARDABLE     "res\\icon7.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 243, 112
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 自定义USB设备上位机程序"
+FONT 9, "宋体"
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,7,7,20,20
+    LTEXT           "《圈圈教你玩USB》之 自定义USB设备上位机程序 1.0 版",
+                    IDC_STATIC,33,7,203,10,SS_NOPREFIX
+    LTEXT           "    Copyright (C) 电脑圈圈 2008-2018                                                                版权所有，盗版必究。                               Http://computer00.21ic.org               Http://group.ednchina.com/99 Http://www.ednchina.com/blog/computer00",
+                    IDC_STATIC,37,24,172,59
+    DEFPUSHBUTTON   "确定",IDOK,91,91,50,14,WS_GROUP
+END
+
+IDD_MYUSBDEVICETESTAPP_DIALOG DIALOGEX 0, 0, 273, 260
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "《圈圈教你玩USB》之 自定义USB设备上位机程序"
+FONT 9, "宋体"
+BEGIN
+    PUSHBUTTON      "清除计数器",IDC_CLEAR_COUNTER,115,7,45,21,WS_DISABLED
+    PUSHBUTTON      "退出程序",IDC_QUIT,215,7,45,21
+    PUSHBUTTON      "打开设备",IDC_OPEN_DEVICE,15,7,45,21,BS_NOTIFY
+    GROUPBOX        "控制学习板上的LED",IDC_STATIC,7,43,257,49
+    PUSHBUTTON      "",IDC_LED1,16,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "关闭设备",IDC_CLOSE_DEVICE,65,7,45,21,WS_DISABLED
+    PUSHBUTTON      "",IDC_LED2,47,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_LED3,78,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_LED4,109,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_LED5,140,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_LED6,171,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_LED7,202,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_LED8,233,68,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    LTEXT           "LED1",IDC_STATIC,18,56,18,8
+    LTEXT           "LED2",IDC_STATIC,47,56,18,8
+    LTEXT           "LED3",IDC_STATIC,78,56,18,8
+    LTEXT           "LED4",IDC_STATIC,109,56,18,8
+    LTEXT           "LED5",IDC_STATIC,141,56,18,8
+    LTEXT           "LED6",IDC_STATIC,172,56,18,8
+    LTEXT           "LED7",IDC_STATIC,203,56,18,8
+    LTEXT           "LED8",IDC_STATIC,233,56,18,8
+    PUSHBUTTON      "关于",IDC_ABOUT,165,7,45,21
+    EDITTEXT        IDC_INF_OUT,7,171,213,72,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_READONLY | ES_WANTRETURN | WS_VSCROLL
+    PUSHBUTTON      "清除信息",IDC_CLEAR_INF,223,222,40,21
+    LTEXT           "计数器值：0",IDC_COUNTER,71,248,90,9
+    LTEXT           "设备未打开",IDC_DS,9,248,43,9
+    GROUPBOX        "学习板上按键情况",IDC_STATIC,7,99,257,49
+    PUSHBUTTON      "",IDC_KEY1,16,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY2,47,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY3,78,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY4,109,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY5,140,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY6,171,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY7,202,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    PUSHBUTTON      "",IDC_KEY8,233,126,16,16,BS_ICON,WS_EX_DLGMODALFRAME
+    LTEXT           "KEY1",IDC_STATIC,18,113,18,8
+    LTEXT           "KEY2",IDC_STATIC,47,113,18,8
+    LTEXT           "KEY3",IDC_STATIC,78,113,18,8
+    LTEXT           "KEY4",IDC_STATIC,109,113,18,8
+    LTEXT           "KEY5",IDC_STATIC,141,113,18,8
+    LTEXT           "KEY6",IDC_STATIC,172,113,18,8
+    LTEXT           "KEY7",IDC_STATIC,203,113,18,8
+    LTEXT           "KEY8",IDC_STATIC,233,113,18,8
+    EDITTEXT        IDC_DATA0,59,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    LTEXT           "发送数据区：",IDC_STATIC,7,157,51,9
+    EDITTEXT        IDC_DATA1,79,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_DATA2,99,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_DATA3,119,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_DATA4,139,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_DATA5,159,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_DATA6,179,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_DATA7,199,156,20,12,ES_CENTER | ES_AUTOHSCROLL
+    PUSHBUTTON      "发送数据",IDC_SEND_DATA,222,154,42,15,WS_DISABLED
+    LTEXT           "总发送：",IDC_STATIC,224,175,44,10
+    LTEXT           "0字节",IDC_TOTAL_SENT,225,186,37,8
+    LTEXT           "总接收：",IDC_STATIC,224,196,37,9
+    LTEXT           "0字节",IDC_TOTAL_RECEIVED,225,207,33,10
+END
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404B0"
+        BEGIN
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "MyUsbDeviceTestApp Microsoft 基础类应用程序\0"
+            VALUE "FileVersion", "1, 0, 0, 1\0"
+            VALUE "InternalName", "MyUsbDeviceTestApp\0"
+            VALUE "LegalCopyright", "版权所有 (C) 2008\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "MyUsbDeviceTestApp.EXE\0"
+            VALUE "ProductName", "MyUsbDeviceTestApp 应用程序\0"
+            VALUE "ProductVersion", "1, 0, 0, 1\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 236
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 105
+    END
+
+    IDD_MYUSBDEVICETESTAPP_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 266
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 257
+        HORZGUIDE, 148
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ABOUTBOX            "关于 MyUsbDeviceTestApp(&A)..."
+END
+
+#endif    // Chinese (P.R.C.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE 4, 2
+#pragma code_page(936)
+#endif //_WIN32
+#include "res\MyUsbDeviceTestApp.rc2"  // non-Microsoft Visual C++ edited resources
+#include "l.chs\afxres.rc"          // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

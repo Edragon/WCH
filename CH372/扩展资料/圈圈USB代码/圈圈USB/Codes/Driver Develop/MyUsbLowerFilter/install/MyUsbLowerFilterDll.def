@@ -1,0 +1,6 @@
+LIBRARY MyUsbLowerFilterDll
+
+EXPORTS
+   Install
+   Uninstall
+

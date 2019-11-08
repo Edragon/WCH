@@ -1,0 +1,100 @@
+C51 COMPILER V7.06   PDIUSBD12                                                             11/16/2008 15:59:30 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE PDIUSBD12
+OBJECT MODULE PLACED IN PDIUSBD12.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE PDIUSBD12.c BROWSE DEBUG OBJECTEXTEND TABS(1)
+
+stmt level    source
+
+   1          /******************************************************************
+   2             本程序只供学习使用，未经作者许可，不得用于其它任何用途
+   3          
+   4                  欢迎访问我的USB专区：http://group.ednchina.com/93/
+   5                  欢迎访问我的blog：   http://www.ednchina.com/blog/computer00
+   6                                       http://computer00.21ic.org
+   7          
+   8                  感谢PCB赞助商——电子园： http://bbs.cepark.com/
+   9          
+  10          PDIUSBD12.C  file
+  11          
+  12          作者：电脑圈圈
+  13          建立日期: 2008.06.27
+  14          修改日期: 2008.06.27
+  15          版本：V1.1
+  16          版权所有，盗版必究。
+  17          Copyright(C) 电脑圈圈 2008-2018
+  18          All rights reserved            
+  19          *******************************************************************/
+  20          
+  21          #include <AT89x52.H>
+  22          #include "MyType.h"
+  23          #include "PDIUSBD12.H"
+  24          
+  25          
+  26          /********************************************************************
+  27          函数功能：D12写命令。
+  28          入口参数：Command：一字节命令。
+  29          返    回：无。
+  30          备    注：无。
+  31          ********************************************************************/
+  32          void D12WriteCommand(uint8 Command)
+  33          {
+  34   1       D12SetCommandAddr();  //设置为命令地址
+  35   1       D12ClrWr(); //WR置低
+  36   1       D12SetPortOut(); //将数据口设置为输出状态（注意这里为空宏，移植时可能有用）
+  37   1       D12SetData(Command);  //输出命令到数据口上
+  38   1       D12SetWr(); //WR置高
+  39   1       D12SetPortIn(); //将数据口设置为输入状态，以备后面输入使用
+  40   1      }
+  41          ////////////////////////End of function//////////////////////////////
+  42          
+  43          /********************************************************************
+  44          函数功能：读一字节D12数据。
+  45          入口参数：无。
+  46          返    回：读回的一字节。
+  47          备    注：无。
+  48          ********************************************************************/
+  49          uint8 D12ReadByte(void)
+  50          {
+  51   1       uint8 temp;
+  52   1       D12SetDataAddr(); //设置为数据地址
+  53   1       D12ClrRd(); //RD置低
+  54   1       temp=D12GetData(); //读回数据
+  55   1       D12SetRd(); //RD置高
+C51 COMPILER V7.06   PDIUSBD12                                                             11/16/2008 15:59:30 PAGE 2   
+
+  56   1       return temp; //返回读到数据
+  57   1      }
+  58          ////////////////////////End of function//////////////////////////////
+  59          
+  60          /********************************************************************
+  61          函数功能：读D12的ID。
+  62          入口参数：无。
+  63          返    回：D12的ID。
+  64          备    注：无。
+  65          ********************************************************************/
+  66          uint16 D12ReadID(void)
+  67          {
+  68   1       uint16 id;
+  69   1       D12WriteCommand(Read_ID); //写读ID命令
+  70   1       id=D12ReadByte(); //读回ID号低字节
+  71   1       id|=((uint16)D12ReadByte())<<8; //读回ID号高字节
+  72   1       return id;
+  73   1      }
+  74          ////////////////////////End of function//////////////////////////////
+  75          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     41    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

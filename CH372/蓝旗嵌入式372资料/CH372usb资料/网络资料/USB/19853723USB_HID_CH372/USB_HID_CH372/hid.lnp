@@ -1,0 +1,3 @@
+"USBEX.obj" 
+TO "hid" 
+RAMSIZE(256) 

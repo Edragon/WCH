@@ -1,0 +1,290 @@
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 15:59:35 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN Main.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE Main.c BROWSE DEBUG OBJECTEXTEND TABS(1)
+
+stmt level    source
+
+   1          /******************************************************************
+   2             本程序只供学习使用，未经作者许可，不得用于其它任何用途
+   3             
+   4                  欢迎访问我的USB专区：http://group.ednchina.com/93/
+   5                  欢迎访问我的blog：   http://www.ednchina.com/blog/computer00
+   6                                       http://computer00.21ic.org
+   7          
+   8                  感谢PCB赞助商——电子园： http://bbs.cepark.com/
+   9          
+  10          main.c file
+  11          
+  12          作者：电脑圈圈
+  13          建立日期: 2008.06.27
+  14          修改日期: 2008.07.16
+  15          版本：V1.1
+  16          版权所有，盗版必究。
+  17          Copyright(C) 电脑圈圈 2008-2018
+  18          All rights reserved            
+  19          *******************************************************************/
+  20          
+  21          #include <AT89X52.H>  //头文件
+  22          #include "Key.h"
+  23          #include "Led.h"
+  24          #include "UART.h"
+  25          #include "pdiusbd12.h"
+  26          #include "UsbCore.h"
+  27          #include "config.h"
+  28          
+  29          code uint8 HeadTable[][74]={
+  30          "********************************************************************\r\n",
+  31          "******    《圈圈教你玩USB》之 带鼠标的USB键盘（双接口实现）   ******\r\n",
+  32          "******                      AT89S52 CPU                       ******\r\n",
+  33          "******                  建立日期：",__DATE__,"                 ******\r\n",
+  34          "******                   建立时间：",__TIME__,"                   ******\r\n",
+  35          "******                    作者：电脑圈圈                      ******\r\n",
+  36          "******                    欢迎访问作者的                      ******\r\n",
+  37          "******           USB专区：http://group.ednchina.com/93/       ******\r\n",
+  38          "******      BLOG1：http://www.ednchina.com/blog/computer00    ******\r\n",
+  39          "******                BLOG2：http://computer00.21ic.org       ******\r\n",
+  40          "******                  请按K1-K8分别进行测试                 ******\r\n",
+  41          "******   K1:功能选择键：按下时K2~K8为键盘，松开时K2~K8为鼠标  ******\r\n",
+  42          "******                      键盘功能时                        ******\r\n",
+  43          "******             K2:左Shift键  K3:左Alt键  K4:1键           ******\r\n",
+  44          "******       K5:2键  K6:3键  K7:Caps Lock键 K8:Num Lock键     ******\r\n",
+  45          "******  注意：数字键是数字小键盘，必须打开Num Lock才是数字键  ******\r\n",
+  46          "******                      鼠标功能时                        ******\r\n",
+  47          "******     K2:光标左移  K3:光标右移  K4:光标上移 K5:光标下移  ******\r\n",
+  48          "******            K6:鼠标左键  K7:鼠标中键  K8:鼠标右键       ******\r\n",
+  49          "********************************************************************\r\n",
+  50          };
+  51          
+  52          /********************************************************************
+  53          函数功能：根据按键情况返回键盘报告的函数。
+  54          入口参数：无。
+  55          返    回：无。
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 15:59:35 PAGE 2   
+
+  56          备    注：无。
+  57          ********************************************************************/
+  58          void SendKeyboardReport(void)
+  59          {
+  60   1       //需要返回的9字节报告的缓冲（一字节报告ID加键盘8字节报告）
+  61   1       
+  62   1       uint8 Buf[9]={0,0,0,0,0,0,0,0,0}; 
+  63   1       
+  64   1       //由于需要返回多个按键，所以需要增加一个变量来保存当前的位置。
+  65   1       //由于报告ID占用第一字节，所以普通按键从第四字节开始存放。
+  66   1       uint8 i=3; 
+  67   1       
+  68   1       //我们用KEY1键来选择剩余的7个键是键盘功能还是鼠标功能。
+  69   1       //当KEY1按住时，剩余7个键为键盘功能，这7个键的功能跟键盘
+  70   1       //实例的一样。
+  71   1       
+  72   1       //根据不同的按键设置输入报告
+  73   1       Buf[0]=0x01;  //第一字节为报告ID，报告ID为1。
+  74   1       if(KeyPress & KEY2) //如果KEY2按住
+  75   1       {
+  76   2        Buf[1]|=0x02;  //KEY2为左Shift键。
+  77   2       }
+  78   1       if(KeyPress & KEY3) //如果KEY3按住
+  79   1       {
+  80   2        Buf[1]|=0x04;  //KEY3为左Alt键
+  81   2       }
+  82   1       if(KeyPress & KEY4) //如果KEY4按住
+  83   1       {
+  84   2        Buf[i]=0x59;  //KEY4为数字小键盘1键。
+  85   2        i++;  //切换到下个位置。
+  86   2       }
+  87   1       if(KeyPress & KEY5)  //如果KEY5按住
+  88   1       {
+  89   2        Buf[i]=0x5A;  //KEY5数字小键盘2键。
+  90   2        i++;  //切换到下个位置。
+  91   2       }
+  92   1       if(KeyPress & KEY6)  //如果KEY6按住
+  93   1       {
+  94   2        Buf[i]=0x5B;  //KEY6为数字小键盘3键。
+  95   2        i++;  //切换到下个位置。
+  96   2       }
+  97   1       if(KeyPress & KEY7)  //如果KEY7按住
+  98   1       {
+  99   2        Buf[i]=0x39;  //KEY7为大/小写切换键。
+ 100   2        i++;  //切换到下个位置。
+ 101   2       }
+ 102   1       if(KeyPress & KEY8)  //如果KEY8按住
+ 103   1       {
+ 104   2        Buf[i]=0x53;  //KEY8为数字小键盘功能切换键。
+ 105   2       }
+ 106   1       //报告准备好了，通过端点1返回，长度为9字节。
+ 107   1       D12WriteEndpointBuffer(3,9,Buf);
+ 108   1       Ep1InIsBusy=1;  //设置端点1输入忙标志。
+ 109   1       //记得清除KeyUp和KeyDown
+ 110   1       KeyUp=0;
+ 111   1       KeyDown=0;
+ 112   1      }
+ 113          ////////////////////////End of function//////////////////////////////
+ 114          
+ 115          /********************************************************************
+ 116          函数功能：根据按键情况返回鼠标报告的函数。
+ 117          入口参数：无。
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 15:59:35 PAGE 3   
+
+ 118          返    回：无。
+ 119          备    注：无。
+ 120          ********************************************************************/
+ 121          void SendMouseReport(void)
+ 122          {
+ 123   1       //需要返回的5字节报告的缓冲（一字节报告ID加键盘4字节报告）
+ 124   1       
+ 125   1       uint8 Buf[5]={0,0,0,0,0}; 
+ 126   1       
+ 127   1       //当KEY1松开时，剩余7个键为鼠标功能，功能分别为：
+ 128   1       //KEY2：光标左移，KEY3：光标右移，KEY4：光标上移，KEY5：光标下移。
+ 129   1       //KEY6：鼠标左键，KEY7：鼠标中键，KEY8：鼠标右键。
+ 130   1       
+ 131   1       //根据不同的按键设置输入报告。注意此处，报告ID要跟报告描述符中的一致。
+ 132   1       Buf[0]=0x01;  //第一字节为报告ID，报告ID为1。
+ 133   1       if(KeyDown & KEY2) //如果KEY2按下
+ 134   1       {
+ 135   2        Buf[2]=-10;  //KEY2为鼠标左移，按一次移动10个单位。
+ 136   2       }
+ 137   1       if(KeyDown & KEY3) //如果KEY3按下
+ 138   1       {
+ 139   2        Buf[2]=10;  //KEY3为鼠标右移，按一次移动10个单位。
+ 140   2       }
+ 141   1       if(KeyDown & KEY4) //如果KEY4按下
+ 142   1       {
+ 143   2        Buf[3]=-10;  //KEY4为鼠标上移，按一次移动10个单位。
+ 144   2       }
+ 145   1       if(KeyDown & KEY5)  //如果KEY5按下
+ 146   1       {
+ 147   2        Buf[3]=10;  //KEY5为鼠标下移，按一次移动10个单位。
+ 148   2       }
+ 149   1       if(KeyPress & KEY6)  //如果KEY6按住
+ 150   1       {
+ 151   2        Buf[1]|=0x01;  //KEY6为鼠标左键。
+ 152   2       }
+ 153   1       if(KeyPress & KEY7)  //如果KEY7按住
+ 154   1       {
+ 155   2        Buf[1]|=0x04;  //KEY7为鼠标中键。
+ 156   2       }
+ 157   1       if(KeyPress & KEY8)  //如果KEY8按住
+ 158   1       {
+ 159   2        Buf[1]|=0x02;  //KEY8为鼠标右键。
+ 160   2       }
+ 161   1       //注意此处，要通过端点2返回。
+ 162   1       //报告准备好了，通过端点2返回，长度为5字节。
+ 163   1       D12WriteEndpointBuffer(5,5,Buf);
+ 164   1       Ep2InIsBusy=1;  //设置端点2输入忙标志。
+ 165   1       //记得清除KeyUp和KeyDown
+ 166   1       KeyUp=0;
+ 167   1       KeyDown=0;
+ 168   1      }
+ 169          ////////////////////////End of function//////////////////////////////
+ 170          
+ 171          /********************************************************************
+ 172          函数功能：主函数。
+ 173          入口参数：无。
+ 174          返    回：无。
+ 175          备    注：无。
+ 176          ********************************************************************/
+ 177          void main(void)  //主函数
+ 178          {
+ 179   1       uint8 i;
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 15:59:35 PAGE 4   
+
+ 180   1       uint16 id;
+ 181   1       uint8 InterruptSource;
+ 182   1       
+ 183   1       EA=1; //打开中断
+ 184   1       InitKeyboard(); //初始化按键
+ 185   1       InitUART();  //初始化串口
+ 186   1       
+ 187   1       for(i=0;i<24;i++)   //显示信息
+ 188   1       {
+ 189   2        Prints(HeadTable[i]);
+ 190   2       }
+ 191   1       
+ 192   1       id=D12ReadID();
+ 193   1      
+ 194   1       Prints("Your D12 chip\'s ID is: ");
+ 195   1       PrintShortIntHex(id);
+ 196   1      
+ 197   1       if(id==0x1012)
+ 198   1       {
+ 199   2        Prints(". ID is correct! Congratulations!\r\n\r\n");
+ 200   2       }
+ 201   1       else
+ 202   1       {
+ 203   2        Prints(". ID is incorrect! What a pity!\r\n\r\n");
+ 204   2       }
+ 205   1       
+ 206   1       UsbDisconnect();  //先断开USB连接
+ 207   1       UsbConnect();  //将USB连接上
+ 208   1       ConfigValue=0; //配置值初始化为0
+ 209   1       
+ 210   1       while(1)  //死循环
+ 211   1       {
+ 212   2        if(D12GetIntPin()==0) //如果有中断发生
+ 213   2        {
+ 214   3         D12WriteCommand(READ_INTERRUPT_REGISTER);  //写读中断寄存器的命令
+ 215   3         InterruptSource=D12ReadByte(); //读回第一字节的中断寄存器
+ 216   3         if(InterruptSource&0x80)UsbBusSuspend(); //总线挂起中断处理
+ 217   3         if(InterruptSource&0x40)UsbBusReset();   //总线复位中断处理
+ 218   3         if(InterruptSource&0x01)UsbEp0Out();     //端点0输出中断处理
+ 219   3         if(InterruptSource&0x02)UsbEp0In();      //端点0输入中断处理
+ 220   3         if(InterruptSource&0x04)UsbEp1Out();     //端点1输出中断处理
+ 221   3         if(InterruptSource&0x08)UsbEp1In();      //端点1输入中断处理
+ 222   3         if(InterruptSource&0x10)UsbEp2Out();     //端点2输出中断处理
+ 223   3         if(InterruptSource&0x20)UsbEp2In();      //端点2输入中断处理
+ 224   3        }
+ 225   2        if(ConfigValue!=0) //如果已经设置为非0的配置，则可以返回报告数据
+ 226   2        {
+ 227   3         //为显示KEY1选择功能，当KEY1按住时，将LED8点亮，表示键盘功能状态
+ 228   3         if(KeyPress & KEY1)
+ 229   3         {
+ 230   4          OnLed8();
+ 231   4          //如果端点1输入没有处于忙状态，则可以发送数据
+ 232   4          if(!Ep1InIsBusy)
+ 233   4          {
+ 234   5           KeyCanChange=0;  //禁止按键扫描
+ 235   5           if(KeyUp||KeyDown) //如果有按键事件发生
+ 236   5           {
+ 237   6            SendKeyboardReport();  //则返回报告
+ 238   6           }
+ 239   5           KeyCanChange=1;  //允许按键扫描
+ 240   5          }
+ 241   4         }
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 15:59:35 PAGE 5   
+
+ 242   3         else
+ 243   3         {
+ 244   4          OffLed8();
+ 245   4          //如果端点2输入没有处于忙状态，则可以发送数据
+ 246   4          if(!Ep2InIsBusy)
+ 247   4          {
+ 248   5           KeyCanChange=0;  //禁止按键扫描
+ 249   5           if(KeyUp||KeyDown) //如果有按键事件发生
+ 250   5           {
+ 251   6            SendMouseReport();  //则返回报告
+ 252   6           }
+ 253   5           KeyCanChange=1;  //允许按键扫描
+ 254   5          }    
+ 255   4         }
+ 256   3        }
+ 257   2       }
+ 258   1      }
+ 259          ////////////////////////End of function//////////////////////////////
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    477    ----
+   CONSTANT SIZE    =   1888    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      18
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

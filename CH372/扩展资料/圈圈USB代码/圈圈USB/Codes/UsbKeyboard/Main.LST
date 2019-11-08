@@ -1,0 +1,211 @@
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 16:00:30 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN Main.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE Main.c BROWSE DEBUG OBJECTEXTEND TABS(1)
+
+stmt level    source
+
+   1          /******************************************************************
+   2             本程序只供学习使用，未经作者许可，不得用于其它任何用途
+   3             
+   4                  欢迎访问我的USB专区：http://group.ednchina.com/93/
+   5                  欢迎访问我的blog：   http://www.ednchina.com/blog/computer00
+   6                                       http://computer00.21ic.org
+   7          
+   8                  感谢PCB赞助商——电子园： http://bbs.cepark.com/
+   9          
+  10          main.c file
+  11          
+  12          作者：电脑圈圈
+  13          建立日期: 2008.06.27
+  14          修改日期: 2008.07.14
+  15          版本：V1.1
+  16          版权所有，盗版必究。
+  17          Copyright(C) 电脑圈圈 2008-2018
+  18          All rights reserved            
+  19          *******************************************************************/
+  20          
+  21          #include <AT89X52.H>  //头文件
+  22          #include "Key.h"
+  23          #include "Led.h"
+  24          #include "UART.h"
+  25          #include "pdiusbd12.h"
+  26          #include "UsbCore.h"
+  27          #include "config.h"
+  28          
+  29          code uint8 HeadTable[][74]={
+  30          "********************************************************************\r\n",
+  31          "******             《圈圈教你玩USB》之 USB键盘                ******\r\n",
+  32          "******                      AT89S52 CPU                       ******\r\n",
+  33          "******                  建立日期：",__DATE__,"                 ******\r\n",
+  34          "******                   建立时间：",__TIME__,"                   ******\r\n",
+  35          "******                    作者：电脑圈圈                      ******\r\n",
+  36          "******                    欢迎访问作者的                      ******\r\n",
+  37          "******           USB专区：http://group.ednchina.com/93/       ******\r\n",
+  38          "******      BLOG1：http://www.ednchina.com/blog/computer00    ******\r\n",
+  39          "******                BLOG2：http://computer00.21ic.org       ******\r\n",
+  40          "******                  请按K1-K8分别进行测试                 ******\r\n",
+  41          "******       K1:左Ctrl键  K2:左Shift键  K3:左Alt键  K4:1键    ******\r\n",
+  42          "******       K5:2键  K6:3键  K7:Caps Lock键 K8:Num Lock键     ******\r\n",
+  43          "******  注意：数字键是数字小键盘，必须打开Num Lock才是数字键  ******\r\n",
+  44          "********************************************************************\r\n",
+  45          };
+  46          
+  47          /********************************************************************
+  48          函数功能：根据按键情况返回报告的函数。
+  49          入口参数：无。
+  50          返    回：无。
+  51          备    注：无。
+  52          ********************************************************************/
+  53          void SendReport(void)
+  54          {
+  55   1       //需要返回的8字节报告的缓冲
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 16:00:30 PAGE 2   
+
+  56   1       //通过报告描述符的定义及HID用途表文档，可知Buf[0]的D0是左Ctrl键，
+  57   1       //D1是左Shift键，D2是左Alt键，D3是左GUI（即Window键），
+  58   1       //D4是右Ctrl，D5是右Shift，D6是右Alt，D7是右GUI键。
+  59   1       //Buf[1]保留，值为0。Buf[2]~Buf[7]为键值，最多可以有6个。
+  60   1       //由于我们这里普通键最多只有5个，因此不会超过6个。
+  61   1       //对于实际的键盘，如果按键数太多时，后面的6个字节都为0xFF，
+  62   1       //表示按下的键太多，无法正确返回。
+  63   1       
+  64   1       uint8 Buf[8]={0,0,0,0,0,0,0,0};
+  65   1       //由于需要返回多个按键，所以需要增加一个变量来保存当前的位置。
+  66   1       uint8 i=2;
+  67   1       
+  68   1       //根据不同的按键设置输入报告
+  69   1       if(KeyPress & KEY1) //如果KEY1按住
+  70   1       {
+  71   2        Buf[0]|=0x01;  //KEY1为左Ctrl键。
+  72   2       }
+  73   1       if(KeyPress & KEY2) //如果KEY2按住
+  74   1       {
+  75   2        Buf[0]|=0x02;  //KEY2为左Shift键。
+  76   2       }
+  77   1       if(KeyPress & KEY3) //如果KEY3按住
+  78   1       {
+  79   2        Buf[0]|=0x04;  //KEY3为左Alt键
+  80   2       }
+  81   1       if(KeyPress & KEY4) //如果KEY4按住
+  82   1       {
+  83   2        Buf[i]=0x59;  //KEY4为数字小键盘1键。
+  84   2        i++;  //切换到下个位置。
+  85   2       }
+  86   1       if(KeyPress & KEY5)  //如果KEY5按住
+  87   1       {
+  88   2        Buf[i]=0x5A;  //KEY5数字小键盘2键。
+  89   2        i++;  //切换到下个位置。
+  90   2       }
+  91   1       if(KeyPress & KEY6)  //如果KEY6按住
+  92   1       {
+  93   2        Buf[i]=0x5B;  //KEY6为数字小键盘3键。
+  94   2        i++;  //切换到下个位置。
+  95   2       }
+  96   1       if(KeyPress & KEY7)  //如果KEY7按住
+  97   1       {
+  98   2        Buf[i]=0x39;  //KEY7为大/小写切换键。
+  99   2        i++;  //切换到下个位置。
+ 100   2       }
+ 101   1       if(KeyPress & KEY8)  //如果KEY8按住
+ 102   1       {
+ 103   2        Buf[i]=0x53;  //KEY8为数字小键盘功能切换键。
+ 104   2       }
+ 105   1       //报告准备好了，通过端点1返回，长度为8字节。
+ 106   1       D12WriteEndpointBuffer(3,8,Buf);
+ 107   1       Ep1InIsBusy=1;  //设置端点忙标志。
+ 108   1       //记得清除KeyUp和KeyDown
+ 109   1       KeyUp=0;
+ 110   1       KeyDown=0;
+ 111   1      }
+ 112          ////////////////////////End of function//////////////////////////////
+ 113          
+ 114          /********************************************************************
+ 115          函数功能：主函数。
+ 116          入口参数：无。
+ 117          返    回：无。
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 16:00:30 PAGE 3   
+
+ 118          备    注：无。
+ 119          ********************************************************************/
+ 120          void main(void)  //主函数
+ 121          {
+ 122   1       uint8 i;
+ 123   1       uint16 id;
+ 124   1       uint8 InterruptSource;
+ 125   1       
+ 126   1       EA=1; //打开中断
+ 127   1       InitKeyboard(); //初始化按键
+ 128   1       InitUART();  //初始化串口
+ 129   1       
+ 130   1       for(i=0;i<19;i++)   //显示信息
+ 131   1       {
+ 132   2        Prints(HeadTable[i]);
+ 133   2       }
+ 134   1       
+ 135   1       id=D12ReadID();
+ 136   1      
+ 137   1       Prints("Your D12 chip\'s ID is: ");
+ 138   1       PrintShortIntHex(id);
+ 139   1      
+ 140   1       if(id==0x1012)
+ 141   1       {
+ 142   2        Prints(". ID is correct! Congratulations!\r\n\r\n");
+ 143   2       }
+ 144   1       else
+ 145   1       {
+ 146   2        Prints(". ID is incorrect! What a pity!\r\n\r\n");
+ 147   2       }
+ 148   1       
+ 149   1       UsbDisconnect();  //先断开USB连接
+ 150   1       UsbConnect();  //将USB连接上
+ 151   1       ConfigValue=0; //配置值初始化为0
+ 152   1       
+ 153   1       while(1)  //死循环
+ 154   1       {
+ 155   2        if(D12GetIntPin()==0) //如果有中断发生
+ 156   2        {
+ 157   3         D12WriteCommand(READ_INTERRUPT_REGISTER);  //写读中断寄存器的命令
+ 158   3         InterruptSource=D12ReadByte(); //读回第一字节的中断寄存器
+ 159   3         if(InterruptSource&0x80)UsbBusSuspend(); //总线挂起中断处理
+ 160   3         if(InterruptSource&0x40)UsbBusReset();   //总线复位中断处理
+ 161   3         if(InterruptSource&0x01)UsbEp0Out();     //端点0输出中断处理
+ 162   3         if(InterruptSource&0x02)UsbEp0In();      //端点0输入中断处理
+ 163   3         if(InterruptSource&0x04)UsbEp1Out();     //端点1输出中断处理
+ 164   3         if(InterruptSource&0x08)UsbEp1In();      //端点1输入中断处理
+ 165   3         if(InterruptSource&0x10)UsbEp2Out();     //端点2输出中断处理
+ 166   3         if(InterruptSource&0x20)UsbEp2In();      //端点2输入中断处理
+ 167   3        }
+ 168   2        if(ConfigValue!=0) //如果已经设置为非0的配置，则可以返回报告数据
+ 169   2        {
+ 170   3         if(!Ep1InIsBusy)  //如果端点1输入没有处于忙状态，则可以发送数据
+ 171   3         {
+ 172   4          KeyCanChange=0;  //禁止按键扫描
+ 173   4          if(KeyUp||KeyDown) //如果有按键事件发生
+ 174   4          {
+ 175   5           SendReport();  //则返回报告
+ 176   5          }
+ 177   4          KeyCanChange=1;  //允许按键扫描
+ 178   4         }
+ 179   3        }
+C51 COMPILER V7.06   MAIN                                                                  11/16/2008 16:00:30 PAGE 4   
+
+ 180   2       }
+ 181   1      }
+ 182          ////////////////////////End of function//////////////////////////////
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    339    ----
+   CONSTANT SIZE    =   1512    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      12
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

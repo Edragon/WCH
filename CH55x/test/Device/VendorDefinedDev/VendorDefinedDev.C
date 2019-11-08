@@ -316,7 +316,7 @@ main( ) {
 	while ( 1 ) {
 		i = getkey( );
 		printf( "%c", (UINT8)i );
-		
+
 		if ( i >= '0' && i <= 'z' ) {
 			memcpy( Ep1Buffer, (PUINT8C)(i-'0'), MAX_PACKET_SIZE );     /* 加载上传数据 */
 			UEP1_T_LEN = i-'0' > 8 ? 8 : i-'0';

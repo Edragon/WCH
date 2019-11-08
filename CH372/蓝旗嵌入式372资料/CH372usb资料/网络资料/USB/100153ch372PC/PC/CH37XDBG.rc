@@ -1,0 +1,458 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (P.R.C.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#pragma code_page(936)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\CH37XDBG.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""l.chs\\afxres.rc""          // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\CH37XDBG.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 235, 55
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 CH37XDBG"
+FONT 9, "宋体"
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
+    LTEXT           "CH37XDBG 1.0 版",IDC_STATIC,40,10,119,8,SS_NOPREFIX
+    LTEXT           "版权所有 (C) 2004",IDC_STATIC,40,25,119,8
+    DEFPUSHBUTTON   "确定",IDOK,178,7,50,14,WS_GROUP
+END
+
+IDD_CH37XDBG_DIALOG DIALOGEX 0, 0, 320, 200
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "CH37XDBG"
+FONT 9, "宋体", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定",IDOK,260,7,50,14
+    PUSHBUTTON      "取消",IDCANCEL,260,23,50,14
+END
+
+IDD_DLGSFR DIALOG DISCARDABLE  0, 0, 334, 274
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "SFR"
+FONT 9, "宋体"
+BEGIN
+    EDITTEXT        IDC_EDIT_NAME1,19,44,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE1,59,44,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME2,19,57,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE2,59,57,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME3,19,70,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE3,59,70,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME4,19,83,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE4,59,83,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME5,19,96,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE5,59,96,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME6,19,109,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE6,59,109,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME7,19,122,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE7,59,122,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME8,19,135,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE8,59,135,39,13,ES_AUTOHSCROLL
+    GROUPBOX        "",IDC_STATIC,15,35,178,121
+    LTEXT           "??",IDC_STATIC_VER,76,18,31,11
+    LTEXT           "固件程序版本",IDC_STATIC,16,18,53,9
+    PUSHBUTTON      "刷新",IDC_BUTTON_REFRESH,150,15,45,17
+    EDITTEXT        IDC_EDIT_NAME9,108,44,39,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE9,148,44,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME10,108,57,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE10,148,57,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME11,108,70,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE11,148,70,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME12,108,83,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE12,148,83,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME13,108,96,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE13,148,96,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME14,108,109,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE14,148,109,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME15,108,122,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE15,148,122,39,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_NAME16,108,135,39,13,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_EDIT_VALUE16,148,135,39,13,ES_AUTOHSCROLL
+    LTEXT           "在某单元输入后按刷新按钮可将更改值写入",IDC_STATIC,18,
+                    173,167,12
+END
+
+IDD_DLGIRAM DIALOG DISCARDABLE  0, 0, 350, 290
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "内部RAM"
+FONT 10, "宋体"
+BEGIN
+    CONTROL         "",IDC_IGRID,"{6262D3A0-531B-11CF-91F6-C2863C385E30}",
+                    WS_TABSTOP,48,22,255,221
+    LTEXT           "内部RAM",IDC_STATIC,14,17,30,9
+    LTEXT           "高四位",IDC_STATIC,16,37,25,8
+    LTEXT           "低四位",IDC_STATIC,48,10,25,8
+    PUSHBUTTON      "刷新",IDC_BUTTON_READ,14,60,26,11
+    LTEXT           "双击某单元并输入可更改其值，无输入值则默认为零",
+                    IDC_STATIC,49,249,231,13
+END
+
+IDD_DLGXRAM DIALOG DISCARDABLE  0, 0, 315, 274
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "外部RAM"
+FONT 10, "宋体"
+BEGIN
+    EDITTEXT        IDC_EDIT_ADDR,12,90,29,12,ES_AUTOHSCROLL
+    LTEXT           "起始地址",IDC_STATIC,12,64,33,9
+    CONTROL         "",IDC_XGRID,"{6262D3A0-531B-11CF-91F6-C2863C385E30}",
+                    WS_TABSTOP,48,22,255,221
+    LTEXT           "外部RAM",IDC_STATIC,9,17,32,9
+    PUSHBUTTON      "刷新",IDC_BUTTON_READ,13,113,29,12
+    LTEXT           "高字节",IDC_STATIC,14,76,24,10
+    LTEXT           "高四位",IDC_STATIC,14,35,25,8
+    LTEXT           "低四位",IDC_STATIC,48,10,25,8
+    LTEXT           "双击某单元并输入可更改其值，无输入值则默认为零",
+                    IDC_STATIC,49,249,230,13
+END
+
+IDD_DLGEXTERN DIALOG DISCARDABLE  0, 0, 315, 266
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "扩展命令"
+FONT 10, "System"
+BEGIN
+    LTEXT           "输入命令码/输出状态码",IDC_STATIC,35,32,84,10
+    EDITTEXT        IDC_EDIT_COMM,122,30,34,12,ES_AUTOHSCROLL
+    LTEXT           "长度(<=38H)",IDC_STATIC,193,32,44,9
+    EDITTEXT        IDC_EDIT_LEN,240,31,29,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PARA1,61,48,29,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PARA2,120,48,34,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PARA3,183,48,34,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PARA4,248,49,34,12,ES_AUTOHSCROLL
+    LTEXT           "参数1",IDC_STATIC,33,49,24,10
+    LTEXT           "参数2",IDC_STATIC,94,50,22,10
+    LTEXT           "参数3",IDC_STATIC,158,49,21,10
+    LTEXT           "参数4",IDC_STATIC,221,49,23,10
+    PUSHBUTTON      "发送",IDC_BUTTON_SEND,206,159,38,12
+    PUSHBUTTON      "接收",IDC_BUTTON_RECEIVE,244,159,38,12
+    EDITTEXT        IDC_EDIT_BUF,35,68,248,85,ES_MULTILINE | ES_AUTOHSCROLL
+END
+
+IDD_DLGENTER DIALOG DISCARDABLE  0, 0, 118, 46
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Enter"
+FONT 10, "System"
+BEGIN
+    EDITTEXT        IDC_EDIT_DATA,15,18,40,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "确定",IDC_BUTTON_ENTER,64,19,37,12
+END
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "CH37XDBG Microsoft 基础类应用程序\0"
+            VALUE "FileVersion", "1, 0, 0, 1\0"
+            VALUE "InternalName", "CH37XDBG\0"
+            VALUE "LegalCopyright", "版权所有 (C) 2004\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "CH37XDBG.EXE\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "CH37XDBG 应用程序\0"
+            VALUE "ProductVersion", "1, 0, 0, 1\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+
+    IDD_CH37XDBG_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 313
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 193
+    END
+
+    IDD_DLGSFR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 244
+    END
+
+    IDD_DLGIRAM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 330
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 270
+    END
+
+    IDD_DLGXRAM, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 308
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 267
+    END
+
+    IDD_DLGEXTERN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 220
+    END
+
+    IDD_DLGENTER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 111
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 39
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_DLGIRAM DLGINIT
+BEGIN
+    IDC_IGRID, 0x37a, 698, 0
+0x0024, 0x0000, 0x0037, 0x0032, 0x0045, 0x0036, 0x0037, 0x0031, 0x0032, 
+0x0030, 0x002d, 0x0035, 0x0039, 0x0035, 0x0039, 0x002d, 0x0031, 0x0031, 
+0x0063, 0x0066, 0x002d, 0x0039, 0x0031, 0x0046, 0x0036, 0x002d, 0x0043, 
+0x0032, 0x0038, 0x0036, 0x0033, 0x0043, 0x0033, 0x0038, 0x0035, 0x0045, 
+0x0033, 0x0030, 0x0012, 0x0000, 0x0001, 0x0000, 0x000a, 0x0000, 0x004c, 
+0x0000, 0x0000, 0x4321, 0x1234, 0x0008, 0x0000, 0x2e18, 0x0000, 0x251b, 
+0x0000, 0x6f42, 0x506f, 0x0000, 0x0006, 0x0080, 0x0000, 0x0011, 0x0000, 
+0x0011, 0x0000, 0x0001, 0x0000, 0x0001, 0x0000, 0x0002, 0x0000, 0x0005, 
+0x8000, 0x0008, 0x8000, 0x000f, 0x8000, 0x0012, 0x8000, 0x000d, 0x8000, 
+0x000e, 0x8000, 0x8080, 0x0080, 0xc0c0, 0x00c0, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0001, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0001, 0x0001, 0x0001, 0x0002, 
+0x0003, 0x0000, 0x0000, 0x0003, 0x0000, 0x0001, 0x0001, 0x0000, 0x0001, 
+0x0004, 0x0000, 0x018e, 0x0000, 0x007c, 0x0030, 0x0030, 0x007c, 0x0030, 
+0x0031, 0x007c, 0x0030, 0x0032, 0x007c, 0x0030, 0x0033, 0x007c, 0x0030, 
+0x0034, 0x007c, 0x0030, 0x0035, 0x007c, 0x0030, 0x0036, 0x007c, 0x0030, 
+0x0037, 0x007c, 0x0030, 0x0038, 0x007c, 0x0030, 0x0039, 0x007c, 0x0030, 
+0x0061, 0x007c, 0x0030, 0x0062, 0x007c, 0x0030, 0x0063, 0x007c, 0x0030, 
+0x0064, 0x007c, 0x0030, 0x0065, 0x007c, 0x0030, 0x0066, 0x0020, 0x003b, 
+0x007c, 0x0030, 0x0030, 0x007c, 0x0031, 0x0030, 0x007c, 0x0032, 0x0030, 
+0x007c, 0x0033, 0x0030, 0x007c, 0x0034, 0x0030, 0x007c, 0x0035, 0x0030, 
+0x007c, 0x0036, 0x0030, 0x007c, 0x0037, 0x0030, 0x007c, 0x0038, 0x0030, 
+0x007c, 0x0039, 0x0030, 0x007c, 0x0061, 0x0030, 0x007c, 0x0062, 0x0030, 
+0x007c, 0x0063, 0x0030, 0x007c, 0x0064, 0x0030, 0x007c, 0x0065, 0x0030, 
+0x007c, 0x0066, 0x0030, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
+0xffff, 0xffff, 0xffff, 0xffff, 0x0000, 0x5203, 0x0be3, 0x8f91, 0x11ce, 
+0xe39d, 0xaa00, 0x4b00, 0x51b8, 0x8601, 0x0000, 0x02bc, 0xd4c0, 0x0001, 
+0x5306, 0x7379, 0x6574, 0x046d, 0xe352, 0x910b, 0xce8f, 0x9d11, 0x00e3, 
+0x00aa, 0xb84b, 0x6c51, 0x0074, 0x0000, 0x0000, 0xa000, 
+    0
+END
+
+IDD_DLGXRAM DLGINIT
+BEGIN
+    IDC_XGRID, 0x37a, 698, 0
+0x0024, 0x0000, 0x0037, 0x0032, 0x0045, 0x0036, 0x0037, 0x0031, 0x0032, 
+0x0030, 0x002d, 0x0035, 0x0039, 0x0035, 0x0039, 0x002d, 0x0031, 0x0031, 
+0x0063, 0x0066, 0x002d, 0x0039, 0x0031, 0x0046, 0x0036, 0x002d, 0x0043, 
+0x0032, 0x0038, 0x0036, 0x0033, 0x0043, 0x0033, 0x0038, 0x0035, 0x0045, 
+0x0033, 0x0030, 0x0012, 0x0000, 0x0001, 0x0000, 0x000a, 0x0000, 0x004c, 
+0x0000, 0x0000, 0x4321, 0x1234, 0x0008, 0x0000, 0x2e18, 0x0000, 0x251b, 
+0x0000, 0x6f42, 0x506f, 0x0000, 0x0006, 0x0080, 0x0000, 0x0011, 0x0000, 
+0x0011, 0x0000, 0x0001, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, 0x0005, 
+0x8000, 0x0008, 0x8000, 0x000f, 0x8000, 0x0012, 0x8000, 0x000d, 0x8000, 
+0x000e, 0x8000, 0x8080, 0x0080, 0xc0c0, 0x00c0, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0001, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0001, 0x0000, 0x0001, 0x0002, 
+0x0003, 0x0000, 0x0000, 0x0003, 0x0000, 0x0001, 0x0001, 0x0000, 0x0001, 
+0x0004, 0x0000, 0x018e, 0x0000, 0x007c, 0x0030, 0x0030, 0x007c, 0x0030, 
+0x0031, 0x007c, 0x0030, 0x0032, 0x007c, 0x0030, 0x0033, 0x007c, 0x0030, 
+0x0034, 0x007c, 0x0030, 0x0035, 0x007c, 0x0030, 0x0036, 0x007c, 0x0030, 
+0x0037, 0x007c, 0x0030, 0x0038, 0x007c, 0x0030, 0x0039, 0x007c, 0x0030, 
+0x0061, 0x007c, 0x0030, 0x0062, 0x007c, 0x0030, 0x0063, 0x007c, 0x0030, 
+0x0064, 0x007c, 0x0030, 0x0065, 0x007c, 0x0030, 0x0066, 0x0020, 0x003b, 
+0x007c, 0x0030, 0x0030, 0x007c, 0x0031, 0x0030, 0x007c, 0x0032, 0x0030, 
+0x007c, 0x0033, 0x0030, 0x007c, 0x0034, 0x0030, 0x007c, 0x0035, 0x0030, 
+0x007c, 0x0036, 0x0030, 0x007c, 0x0037, 0x0030, 0x007c, 0x0038, 0x0030, 
+0x007c, 0x0039, 0x0030, 0x007c, 0x0061, 0x0030, 0x007c, 0x0062, 0x0030, 
+0x007c, 0x0063, 0x0030, 0x007c, 0x0064, 0x0030, 0x007c, 0x0065, 0x0030, 
+0x007c, 0x0066, 0x0030, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 
+0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x5203, 0x0be3, 0x8f91, 0x11ce, 
+0xe39d, 0xaa00, 0x4b00, 0x51b8, 0x8601, 0x0000, 0x02bc, 0xd4c0, 0x0001, 
+0x5306, 0x7379, 0x6574, 0x046d, 0xe352, 0x910b, 0xce8f, 0x9d11, 0x00e3, 
+0x00aa, 0xb84b, 0x6c51, 0x0074, 0x0000, 0x0000, 0xa000, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ABOUTBOX            "关于 CH37XDBG(&A)..."
+END
+
+#endif    // Chinese (P.R.C.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE 4, 2
+#pragma code_page(936)
+#endif //_WIN32
+#include "res\CH37XDBG.rc2"  // non-Microsoft Visual C++ edited resources
+#include "l.chs\afxres.rc"          // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

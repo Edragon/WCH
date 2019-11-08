@@ -1,0 +1,8 @@
+"STARTUP.obj",
+"Main.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj" 
+TO "UsbToUart" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )

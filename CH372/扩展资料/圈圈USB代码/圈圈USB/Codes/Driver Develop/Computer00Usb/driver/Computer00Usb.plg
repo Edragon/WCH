@@ -1,0 +1,58 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Computer00Usb - Win32 Free--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x409 /fo".\objfre\i386/Computer00Usb.res" /i "d:\WINDDK\2600\inc\crt" /d "NDEBUG" /d NTVERSION='WDM' "G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\Driver\Computer00Usb.rc"" 
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP4C.tmp" with contents
+[
+/nologo /Gz /ML /W3 /Oy /Gy /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\..\common\include\stl" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\source" /I "d:\WINDDK\2600\inc\wxp" /I "d:\WINDDK\2600\inc\crt" /I "d:\WINDDK\2600\inc\ddk\wxp" /I "d:\WINDDK\2600\inc\ddk\wdm\wxp" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_vxd" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_wdm" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_ndis" /FI"warning.h" /D _X86_=1 /D i386=1 /D "STD_CALL" /D CONDITION_HANDLING=1 /D NT_INST=0 /D WIN32=100 /D _NT1X_=100 /D WINNT=1 /D WIN32_LEAN_AND_MEAN=1 /D DEVL=1 /D FPO=0 /D "NDEBUG" /D _DLL=1 /D _WIN32_WINNT=0x0501 /D WINVER=0x0501 /D _WIN32_IE=0x0603 /D NTDDI_VERSION=0x05010000 /D NTVERSION='WDM' /FR".\objfre\i386/" /Fo".\objfre\i386/" /Zel -cbstring /GF /Oxs /c 
+"G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\Driver\Computer00UsbDevice.cpp"
+"G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\Driver\Computer00UsbDriver.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP4C.tmp" 
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP4D.tmp" with contents
+[
+ntoskrnl.lib hal.lib usbd.lib vdw_wdm.lib /nologo /base:"0x10000" /version:5.0 /stack:0x40000,0x1000 /entry:"DriverEntry" /incremental:no /pdb:".\objfre\i386/Computer00Usb.pdb" /machine:IX86 /nodefaultlib /out:"objfre\i386\Computer00Usb.sys" /libpath:"d:\WINDDK\2600\lib\wxp\i386" /libpath:"D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\lib\i386\free" /libpath:"D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~3\lib\i386\free" /driver /MERGE:_PAGE=PAGE /MERGE:_TEXT=.text /SECTION:INIT,d /MERGE:.rdata=.text /FULLBUILD /RELEASE /OPT:REF /OPT:ICF /align:0x80 /osversion:5.00 /subsystem:native,1.10 /debug:MINIMAL /ignore:4010,4037,4039,4065,4070,4078,4087,4089,4099,4221,4210 
+".\objfre\i386\Computer00UsbDevice.obj"
+".\objfre\i386\Computer00UsbDriver.obj"
+".\objfre\i386\Computer00Usb.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP4D.tmp"
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP4E.bat" with contents
+[
+@echo off
+D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\bin\nmsym /trans:source,package,always .\objfre\i386\Computer00Usb.sys
+]
+Creating command line "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP4E.bat"
+Compiling resources with DDK resource compiler...
+Compiling with DDK compiler...
+Computer00UsbDevice.cpp
+Computer00UsbDriver.cpp
+Generating Code...
+Linking with DDK linker...
+<h3>Output Window</h3>
+---------------------------Build SoftICE Symbols----------------------------
+
+Compuware NM32 Symbol Translator/Loader version 4.3.2
+(C) Compuware Corporation, 1996-2004
+
+MODULE=.\objfre\i386\Computer00Usb.sys
+PROMPT=OFF
+SoftICE is not active
+Error translating G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\Driver\objfre\i386\Computer00Usb.sys: Matching PDB file not found.
+Error executing c:\windows\system32\cmd.exe.
+Creating command line "bscmake.exe /nologo /o".\objfre\i386/Computer00Usb.bsc"  ".\objfre\i386\Computer00UsbDevice.sbr" ".\objfre\i386\Computer00UsbDriver.sbr""
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+Computer00Usb.sys - 1 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

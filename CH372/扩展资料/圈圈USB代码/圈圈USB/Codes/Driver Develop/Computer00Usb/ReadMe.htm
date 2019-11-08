@@ -1,0 +1,308 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+    <HEAD>
+        <TITLE>Project Summary</TITLE>
+        <style>
+        h1
+	        {mso-style-next:Normal;
+	        margin-top:12.0pt;
+	        margin-right:0in;
+	        margin-bottom:3.0pt;
+	        margin-left:0in;
+	        mso-pagination:widow-orphan;
+	        page-break-after:avoid;
+	        mso-outline-level:1;
+	        font-size:16.0pt;
+	        font-family:Tahoma;
+	        color:navy;
+	        mso-font-kerning:16.0pt;}
+        h2
+	        {margin-right:0in;
+	        margin-top:14.0pt;
+	        mso-margin-bottom-alt:auto;
+	        margin-left:0in;
+	        mso-pagination:widow-orphan;
+	        mso-outline-level:2;
+	        font-size:13.5pt;
+	        mso-bidi-font-size:18.0pt;
+	        font-family:Tahoma;
+	        color:navy;}
+        </style>
+    </HEAD>
+    <BODY>
+        <h1 style="color:navy"><a name="top"></a>Computer00Usb WDM Driver</h1>
+        <BR>
+        <BR>
+        <h2 style="color:navy">Summary</h2>
+        <p>
+            This directory contains project files for the Computer00Usb WDM Driver.
+        </p>
+        <h2 style="color:navy">Building the Driver</h2>
+        <p>
+        Open Computer00Usb.dsp in the Visual Studio 6.0 IDE,
+        select the “Win32 Checked”
+        configuration, then either select the Computer00Usb project or you can build
+        the entire solution/workspace. The build creates a file named Computer00Usb.sys. You
+        will need a Microsoft Device Driver Development Kit (DDK) build version 2600.1106 or
+        later (XP SP1 DDK). Alternatively, the driver can be built from a DDK build environment
+        command-line using build.exe. Just type build -ceZ from the driver directory
+        location.
+        </p>
+        <h2 style="color:navy">Installing the WDM Driver</h2>
+        <p>
+            The driver, Computer00Usb.sys, must be loaded in a plug and play friendly
+            fashion. If the driver is for a plug and play device such as a PCI, USB, or
+            IEEE 1394 device, often the device will already be listed in the Device Manager
+            under “Other Devices”. If the device is already listed, double click on the
+            device, and, when the properties dialog comes up, select Update driver from the
+            driver tab. Choose to specify the location of the driver file, and browse to
+            the folder containing Computer00Usb.inf. The device manager should then load
+            the driver. If the device is not in the device manager, the driver may be
+            loaded by using the Add New Hardware option in the control panel. It is also
+            possible to load the driver using the EZDriverInstaller available in the start
+            menu under Compuware DriverStudio | Test.
+        </p>
+        <h2 style="color:navy">Building the Application</h2>
+        <p>
+        Open Computer00Usb.dsp in the Visual Studio 6.0 IDE,
+        select the “Win32 Checked”
+        configuration, then either select the Computer00UsbApp project or you can
+        build the entire solution/workspace. The build creates a file named
+        Computer00UsbApp.exe. Alternatively, the application can be built from a DDK
+        build environment command-line using build.exe. Just type build -ceZ from the
+        application directory location.
+        </p>
+        <h2 style="color:navy">File Manifest</h2>
+        <table border="1" cellspacing="3" style=';margin-left:8.6pt; font-size:10.0pt;font-family:Tahoma;mso-fareast-font-family:"Courier New"; color:windowtext'>
+            <tr>
+                <td width="170" style="padding:1.5pt 0pt 1.5pt 5pt">
+                    <b>Driver File</b>
+                </td>
+                <td width="520" style="padding:1.5pt 0pt 1.5pt 5pt">
+                    <b>Description</b>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00Usb.inf
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Driver setup information file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbDriver.cpp
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Main driver implementation file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbDriver.h
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Main driver declaration file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbDevice.cpp
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Main device class implementation file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbDevice.h
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Main device class declaration file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;function.h
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Driver request handlers declaration file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00Usb.cat
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Catalog file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00Usb.rc
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Driver resource file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;intrface.h
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;IOCTL declaration file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;makefile
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Used by the DDK utility BUILD.EXE.
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;sources
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Build information for the DDK utility BUILD.EXE
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00Usb.dsp
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Visual Studio 6.0 project file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;dirs
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Build information for the DDK utility BUILD.EXE
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00Usb.dsw
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Visual Studio 6.0 workspace file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;ReadMe.htm
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;This file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbVars.xml
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Wizard project settings file (Do not delete)
+                </td>
+            </tr>
+            <tr bgcolor="Silver">
+                <td style="background:grey;padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;
+                </td>
+                <td style="background:grey;padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    <b>Test Application File</b>
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    <b>Description</b>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbApp.cpp
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Main test application implementation file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbIorw.cpp
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Test application IO implementation file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbApp.rc
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Test application resource file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbApp.h
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Test application main declaration file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;resource.h
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Resource constant declaration file
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;makefile
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Used by the DDK utility BUILD.EXE.
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;sources
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Build information for the DDK utility BUILD.EXE
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Computer00UsbApp.dsp
+                </td>
+                <td style="padding:1.5pt 0pt 1.5pt 5pt">
+                    &nbsp;Visual Studio 6.0 project file
+                </td>
+            </tr>
+        </table>
+        <BR>
+        <BR>
+        <center>
+            <a href="#top">Return to Top of Page</a>
+        </center>
+        <BR>
+        <div style="background:aqua">
+            <p>
+                &nbsp</p>
+        </div>
+        <SPAN style="FONT-SIZE: 7.5pt; FONT-FAMILY: 'MS Sans Serif'; mso-fareast-font-family: 'Courier New'; mso-bidi-font-family: 'Courier New'">
+            © Copyright 2003 Compuware Corporation
+        </SPAN>
+    </BODY>
+</HTML>
