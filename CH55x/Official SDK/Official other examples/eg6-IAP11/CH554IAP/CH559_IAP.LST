@@ -1,0 +1,472 @@
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE CH559_IAP
+OBJECT MODULE PLACED IN CH559_IAP.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE CH559_IAP.C BROWSE INCDIR(..\User\Device;..\User\Host;..\User;..\User\PUB;.
+                    -.\User\PUB\INC) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          
+   2          /********************************** (C) COPYRIGHT ******************************
+   3          * File Name          : CH559_IAP.C
+   4          * Author             : WCH
+   5          * Version            : V1.3
+   6          * Date               : 2016/06/24
+   7          * Description        : IAP ¹¦ÄÜÑÝÊ¾Àý×Ó³ÌÐò
+   8          *                      1£¬Ö§³Ö´®¿ÚÏÂÔØ£¬´®¿ÚºÅÎª0£¬²¨ÌØÂÊÎª57600£¬ÓÉÓÚ²ÉÓÃÄÚ²¿¾§Õñ£¬¾§Õñ´æÔÚÎó²î£¬ËùÒÔÔö¼Ó
+             -´®¿ÚÀÛ¼ÓºÍ£¬ÀÛ¼ÓºÍ´íÎó½øÐÐÖØ·¢
+   9          *                      2£¬Ö§³ÖUSBÏÂÔØ£¬USBÎªÈ«ËÙÉè±¸
+  10                                 3£¬Ö§³ÖEEPROM±à³Ì
+  11                                 4£¬Ö§³ÖÐ¾Æ¬ÐÍºÅÅÐ¶Ï
+  12          *******************************************************************************/
+  13          
+  14          #include <stdlib.h>
+  15          #include <string.h>
+  16          #include <intrins.h>
+  17          #include "../../public/CH554.H"
+  18          #include "CH559_IAP.H"
+  19          
+  20          sbit DisableIAP            = P1^0;                     //·µ»ØÓÃ»§³ÌÐò¼ì²âÒý½Å
+  21          #define IAP_CODE_ADDR        (0x3000)             //1kµÄÕûÊý±¶£¬ÒòÎª55XµÄFlashÒ»´ÎÖÁÉÙ²Á1K
+  22          #define THIS_ENDP0_SIZE         DEFAULT_ENDP0_SIZE     //Ä¬ÈÏ¶Ëµã0µÄ´óÐ¡
+  23          
+  24          // Éè±¸ÃèÊö·û
+  25          UINT8C    MyDevDescr[] = { 0x12, 0x01, 0x10, 0x01,
+  26                                     0xFF, 0x80, 0x55, THIS_ENDP0_SIZE,
+  27                                     0x48, 0x43, 0xe0, 0x55,
+  28                                     0x00, 0x01, 0x00, 0x00,0x00, 0x01
+  29                                   };
+  30          // ÅäÖÃÃèÊö·û
+  31          UINT8C    MyCfgDescr[] = { 0x09, 0x02, 0x20, 0x00, 0x01, 0x01, 0x00, 0x80, 0x32,
+  32                                     0x09, 0x04, 0x00, 0x00, 0x02, 0xFF, 0x80, 0x55, 0x00,
+  33                                     0x07, 0x05, 0x82, 0x02, 0x40, 0x00, 0x00,
+  34                                     0x07, 0x05, 0x02, 0x02, 0x40, 0x00, 0x00
+  35                                   };
+  36          UINT8    UsbConfig = 0;                                // USBÅäÖÃ±êÖ¾
+  37          UINT8X    Ep0Buffer[THIS_ENDP0_SIZE] _at_ 0x0000 ;     // OUT&IN, must even address
+  38          UINT8X    Ep2Buffer[2*MAX_PACKET_SIZE] _at_ 0x0008 ;   // OUT+IN, must even address
+  39          #define   UsbSetupBuf     ((PUSB_SETUP_REQ)Ep0Buffer)
+  40          
+  41          iap_cmd1 xdata iap_cmd  _at_ 0x0088;                   //IAPÃüÁî
+  42          UINT8   uart_bit;                                      //ÏÂÔØ·½Ê½È«¾Ö±êÖ¾Î»£¬1±íÊ¾Îª´®¿Ú£¬2±íÊ¾ÎªUSB¿Ú
+  43          UINT16  chip_id,eeprom_len;
+  44          PUINT8C    pCode;
+  45          
+  46          #pragma NOAREGS
+  47          
+  48          
+  49          /*******************************************************************************
+  50          * Function Name  : ProgWord
+  51          * Description    : Ð¾Æ¬±à³Ìº¯Êý
+  52          * Input          : Addr    Ð¾Æ¬±à³ÌµØÖ·µØÖ·£¬µØÖ·ÎªÅ¼ÊýµØÖ·
+  53                             Data    ±à³ÌÊý¾Ý£¬ÒÔWORDÎª»ù×¼
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 2   
+
+  54          * Output         : None
+  55          * Return         :         Ð¾Æ¬±à³Ì·µ»Ø×´Ì¬
+  56                              0x00   ±à³Ì³É¹¦
+  57                              0x01   ±à³Ì³¬Ê±
+  58                              0x02   Î´Öª´íÎó£¬±à³ÌÊ§°Ü
+  59          *******************************************************************************/
+  60          UINT8 ProgWord( UINT16 Addr, UINT16 Data )
+  61          {
+  62   1        ROM_ADDR = Addr;
+  63   1        ROM_DATA = Data;
+  64   1        if ( ROM_STATUS & bROM_ADDR_OK ) {                                           // ²Ù×÷µØÖ·ÓÐÐ§
+  65   2          ROM_CTRL = ROM_CMD_WRITE;
+  66   2          return( ( ROM_STATUS ^ bROM_ADDR_OK ) & 0x7F );                            // ·µ»Ø×´Ì¬,0x00=success, 0x0
+             -1=time out(bROM_CMD_TOUT), 0x02=unknown command(bROM_CMD_ERR)
+  67   2        }
+  68   1        else return( 0x40 );
+  69   1      }
+  70          /*******************************************************************************
+  71          * Function Name  : FlashVerify
+  72          * Description    : FlashÐ£Ñé
+  73          * Input          : Addr    Ð¾Æ¬±à³ÌµØÖ·µØÖ·£¬µØÖ·ÎªÅ¼ÊýµØÖ·
+  74                             pData   ±à³ÌÊý¾Ý£¬ÒÔWORDÎª»ù×¼
+  75                             len     Ð£Ñé³¤¶È
+  76          * Output         : None
+  77          * Return         :         ·µ»ØÐ£Ñé×´Ì¬
+  78                              0x00   Ð£Ñé³É¹¦
+  79                              0xff   Ð£ÑéÊ§°Ü
+  80          *******************************************************************************/
+  81          UINT8 FlashVerify( UINT16 Addr, UINT8 *pData, UINT16 len )
+  82          {
+  83   1          UINT16 i;
+  84   1          pCode = (PUINT8C)( Addr );
+  85   1          for( i=0; i!=len; i++ )
+  86   1          {
+  87   2              if( *pData != *pCode )
+  88   2              {
+  89   3                  return 0xff;
+  90   3              }
+  91   2              pCode++;
+  92   2              pData++;
+  93   2          }
+  94   1          return 0;
+  95   1      }
+  96          
+  97          /*******************************************************************************
+  98          * Function Name  : CH55X_Respond
+  99          * Description    : IAPÉý¼¶Ê±£¬Ð¾Æ¬Ó¦´ðº¯Êý
+ 100          * Input          : s ÓÐÐ§Ó¦´ð×Ö½Ú
+ 101          * Output         : None
+ 102          * Return         : SBUF ´®¿Ú½ÓÊÕ×Ö½Ú
+ 103          *******************************************************************************/
+ 104          void CH55X_Respond( UINT8 s )
+ 105          {
+ 106   1              Ep2Buffer[ MAX_PACKET_SIZE ]   = s;
+ 107   1              Ep2Buffer[ MAX_PACKET_SIZE+1 ] = 0X00;
+ 108   1              UEP2_T_LEN = 2;
+ 109   1              UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;  // ÔÊÐíÉÏ´«
+ 110   1      }
+ 111          /*******************************************************************************
+ 112          * Function Name  : CH559_USB_ISPDownload
+ 113          * Description    : CH559ÏÂÔØº¯Êý
+ 114          *                £º
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 3   
+
+ 115          * Input          : None
+ 116          * Output         : None
+ 117          * Return         : None
+ 118          *******************************************************************************/
+ 119          void CH55X_IAPDownload( void )
+ 120          {
+ 121   1          UINT8  s;
+ 122   1          UINT16 i;
+ 123   1          UINT16 len,Data;
+ 124   1          UINT32 addr;
+ 125   1          switch( iap_cmd.other.buf[0] )                                  // ·ÖÎöÃüÁîÂë
+ 126   1          {
+ 127   2          case CMD_IAP_PROM:                                              // ISP ±à³ÌÃüÁî
+ 128   2              len = iap_cmd.program.len>>1;                               //±ØÐëÎª2µÄÕûÊý±¶£¬°´ÕÕ°ë×Ö½øÐÐ²Ù×÷
+ 129   2              addr = (iap_cmd.program.addr[0] | (UINT16)iap_cmd.program.addr[1]<<8);
+ 130   2              SAFE_MOD = 0x55;
+ 131   2              SAFE_MOD = 0xAA;
+ 132   2              GLOBAL_CFG |= bCODE_WE | bDATA_WE;                          //Ð´Flash
+ 133   2              for( i=0; i!=len; i++ )
+ 134   2              {
+ 135   3                  Data = (iap_cmd.program.buf[2*i] | (UINT16)iap_cmd.program.buf[2*i+1]<<8);
+ 136   3                  s = ProgWord( addr,Data );
+ 137   3                  addr+=2;
+ 138   3                  if( s != 0x00 )
+ 139   3                  {
+ 140   4                      break;
+ 141   4                  }
+ 142   3              }
+ 143   2              SAFE_MOD = 0x55;
+ 144   2              SAFE_MOD = 0xAA;
+ 145   2              GLOBAL_CFG &= ~ ( bCODE_WE | bDATA_WE );
+ 146   2              CH55X_Respond( s );                                         //·µ»ØÐ£Ñé
+ 147   2              break;
+ 148   2          case CMD_IAP_ERASE:                                             // ISP ²Á³ýÃüÁî
+ 149   2              CH55X_Respond( 0 );
+ 150   2              break;
+ 151   2          case CMD_IAP_VERIFY:                                             // ISP Ð£ÑéÃüÁî
+ 152   2              addr = (iap_cmd.verify.addr[0] | (UINT16)iap_cmd.verify.addr[1]<<8);
+ 153   2              len = iap_cmd.verify.len>>1;                                 // ±ØÐëÎª2µÄÕûÊý±¶£¬°´ÕÕ×Ö½øÐÐ²Ù×÷
+ 154   2              s = FlashVerify( addr,&(iap_cmd.verify.buf[0]),iap_cmd.verify.len );
+ 155   2              CH55X_Respond( s );
+ 156   2              break;
+ 157   2          case CMD_IAP_END:                                                // ISP ½áÊøÃüÁî
+ 158   2              SAFE_MOD = 0x55;
+ 159   2              SAFE_MOD = 0xAA;
+ 160   2              GLOBAL_CFG |= bSW_RESET;                                     // ¸´Î»µ¥Æ¬»ú,½øÈëÓÃ»§³ÌÐò 
+ 161   2              break;
+ 162   2          default:
+ 163   2              CH55X_Respond( 0xfe );                                       // Î´ÖªµÄÃüÁî
+ 164   2              break;
+ 165   2          }
+ 166   1      }
+ 167          /*******************************************************************************
+ 168          * Function Name  : USB_DeviceInterrupt
+ 169          * Description    : USBÖÐ¶Ï²éÑ¯º¯Êý£¬IAP³ÌÐòÎÞ·¨Ê¹ÓÃÖÐ¶Ï
+ 170          *                £º
+ 171          * Input          : None
+ 172          * Output         : None
+ 173          * Return         : None
+ 174          *******************************************************************************/
+ 175          void USB_DeviceInterrupt( void )
+ 176          {
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 4   
+
+ 177   1          UINT8    len;
+ 178   1          static    UINT8    SetupReqCode, SetupLen;
+ 179   1          static    PUINT8    pDescr;
+ 180   1          if( UIF_TRANSFER )                                                // USB´«ÊäÍê³É
+ 181   1          {
+ 182   2              if ( U_IS_NAK ){}                                             // ±¾Àý×Ó¿ÉÒÔ²»±Ø´¦ÀíNAK
+ 183   2              else
+ 184   2              {
+ 185   3                  switch ( USB_INT_ST & ( MASK_UIS_TOKEN | MASK_UIS_ENDP ) )// ·ÖÎö²Ù×÷ÁîÅÆºÍ¶ËµãºÅ
+ 186   3                  {
+ 187   4                  case UIS_TOKEN_OUT | 2:                                   // endpoint 2# ÅúÁ¿¶ËµãÏÂ´«
+ 188   4                      if ( U_TOG_OK )                                       // ²»Í¬²½µÄÊý¾Ý°ü½«¶ªÆú
+ 189   4                      {
+ 190   5                          len = USB_RX_LEN;
+ 191   5                          memcpy( iap_cmd.other.buf,Ep2Buffer,len );
+ 192   5                          uart_bit = 2;
+ 193   5                          CH55X_IAPDownload( );
+ 194   5                      }
+ 195   4                      break;
+ 196   4                  case UIS_TOKEN_IN | 2:                                    // endpoint 2# ÅúÁ¿¶ËµãÉÏ´«
+ 197   4                      UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;// ÔÝÍ£ÉÏ´«
+ 198   4                      break;
+ 199   4                  case UIS_TOKEN_IN | 1:                                    // endpoint 1# ÖÐ¶Ï¶ËµãÉÏ´«
+ 200   4                      UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;// ÔÝÍ£ÉÏ´«
+ 201   4                      break;
+ 202   4                  case UIS_TOKEN_SETUP | 0:                                 // endpoint 0# SETUP
+ 203   4                      len = USB_RX_LEN;
+ 204   4                      if ( len == sizeof( USB_SETUP_REQ ) )                 // SETUP°ü³¤¶È
+ 205   4                      {
+ 206   5                          SetupLen = UsbSetupBuf->wLengthL;
+ 207   5                          if ( UsbSetupBuf->wLengthH || SetupLen > 0x7F )
+ 208   5                          {
+ 209   6                              SetupLen = 0x7F;                              // ÏÞÖÆ×Ü³¤¶È
+ 210   6                          }
+ 211   5                          len = 0;                                          // Ä¬ÈÏÎª³É¹¦²¢ÇÒÉÏ´«0³¤¶È
+ 212   5                          if ( ( UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK ) != USB_REQ_TYP_STANDARD )//Ö»Ö§³
+             -Ö±ê×¼ÇëÇó
+ 213   5                          {
+ 214   6                              len = 0xFF;                                   // ²Ù×÷Ê§°Ü
+ 215   6                          }
+ 216   5                          else                                              // ±ê×¼ÇëÇó
+ 217   5                          {
+ 218   6                              SetupReqCode = UsbSetupBuf->bRequest;
+ 219   6                              switch( SetupReqCode )                        // ÇëÇóÂë
+ 220   6                              {
+ 221   7                              case USB_GET_DESCRIPTOR:
+ 222   7                                  switch( UsbSetupBuf->wValueH )
+ 223   7                                  {
+ 224   8                                  case 1:                                   // Éè±¸ÃèÊö·û
+ 225   8                                      pDescr = (PUINT8)( &MyDevDescr[0] );
+ 226   8                                      len = sizeof( MyDevDescr );
+ 227   8                                      break;
+ 228   8                                  case 2:                                   // ÅäÖÃÃèÊö·û
+ 229   8                                      pDescr = (PUINT8)( &MyCfgDescr[0] );
+ 230   8                                      len = sizeof( MyCfgDescr );
+ 231   8                                      break;
+ 232   8                                  default:
+ 233   8                                      len = 0xFF;                           // ²»Ö§³ÖµÄÃèÊö·ûÀàÐÍ
+ 234   8                                      break;
+ 235   8                                  }
+ 236   7                                  if ( SetupLen > len )
+ 237   7                                  {
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 5   
+
+ 238   8                                      SetupLen = len;                       // ÏÞÖÆ×Ü³¤¶È
+ 239   8                                  }
+ 240   7                                  len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;// ±¾´Î´«Êä³¤¶È
+ 241   7                                  memcpy( Ep0Buffer, pDescr, len );         // ¼ÓÔØÉÏ´«Êý¾Ý 
+ 242   7                                  SetupLen -= len;
+ 243   7                                  pDescr += len;
+ 244   7                                  break;
+ 245   7                              case USB_SET_ADDRESS:
+ 246   7                                  SetupLen = UsbSetupBuf->wValueL;          // ÔÝ´æUSBÉè±¸µØÖ·
+ 247   7                                  break;
+ 248   7                              case USB_GET_CONFIGURATION:
+ 249   7                                  Ep0Buffer[0] = UsbConfig;
+ 250   7                                  if ( SetupLen >= 1 )
+ 251   7                                  {
+ 252   8                                      len = 1;
+ 253   8                                  }
+ 254   7                                  break;
+ 255   7                              case USB_SET_CONFIGURATION:
+ 256   7                                  UsbConfig = UsbSetupBuf->wValueL;
+ 257   7                                  break;
+ 258   7                              default:
+ 259   7                                  len = 0xFF;                               // ²Ù×÷Ê§°Ü
+ 260   7                                  break;
+ 261   7                              }
+ 262   6                          }
+ 263   5                      }
+ 264   4                      else
+ 265   4                      {
+ 266   5                          len = 0xFF;                                       // SETUP°ü³¤¶È´íÎó
+ 267   5                      }
+ 268   4                      if ( len == 0xFF )                                    // ²Ù×÷Ê§°Ü
+ 269   4                      {
+ 270   5                          SetupReqCode = 0xFF;
+ 271   5                          UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;// STALL
+ 272   5                      }
+ 273   4                      else if ( len <= THIS_ENDP0_SIZE )                    // ÉÏ´«Êý¾Ý»òÕß×´Ì¬½×¶Î·µ»Ø0³¤¶È°ü
+ 274   4                      {
+ 275   5                          UEP0_T_LEN = len;
+ 276   5                          UEP0_CTRL  = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;// Ä¬ÈÏÊý¾Ý°üÊÇDA
+             -TA1
+ 277   5                      }
+ 278   4                      else                                                  // ÏÂ´«Êý¾Ý»òÆäËü
+ 279   4                      {
+ 280   5                          UEP0_T_LEN = 0;                                   // ËäÈ»ÉÐÎ´µ½×´Ì¬½×¶Î£¬µ«ÊÇÌáÇ°Ô¤ÖÃÉ
+             -Ï´«0³¤¶ÈÊý¾Ý°üÒÔ·ÀÖ÷»úÌáÇ°½øÈë×´Ì¬½×¶Î
+ 281   5                          UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;// Ä¬ÈÏÊý¾Ý°üÊÇDAT
+             -A1
+ 282   5                      }
+ 283   4                      break;
+ 284   4                  case UIS_TOKEN_IN | 0:                                    // endpoint 0# IN
+ 285   4                      switch( SetupReqCode )
+ 286   4                      {
+ 287   5                      case USB_GET_DESCRIPTOR:
+ 288   5                          len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;// ±¾´Î´«Êä³¤¶È
+ 289   5                          memcpy( Ep0Buffer, pDescr, len );                 // ¼ÓÔØÉÏ´«Êý¾Ý 
+ 290   5                          SetupLen -= len;
+ 291   5                          pDescr += len;
+ 292   5                          UEP0_T_LEN = len;
+ 293   5                          UEP0_CTRL ^= bUEP_T_TOG;                          // ·­×ª
+ 294   5                          break;
+ 295   5                      case USB_SET_ADDRESS:
+ 296   5                          USB_DEV_AD = USB_DEV_AD & bUDA_GP_BIT | SetupLen;
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 6   
+
+ 297   5                          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 298   5                          break;
+ 299   5                      default:
+ 300   5                          UEP0_T_LEN = 0;                                   // ×´Ì¬½×¶ÎÍê³ÉÖÐ¶Ï»òÕßÊÇÇ¿ÖÆÉÏ´«0³¤
+             -¶ÈÊý¾Ý°ü½áÊø¿ØÖÆ´«Êä
+ 301   5                          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 302   5                          break;
+ 303   5                      }
+ 304   4                      break;
+ 305   4                  case UIS_TOKEN_OUT | 0:                                   // endpoint 0# OUT
+ 306   4                      switch( SetupReqCode )
+ 307   4                      {
+ 308   5                      default:
+ 309   5                          UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;        // ×¼±¸ÏÂÒ»¿ØÖÆ´«Êä
+ 310   5                          break;
+ 311   5                      }
+ 312   4                      break;
+ 313   4                  default:
+ 314   4                      break;
+ 315   4                  }
+ 316   3              }
+ 317   2              UIF_TRANSFER = 0;                                             // ÇåÖÐ¶Ï±êÖ¾
+ 318   2          }
+ 319   1          else if ( UIF_BUS_RST )                                           // USB×ÜÏß¸´Î»
+ 320   1          {
+ 321   2              UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 322   2              UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+ 323   2              UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 324   2              USB_DEV_AD = 0x00;
+ 325   2              UIF_SUSPEND = 0;
+ 326   2              UIF_TRANSFER = 0;
+ 327   2              UIF_BUS_RST = 0;                                              // ÇåÖÐ¶Ï±êÖ¾
+ 328   2          }
+ 329   1          else if ( UIF_SUSPEND )                                           // USB×ÜÏß¹ÒÆð/»½ÐÑÍê³É
+ 330   1          {
+ 331   2              UIF_SUSPEND = 0;
+ 332   2          }
+ 333   1          else                                                              // ÒâÍâµÄÖÐ¶Ï,²»¿ÉÄÜ·¢ÉúµÄÇé¿ö
+ 334   1          {
+ 335   2              USB_INT_FG = 0xFF;                                            // ÇåÖÐ¶Ï±êÖ¾
+ 336   2          }
+ 337   1      }
+ 338          
+ 339          /*******************************************************************************
+ 340          * Function Name  : InitUSB_Device()
+ 341          * Description    : USBÉè±¸Ä£Ê½ÅäÖÃ,Éè±¸Ä£Ê½Æô¶¯£¬ÊÕ·¢¶ËµãÅäÖÃ£¬ÖÐ¶Ï¿ªÆô
+ 342          * Input          : None
+ 343          * Output         : None
+ 344          * Return         : None
+ 345          *******************************************************************************/
+ 346          void  InitUSB_Device( void )                                      // ³õÊ¼»¯USBÉè±¸
+ 347          {
+ 348   1        IE_USB = 0;
+ 349   1        USB_CTRL = 0x00;                                                // ÏÈÉè¶¨Ä£Ê½
+ 350   1        UEP4_1_MOD = bUEP1_TX_EN;                                       // ¶Ëµã1ÉÏ´«IN
+ 351   1        UEP2_3_MOD = bUEP2_RX_EN | bUEP2_TX_EN;                         // ¶Ëµã2ÏÂ´«OUTºÍÉÏ´«IN
+ 352   1        UEP0_DMA = Ep0Buffer;
+ 353   1        UEP2_DMA = Ep2Buffer;
+ 354   1        UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 355   1        UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+ 356   1        UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+ 357   1        USB_DEV_AD = 0x00;
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 7   
+
+ 358   1        UDEV_CTRL = bUD_PD_DIS;                                         // ½ûÖ¹DP/DMÏÂÀ­µç×è
+ 359   1        USB_CTRL = bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;           // Æô¶¯USBÉè±¸¼°DMA£¬ÔÚÖÐ¶ÏÆÚ¼äÖÐ¶Ï±êÖ¾Î´
+             -Çå³ýÇ°×Ô¶¯·µ»ØNAK
+ 360   1        UDEV_CTRL |= bUD_PORT_EN;                                       // ÔÊÐíUSB¶Ë¿Ú
+ 361   1        USB_INT_FG = 0xFF;                                              // ÇåÖÐ¶Ï±êÖ¾
+ 362   1        USB_INT_EN = bUIE_SUSPEND | bUIE_TRANSFER | bUIE_BUS_RST;
+ 363   1      } 
+ 364          /*******************************************************************************
+ 365          * Function Name  : mDelay20us(UNIT16 n)
+ 366          * Description    : 20usÑÓÊ±º¯Êý£¬Ö÷Æµ12MHz£¬ÑÓÊ±²»×¼£¬ÆäËûÖ÷Æµ²Î¿¼DEBUG.CµÄÑÓÊ±º¯Êý
+ 367          * Input          : UNIT16 n
+ 368          * Output         : None
+ 369          * Return         : None
+ 370          *******************************************************************************/ 
+ 371          void mDelay20us( UINT16 n )
+ 372          {
+ 373   1          for( n <<= 3; n; --n )
+ 374   1          {
+ 375   2              _nop_( );
+ 376   2          }
+ 377   1      }
+ 378          
+ 379          /*******************************************************************************
+ 380          * Function Name  : main
+ 381          * Description    : Ö÷º¯Êý
+ 382          * Input          : None
+ 383          * Output         : None
+ 384          * Return         : None
+ 385          *******************************************************************************/
+ 386          void main( void )
+ 387          {
+ 388   1          UINT16 i=0,j;
+ 389   1          EA = 0;                                                              // ¹Ø±ÕÖÐ¶Ï£¬IAP·½Ê½ÎÞ·¨Ê¹ÓÃÖÐ¶Ï
+ 390   1          uart_bit = 0;
+ 391   1          InitUSB_Device( );                                                   /* USBÉè±¸Ä£Ê½³õÊ¼»¯º¯Êý£¬²éÑ¯·½Ê
+             -½ */
+ 392   1          while(1)
+ 393   1          {
+ 394   2              i++;
+ 395   2              j++;
+ 396   2              if( j > 30 )
+ 397   2              {
+ 398   3                  j = 0;
+ 399   3                  if( USB_INT_FG )
+ 400   3                  {
+ 401   4                      USB_DeviceInterrupt( );                                  // ²éÑ¯usbÖÐ¶Ï,½¨Òé²»ÒªÆµ·±²éÑ¯
+ 402   4                  }
+ 403   3              }
+ 404   2              if( i == 20000 )
+ 405   2              {
+ 406   3                  i = 0;
+ 407   3              }
+ 408   2              if( i == 0 )                                                     //½ö½öÊÇµãµÆÖ¸Ê¾£¬ÎÞÒâÒå
+ 409   2              {
+ 410   3              }
+ 411   2              if( i == 10000 )
+ 412   2              {
+ 413   3                                                 //ÉÁµÆ
+ 414   3              }
+ 415   2              mDelay20us(1);                                                    // ÑÓÊ±
+ 416   2              /* ÍË³öiapÏÂÔØ */
+ 417   2              if( DisableIAP == 0 )                                             // ²éÑ¯P10µÍµçÆ½Ê±Ö´ÐÐÈí¸´Î»£¬´Ó
+C51 COMPILER V9.51   CH559_IAP                                                             01/09/2018 18:40:22 PAGE 8   
+
+             -ÐÂÖ´ÐÐÓÃ»§³ÌÐò
+ 418   2              {
+ 419   3                  SAFE_MOD = 0x55;
+ 420   3                  SAFE_MOD = 0xAA;
+ 421   3                  GLOBAL_CFG |= bSW_RESET;                                      //Èí¼þ¸´Î»µ¥Æ¬»ú,½øÈëÓÃ»§³ÌÐò */
+ 422   3              }
+ 423   2          }
+ 424   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    999    ----
+   CONSTANT SIZE    =     50    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13      20
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,600 @@
+ASxxxx Linker V03.00 + NoICE + sdld,  page 1.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CABS                                00000000    00000000 =           0. bytes (ABS,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000000  l_BIT_BANK                      
+C:   00000000  l_BSEG                          
+C:   00000000  l_BSEG_BYTES                    
+C:   00000000  l_CABS                          
+C:   00000000  l_GSINIT                        
+C:   00000000  l_GSINIT1                       
+C:   00000000  l_GSINIT5                       
+C:   00000000  l_IABS                          
+C:   00000000  l_PSEG                          
+C:   00000000  l_REG_BANK_1                    
+C:   00000000  l_REG_BANK_2                    
+C:   00000000  l_REG_BANK_3                    
+C:   00000000  l_RSEG                          
+C:   00000000  l_RSEG0                         
+C:   00000000  l_RSEG1                         
+C:   00000000  l_XABS                          
+C:   00000000  l_XINIT                         
+C:   00000000  l_XISEG                         
+C:   00000000  l_XSEG                          
+C:   00000000  l__CODE                         
+C:   00000000  s_BSEG                          
+C:   00000000  s_CABS                          
+C:   00000000  s_DSEG                          
+C:   00000000  s_HOME                          
+C:   00000000  s_IABS                          
+C:   00000000  s_PSEG                          
+C:   00000000  s_REG_BANK_0                    
+C:   00000000  s_RSEG                          
+C:   00000000  s_RSEG0                         
+C:   00000000  s_RSEG1                         
+C:   00000000  s_XABS                          
+C:   00000000  s_XISEG                         
+C:   00000000  s_XSEG                          
+C:   00000003  l_GSFINAL                       
+C:   00000003  l_GSINIT0                       
+C:   00000004  l_OSEG                          
+C:   00000006  l_HOME                          
+C:   00000006  l_ISEG                          
+C:   00000006  s_GSINIT0                       
+C:   00000008  l_REG_BANK_0                    
+C:   00000008  s_REG_BANK_1                    
+C:   00000009  s_GSINIT1                       
+C:   00000009  s_GSINIT2                       
+C:   0000000A  l_GSINIT2                       
+C:   00000010  s_REG_BANK_2                    
+C:   00000013  s_GSINIT3                       
+C:   00000018  s_BIT_BANK                      
+C:   00000018  s_REG_BANK_3                    
+C:   00000020  s_BSEG_BYTES                    
+C:   00000020  s__CODE                         
+ASxxxx Linker V03.00 + NoICE + sdld,  page 2.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CABS                                00000000    00000000 =           0. bytes (ABS,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000022  l_GSINIT3                       
+C:   0000002A  l_GSINIT4                       
+C:   00000034  l_CONST                         
+C:   00000035  s_GSINIT4                       
+C:   00000045  s_OSEG                          
+C:   00000049  s_ISEG                          
+C:   0000004F  s_SSEG                          
+C:   0000005F  s_GSFINAL                       
+C:   0000005F  s_GSINIT                        
+C:   0000005F  s_GSINIT5                       
+C:   00000062  s_CSEG                          
+C:   00000080  l_DSEG                          
+C:   000000B1  l_SSEG                          
+C:   00000100  l_IRAM                          
+C:   00000CD4  l_CSEG                          
+C:   00000D36  s_CONST                         
+C:   00000D6A  s_XINIT                         
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 3.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000000  .__.ABS.                           _bp
+     00000080  _ADC_CHAN0                         touchkey
+     00000080  _ADC_CTRL                          touchkey
+     00000081  _ADC_CHAN1                         touchkey
+     00000081  _SP                                touchkey
+     00000082  _DPL                               touchkey
+     00000083  _CMP_CHAN                          touchkey
+     00000083  _DPH                               touchkey
+     00000084  _ADC_START                         touchkey
+     00000084  _ROM_ADDR_L                        touchkey
+     00000085  _ADC_IF                            touchkey
+     00000085  _ROM_ADDR_H                        touchkey
+     00000086  _CMP_IF                            touchkey
+     00000086  _ROM_CTRL                          touchkey
+     00000087  _CMPO                              touchkey
+     00000087  _PCON                              touchkey
+     00000088  _IT0                               touchkey
+     00000088  _TCON                              touchkey
+     00000089  _IE0                               touchkey
+     00000089  _TMOD                              touchkey
+     0000008A  _IT1                               touchkey
+     0000008A  _TL0                               touchkey
+     0000008B  _IE1                               touchkey
+     0000008B  _TL1                               touchkey
+     0000008C  _TH0                               touchkey
+     0000008C  _TR0                               touchkey
+     0000008D  _TF0                               touchkey
+     0000008D  _TH1                               touchkey
+     0000008E  _ROM_DATA_L                        touchkey
+     0000008E  _TR1                               touchkey
+     0000008F  _ROM_DATA_H                        touchkey
+     0000008F  _TF1                               touchkey
+     00000090  _CAP1                              touchkey
+     00000090  _P1                                touchkey
+     00000090  _T2                                touchkey
+     00000090  _TIN0                              touchkey
+     00000091  _AIN0                              touchkey
+     00000091  _CAP2                              touchkey
+     00000091  _T2EX                              touchkey
+     00000091  _TIN1                              touchkey
+     00000091  _USB_C_CTRL                        touchkey
+     00000091  _VBUS2                             touchkey
+     00000092  _P1_MOD_OC                         touchkey
+     00000092  _RXD_                              touchkey
+     00000093  _P1_DIR_PU                         touchkey
+     00000093  _TXD_                              touchkey
+     00000094  _AIN1                              touchkey
+     00000094  _CAP1_                             touchkey
+     00000094  _SCS                               touchkey
+     00000094  _T2_                               touchkey
+ASxxxx Linker V03.00 + NoICE + sdld,  page 4.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000094  _TIN2                              touchkey
+     00000094  _UCC1                              touchkey
+     00000095  _AIN2                              touchkey
+     00000095  _MOSI                              touchkey
+     00000095  _PWM1                              touchkey
+     00000095  _TIN3                              touchkey
+     00000095  _UCC2                              touchkey
+     00000096  _MISO                              touchkey
+     00000096  _P3_MOD_OC                         touchkey
+     00000096  _RXD1                              touchkey
+     00000096  _TIN4                              touchkey
+     00000097  _P3_DIR_PU                         touchkey
+     00000097  _SCK                               touchkey
+     00000097  _TIN5                              touchkey
+     00000097  _TXD1                              touchkey
+     00000098  _RI                                touchkey
+     00000098  _SCON                              touchkey
+     00000099  _SBUF                              touchkey
+     00000099  _TI                                touchkey
+     0000009A  _ADC_CFG                           touchkey
+     0000009A  _RB8                               touchkey
+     0000009B  _PWM_DATA2                         touchkey
+     0000009B  _TB8                               touchkey
+     0000009C  _PWM_DATA1                         touchkey
+     0000009C  _REN                               touchkey
+     0000009D  _PWM_CTRL                          touchkey
+     0000009D  _SM2                               touchkey
+     0000009E  _PWM_CK_SE                         touchkey
+     0000009E  _SM1                               touchkey
+     0000009F  _ADC_DATA                          touchkey
+     0000009F  _SM0                               touchkey
+     000000A0  _P2                                touchkey
+     000000A0  __XPAGE                            
+     000000A1  _SAFE_MOD                          touchkey
+     000000A2  _XBUS_AUX                          touchkey
+     000000A8  _EX0                               touchkey
+     000000A8  _IE                                touchkey
+     000000A9  _ET0                               touchkey
+     000000A9  _WAKE_CTRL                         touchkey
+     000000AA  _EX1                               touchkey
+     000000AB  _ET1                               touchkey
+     000000AC  _ES                                touchkey
+     000000AD  _ET2                               touchkey
+     000000AE  _E_DIS                             touchkey
+     000000AF  _EA                                touchkey
+     000000B0  _P3                                touchkey
+     000000B0  _PWM1_                             touchkey
+     000000B0  _RXD                               touchkey
+     000000B1  _GLOBAL_CFG                        touchkey
+     000000B1  _PWM2_                             touchkey
+     000000B1  _TXD                               touchkey
+ASxxxx Linker V03.00 + NoICE + sdld,  page 5.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     000000B2  _AIN3                              touchkey
+     000000B2  _INT0                              touchkey
+     000000B2  _TXD1_                             touchkey
+     000000B2  _VBUS1                             touchkey
+     000000B3  _INT1                              touchkey
+     000000B4  _PWM2                              touchkey
+     000000B4  _RXD1_                             touchkey
+     000000B4  _T0                                touchkey
+     000000B5  _T1                                touchkey
+     000000B6  _UDP                               touchkey
+     000000B7  _UDM                               touchkey
+     000000B8  _IP                                touchkey
+     000000B8  _PX0                               touchkey
+     000000B9  _CLOCK_CFG                         touchkey
+     000000B9  _PT0                               touchkey
+     000000BA  _PX1                               touchkey
+     000000BB  _PT1                               touchkey
+     000000BC  _PS                                touchkey
+     000000BD  _PT2                               touchkey
+     000000BE  _PL_FLAG                           touchkey
+     000000BF  _PH_FLAG                           touchkey
+     000000C0  _SCON1                             touchkey
+     000000C0  _U1RI                              touchkey
+     000000C1  _SBUF1                             touchkey
+     000000C1  _U1TI                              touchkey
+     000000C2  _SBAUD1                            touchkey
+     000000C2  _U1RB8                             touchkey
+     000000C3  _TKEY_CTRL                         touchkey
+     000000C3  _U1TB8                             touchkey
+     000000C4  _TKEY_DATL                         touchkey
+     000000C4  _U1REN                             touchkey
+     000000C5  _TKEY_DATH                         touchkey
+     000000C5  _U1SMOD                            touchkey
+     000000C6  _PIN_FUNC                          touchkey
+     000000C7  _GPIO_IE                           touchkey
+     000000C7  _U1SM0                             touchkey
+     000000C8  _CP_RL2                            touchkey
+     000000C8  _T2CON                             touchkey
+     000000C9  _C_T2                              touchkey
+     000000C9  _T2MOD                             touchkey
+     000000CA  _RCAP2L                            touchkey
+     000000CA  _TR2                               touchkey
+     000000CB  _EXEN2                             touchkey
+     000000CB  _RCAP2H                            touchkey
+     000000CC  _TCLK                              touchkey
+     000000CC  _TL2                               touchkey
+     000000CD  _RCLK                              touchkey
+     000000CD  _TH2                               touchkey
+     000000CE  _EXF2                              touchkey
+     000000CE  _T2CAP1L                           touchkey
+     000000CF  _CAP1F                             touchkey
+ASxxxx Linker V03.00 + NoICE + sdld,  page 6.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     000000CF  _T2CAP1H                           touchkey
+     000000CF  _TF2                               touchkey
+     000000D0  _P                                 touchkey
+     000000D0  _PSW                               touchkey
+     000000D1  _F1                                touchkey
+     000000D1  _UDEV_CTRL                         touchkey
+     000000D2  _OV                                touchkey
+     000000D2  _UEP1_CTRL                         touchkey
+     000000D3  _RS0                               touchkey
+     000000D3  _UEP1_T_LEN                        touchkey
+     000000D4  _RS1                               touchkey
+     000000D4  _UEP2_CTRL                         touchkey
+     000000D5  _F0                                touchkey
+     000000D5  _UEP2_T_LEN                        touchkey
+     000000D6  _AC                                touchkey
+     000000D6  _UEP3_CTRL                         touchkey
+     000000D7  _CY                                touchkey
+     000000D7  _UEP3_T_LEN                        touchkey
+     000000D8  _UIF_BUS_RST                       touchkey
+     000000D8  _UIF_DETECT                        touchkey
+     000000D8  _USB_INT_FG                        touchkey
+     000000D9  _UIF_TRANSFER                      touchkey
+     000000D9  _USB_INT_ST                        touchkey
+     000000DA  _UIF_SUSPEND                       touchkey
+     000000DA  _USB_MIS_ST                        touchkey
+     000000DB  _UIF_HST_SOF                       touchkey
+     000000DB  _USB_RX_LEN                        touchkey
+     000000DC  _UEP0_CTRL                         touchkey
+     000000DC  _UIF_FIFO_OV                       touchkey
+     000000DD  _UEP0_T_LEN                        touchkey
+     000000DD  _U_SIE_FREE                        touchkey
+     000000DE  _UEP4_CTRL                         touchkey
+     000000DE  _U_TOG_OK                          touchkey
+     000000DF  _UEP4_T_LEN                        touchkey
+     000000DF  _U_IS_NAK                          touchkey
+     000000E0  _ACC                               touchkey
+     000000E1  _USB_INT_EN                        touchkey
+     000000E2  _USB_CTRL                          touchkey
+     000000E3  _USB_DEV_AD                        touchkey
+     000000E4  _UEP2_DMA_L                        touchkey
+     000000E5  _UEP2_DMA_H                        touchkey
+     000000E6  _UEP3_DMA_L                        touchkey
+     000000E7  _UEP3_DMA_H                        touchkey
+     000000E8  _IE_EX                             touchkey
+     000000E8  _IE_SPI0                           touchkey
+     000000E9  _IE_TKEY                           touchkey
+     000000E9  _IP_EX                             touchkey
+     000000EA  _IE_USB                            touchkey
+     000000EA  _UEP4_1_MOD                        touchkey
+     000000EB  _IE_ADC                            touchkey
+     000000EB  _UEP2_3_MOD                        touchkey
+ASxxxx Linker V03.00 + NoICE + sdld,  page 7.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     000000EC  _IE_UART1                          touchkey
+     000000EC  _UEP0_DMA_L                        touchkey
+     000000ED  _IE_PWMX                           touchkey
+     000000ED  _UEP0_DMA_H                        touchkey
+     000000EE  _IE_GPIO                           touchkey
+     000000EE  _UEP1_DMA_L                        touchkey
+     000000EF  _IE_WDOG                           touchkey
+     000000EF  _UEP1_DMA_H                        touchkey
+     000000F0  _B                                 touchkey
+     000000F5  _B_5                               _gptrget
+     000000F6  _B_6                               _gptrget
+     000000F7  _B_7                               _gptrget
+     000000F8  _S0_R_FIFO                         touchkey
+     000000F8  _SPI0_STAT                         touchkey
+     000000F9  _SPI0_DATA                         touchkey
+     000000FA  _S0_T_FIFO                         touchkey
+     000000FA  _SPI0_CTRL                         touchkey
+     000000FB  _S0_FREE                           touchkey
+     000000FB  _SPI0_CK_SE                        touchkey
+     000000FC  _S0_IF_BYTE                        touchkey
+     000000FC  _SPI0_SETUP                        touchkey
+     000000FD  _S0_IF_FIRST                       touchkey
+     000000FE  _RESET_KEEP                        touchkey
+     000000FE  _S0_IF_OV                          touchkey
+     000000FF  _S0_FST_ACT                        touchkey
+     000000FF  _WDOG_COUNT                        touchkey
+     00008584  _ROM_ADDR                          touchkey
+     00008F8E  _ROM_DATA                          touchkey
+     0000C5C4  _TKEY_DAT                          touchkey
+     0000CBCA  _RCAP2                             touchkey
+     0000CDCC  _T2COUNT                           touchkey
+     0000CFCE  _T2CAP1                            touchkey
+     0000E5E4  _UEP2_DMA                          touchkey
+     0000E7E6  _UEP3_DMA                          touchkey
+     0000EDEC  _UEP0_DMA                          touchkey
+     0000EFEE  _UEP1_DMA                          touchkey
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 8.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+REG_BANK_0                          00000000    00000008 =           8. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 9.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+DSEG                                00000000    00000080 =         128. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     0000000D  _KeyFree                           touchkey
+     00000015  _KeyBuf                            touchkey
+     00000016  _vprintf_PARM_2                    vprintf
+     00000024  __print_format_PARM_2              printf_large
+     00000027  __print_format_PARM_3              printf_large
+     0000002A  __print_format_PARM_4              printf_large
+     00000044  _bp                                _bp
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 10.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+OSEG                                00000045    00000004 =           4. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000045  __divsint_PARM_2                   _divuint
+     00000045  __divslong_PARM_2                  _divulong
+     00000045  __divuint_PARM_2                   _divuint
+     00000045  __divulong_PARM_2                  _divulong
+     00000045  __modslong_PARM_2                  _modulong
+     00000045  __modulong_PARM_2                  _modulong
+     00000045  __mulint_PARM_2                    _mulint
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 11.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+ISEG                                00000049    00000006 =           6. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 12.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+SSEG                                0000004F    000000B1 =         177. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     0000004F  __start__stack                     main
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 13.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+HOME                                00000000    00000006 =           6. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000003  __sdcc_program_startup             main
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 14.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT0                             00000006    00000003 =           3. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000006  __sdcc_gsinit_startup              
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 15.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT2                             00000009    0000000A =          10. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 16.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT3                             00000013    00000022 =          34. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000013  __mcs51_genXINIT                   
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 17.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT4                             00000035    0000002A =          42. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000035  __mcs51_genRAMCLEAR                
+C:   0000003B  __mcs51_genXRAMCLEAR               
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 18.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSFINAL                             0000005F    00000003 =           3. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 19.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CSEG                                00000062    00000CD4 =        3284. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000062  _main                              main
+C:   000000BE  _CfgFsys                           debug
+C:   000000D0  _mDelayuS                          debug
+C:   000000E6  _mDelaymS                          debug
+C:   00000104  _CH554UART0Alter                   debug
+C:   00000108  _mInitSTDIO                        debug
+C:   00000196  _CH554UART0RcvByte                 debug
+C:   0000019F  _CH554UART0SendByte                debug
+C:   000001A8  _putchar                           debug
+C:   000001B8  _getchar                           debug
+C:   000001C6  _CH554UART1Alter                   debug
+C:   000001CA  _UART1Setup                        debug
+C:   000001D4  _CH554UART1RcvByte                 debug
+C:   000001DD  _CH554UART1SendByte                debug
+C:   000001E6  _CH554WDTModeSelect                debug
+C:   00000200  _CH554WDTFeed                      debug
+C:   00000204  _GetTouchKeyFree                   touchkey
+C:   0000026F  _TouchKeyChannelSelect             touchkey
+C:   00000288  _TouchKeyChannelQuery              touchkey
+C:   000002C2  __modulong                         _modulong
+C:   00000345  __divulong                         _divulong
+C:   000003AA  __divuint                          _divuint
+C:   000003E2  _vprintf                           vprintf
+C:   000003FB  _printf                            vprintf
+C:   000004C1  __print_format                     printf_large
+C:   00000CA9  _strlen                            _strlen
+C:   00000CC1  __mulint                           _mulint
+C:   00000CC1  __mulint_dummy                     _mulint
+C:   00000CDE  __gptrget                          _gptrget
+C:   00000CFA  __divsint                          _divsint
+C:   00000D32  __sdcc_external_startup            _startup
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 20.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CONST                               00000D36    00000034 =          52. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 21.
+
+Files Linked                              [ module(s) ]
+
+main.rel                                  [  ]
+debug.rel                                 [  ]
+touchkey.rel                              [  ]
+
+
+Libraries Linked                          [ object file ]
+
+D:\Program Files\SDCC\bin\..\lib\small/liblong.lib
+                                          [ _modulong.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/liblong.lib
+                                          [ _divulong.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/mcs51.lib
+                                          [ crtclear.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/mcs51.lib
+                                          [ crtxinit.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libint.lib
+                                          [ _divuint.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/mcs51.lib
+                                          [ crtxclear.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libsdcc.lib
+                                          [ vprintf.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libsdcc.lib
+                                          [ printf_large.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/mcs51.lib
+                                          [ crtpagesfr.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libsdcc.lib
+                                          [ _strlen.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libint.lib
+                                          [ _mulint.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/mcs51.lib
+                                          [ crtstart.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libsdcc.lib
+                                          [ _gptrget.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libint.lib
+                                          [ _divsint.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libsdcc.lib
+                                          [ _startup.rel ]
+D:\Program Files\SDCC\bin\..\lib\small/libsdcc.lib
+                                          [ _bp.rel ]
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 22.
+
+User Base Address Definitions
+
+HOME = 0x0000
+ISEG = 0x0000
+BSEG = 0x0000
+
+

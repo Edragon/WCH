@@ -1,0 +1,517 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        01/09/2018  18:40:32  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+D:\KEIL\C51\BIN\BL51.EXE CH559_IAP.obj TO CH559_IAP RAMSIZE (256) CODE (0X3004-0XFFFF)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  CH559_IAP.obj (CH559_IAP)
+  D:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+  D:\KEIL\C51\LIB\C51S.LIB (?C?COPY)
+  D:\KEIL\C51\LIB\C51S.LIB (?C?CLDPTR)
+  D:\KEIL\C51\LIB\C51S.LIB (?C_INIT)
+
+
+LINK MAP OF MODULE:  CH559_IAP (CH559_IAP)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0014H     UNIT         _DATA_GROUP_
+            DATA    001CH     000DH     UNIT         ?DT?CH559_IAP
+            IDATA   0029H     0001H     UNIT         ?STACK
+
+            * * * * * * *  X D A T A   M E M O R Y  * * * * * * *
+            XDATA   0000H     0008H     ABSOLUTE     
+            XDATA   0008H     0080H     ABSOLUTE     
+            XDATA   0088H     0040H     ABSOLUTE     
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+                    0003H     3001H                  *** GAP ***
+            CODE    3004H     01DEH     UNIT         ?PR?USB_DEVICEINTERRUPT?CH559_IAP
+            CODE    31E2H     010FH     UNIT         ?C?LIB_CODE
+            CODE    32F1H     00FCH     UNIT         ?PR?CH55X_IAPDOWNLOAD?CH559_IAP
+            CODE    33EDH     008CH     UNIT         ?C_C51STARTUP
+            CODE    3479H     0056H     UNIT         ?PR?MAIN?CH559_IAP
+            CODE    34CFH     0043H     UNIT         ?PR?_FLASHVERIFY?CH559_IAP
+            CODE    3512H     0032H     UNIT         ?PR?INITUSB_DEVICE?CH559_IAP
+            CODE    3544H     0032H     UNIT         ?CO?CH559_IAP
+            CODE    3576H     001BH     UNIT         ?PR?_PROGWORD?CH559_IAP
+            CODE    3591H     0018H     UNIT         ?PR?_MDELAY20US?CH559_IAP
+            CODE    35A9H     000FH     UNIT         ?PR?_CH55X_RESPOND?CH559_IAP
+            CODE    35B8H     0004H     UNIT         ?C_INITSEG
+
+
+
+OVERLAY MAP OF MODULE:   CH559_IAP (CH559_IAP)
+
+
+SEGMENT                                     DATA_GROUP 
+  +--> CALLED SEGMENT                     START    LENGTH
+---------------------------------------------------------
+?C_C51STARTUP                             -----    -----
+  +--> ?PR?MAIN?CH559_IAP
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 2
+
+
+  +--> ?C_INITSEG
+
+?PR?MAIN?CH559_IAP                        0008H    0004H
+  +--> ?PR?INITUSB_DEVICE?CH559_IAP
+  +--> ?PR?USB_DEVICEINTERRUPT?CH559_IAP
+  +--> ?PR?_MDELAY20US?CH559_IAP
+
+?PR?USB_DEVICEINTERRUPT?CH559_IAP         000CH    0001H
+  +--> ?PR?CH55X_IAPDOWNLOAD?CH559_IAP
+  +--> ?CO?CH559_IAP
+
+?PR?CH55X_IAPDOWNLOAD?CH559_IAP           000DH    0006H
+  +--> ?PR?_PROGWORD?CH559_IAP
+  +--> ?PR?_FLASHVERIFY?CH559_IAP
+  +--> ?PR?_CH55X_RESPOND?CH559_IAP
+
+?PR?_FLASHVERIFY?CH559_IAP                0013H    0009H
+
+
+
+SYMBOL TABLE OF MODULE:  CH559_IAP (CH559_IAP)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        CH559_IAP
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0090H         PUBLIC        P1
+  D:00E2H         PUBLIC        USB_CTRL
+  D:00B0H         PUBLIC        P3
+  D:0021H         PUBLIC        UsbConfig
+  D:0086H         PUBLIC        ROM_CTRL
+  B:00A8H.7       PUBLIC        EA
+  B:00D8H.0       PUBLIC        UIF_BUS_RST
+  D:00E8H         PUBLIC        IE_EX
+  B:00D8H.7       PUBLIC        U_IS_NAK
+  D:00A8H         PUBLIC        IE
+  C:35A9H         PUBLIC        _CH55X_Respond
+  D:00DDH         PUBLIC        UEP0_T_LEN
+  D:00E3H         PUBLIC        USB_DEV_AD
+  D:00D5H         PUBLIC        UEP2_T_LEN
+  B:0090H.0       PUBLIC        DisableIAP
+  D:00B8H         PUBLIC        IP
+  B:00D8H.6       PUBLIC        U_TOG_OK
+  D:00D8H         PUBLIC        USB_INT_FG
+  C:3479H         PUBLIC        main
+  D:00E1H         PUBLIC        USB_INT_EN
+  C:3591H         PUBLIC        _mDelay20us
+  D:0022H         PUBLIC        eeprom_len
+  B:00D8H.1       PUBLIC        UIF_TRANSFER
+  D:00DCH         PUBLIC        UEP0_CTRL
+  D:00D2H         PUBLIC        UEP1_CTRL
+  D:00D4H         PUBLIC        UEP2_CTRL
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  C:3512H         PUBLIC        InitUSB_Device
+  D:00DBH         PUBLIC        USB_RX_LEN
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 3
+
+
+  C:3576H         PUBLIC        _ProgWord
+  D:00F8H         PUBLIC        SPI0_STAT
+  D:00D9H         PUBLIC        USB_INT_ST
+  X:0000H         PUBLIC        Ep0Buffer
+  X:0008H         PUBLIC        Ep2Buffer
+  C:32F1H         PUBLIC        CH55X_IAPDownload
+  D:00D1H         PUBLIC        UDEV_CTRL
+  C:3556H         PUBLIC        MyCfgDescr
+  D:00ECH         PUBLIC        UEP0_DMA
+  D:00E4H         PUBLIC        UEP2_DMA
+  X:0088H         PUBLIC        iap_cmd
+  D:0024H         PUBLIC        chip_id
+  B:00E8H.2       PUBLIC        IE_USB
+  C:3544H         PUBLIC        MyDevDescr
+  D:0026H         PUBLIC        uart_bit
+  D:0080H         PUBLIC        ADC_CTRL
+  D:00A1H         PUBLIC        SAFE_MOD
+  D:00B1H         PUBLIC        GLOBAL_CFG
+  D:00C0H         PUBLIC        SCON1
+  D:00C8H         PUBLIC        T2CON
+  C:34CFH         PUBLIC        _FlashVerify
+  B:00D8H.2       PUBLIC        UIF_SUSPEND
+  D:008EH         PUBLIC        ROM_DATA
+  D:0084H         PUBLIC        ROM_ADDR
+  D:0027H         PUBLIC        pCode
+  D:00EBH         PUBLIC        UEP2_3_MOD
+  D:00EAH         PUBLIC        UEP4_1_MOD
+  C:3004H         PUBLIC        USB_DeviceInterrupt
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          _PROGWORD
+  D:0006H         SYMBOL        Addr
+  D:0004H         SYMBOL        Data
+  C:3576H         LINE#         60
+  C:3576H         LINE#         61
+  C:3576H         LINE#         62
+  C:357AH         LINE#         63
+  C:357EH         LINE#         64
+  C:3583H         LINE#         65
+  C:3586H         LINE#         66
+  C:358EH         LINE#         67
+  C:358EH         LINE#         68
+  C:3590H         LINE#         69
+  -------         ENDPROC       _PROGWORD
+  -------         PROC          _FLASHVERIFY
+  D:0006H         SYMBOL        Addr
+  D:0001H         SYMBOL        pData
+  D:0018H         SYMBOL        len
+  -------         DO            
+  D:001AH         SYMBOL        i
+  -------         ENDDO         
+  C:34CFH         LINE#         81
+  C:34CFH         LINE#         82
+  C:34CFH         LINE#         84
+  C:34D3H         LINE#         85
+  C:34E4H         LINE#         86
+  C:34E4H         LINE#         87
+  C:34F3H         LINE#         88
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 4
+
+
+  C:34F3H         LINE#         89
+  C:34F6H         LINE#         90
+  C:34F6H         LINE#         91
+  C:34FEH         LINE#         92
+  C:3505H         LINE#         93
+  C:350FH         LINE#         94
+  C:3511H         LINE#         95
+  -------         ENDPROC       _FLASHVERIFY
+  -------         PROC          _CH55X_RESPOND
+  D:0007H         SYMBOL        s
+  C:35A9H         LINE#         104
+  C:35A9H         LINE#         105
+  C:35A9H         LINE#         106
+  C:35AEH         LINE#         107
+  C:35B1H         LINE#         108
+  C:35B4H         LINE#         109
+  C:35B7H         LINE#         110
+  -------         ENDPROC       _CH55X_RESPOND
+  -------         PROC          CH55X_IAPDOWNLOAD
+  -------         DO            
+  D:0001H         SYMBOL        s
+  D:0002H         SYMBOL        i
+  D:000DH         SYMBOL        len
+  D:0004H         SYMBOL        Data
+  D:000FH         SYMBOL        addr
+  -------         ENDDO         
+  C:32F1H         LINE#         119
+  C:32F1H         LINE#         120
+  C:32F1H         LINE#         125
+  C:330FH         LINE#         126
+  C:330FH         LINE#         127
+  C:330FH         LINE#         128
+  C:331AH         LINE#         129
+  C:332FH         LINE#         130
+  C:3332H         LINE#         131
+  C:3335H         LINE#         132
+  C:3338H         LINE#         133
+  C:3344H         LINE#         134
+  C:3344H         LINE#         135
+  C:336CH         LINE#         136
+  C:3376H         LINE#         137
+  C:338BH         LINE#         138
+  C:338EH         LINE#         139
+  C:338EH         LINE#         140
+  C:338EH         LINE#         141
+  C:338EH         LINE#         142
+  C:3395H         LINE#         143
+  C:3398H         LINE#         144
+  C:339BH         LINE#         145
+  C:339EH         LINE#         146
+  C:33A1H         LINE#         147
+  C:33A3H         LINE#         148
+  C:33A3H         LINE#         149
+  C:33A5H         LINE#         150
+  C:33A7H         LINE#         151
+  C:33A7H         LINE#         152
+  C:33BCH         LINE#         153
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 5
+
+
+  C:33C7H         LINE#         154
+  C:33DBH         LINE#         155
+  C:33DBH         LINE#         156
+  C:33DDH         LINE#         157
+  C:33DDH         LINE#         158
+  C:33E0H         LINE#         159
+  C:33E3H         LINE#         160
+  C:33E6H         LINE#         161
+  C:33E7H         LINE#         162
+  C:33E7H         LINE#         163
+  C:33ECH         LINE#         164
+  C:33ECH         LINE#         165
+  C:33ECH         LINE#         166
+  -------         ENDPROC       CH55X_IAPDOWNLOAD
+  -------         PROC          USB_DEVICEINTERRUPT
+  -------         DO            
+  D:000CH         SYMBOL        len
+  D:001CH         SYMBOL        SetupReqCode
+  D:001DH         SYMBOL        SetupLen
+  D:001EH         SYMBOL        pDescr
+  -------         ENDDO         
+  C:3004H         LINE#         175
+  C:3004H         LINE#         176
+  C:3004H         LINE#         180
+  C:300AH         LINE#         181
+  C:300AH         LINE#         182
+  C:3010H         LINE#         184
+  C:3010H         LINE#         185
+  C:3031H         LINE#         186
+  C:3031H         LINE#         187
+  C:3031H         LINE#         188
+  C:3037H         LINE#         189
+  C:3037H         LINE#         190
+  C:303AH         LINE#         191
+  C:304DH         LINE#         192
+  C:3050H         LINE#         193
+  C:3053H         LINE#         194
+  C:3053H         LINE#         195
+  C:3056H         LINE#         196
+  C:3056H         LINE#         197
+  C:305EH         LINE#         198
+  C:3061H         LINE#         199
+  C:3061H         LINE#         200
+  C:3069H         LINE#         201
+  C:306CH         LINE#         202
+  C:306CH         LINE#         203
+  C:306FH         LINE#         204
+  C:3078H         LINE#         205
+  C:3078H         LINE#         206
+  C:307EH         LINE#         207
+  C:3089H         LINE#         208
+  C:3089H         LINE#         209
+  C:308CH         LINE#         210
+  C:308CH         LINE#         211
+  C:308FH         LINE#         212
+  C:3097H         LINE#         213
+  C:3097H         LINE#         214
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 6
+
+
+  C:3097H         LINE#         215
+  C:309AH         LINE#         217
+  C:309AH         LINE#         218
+  C:30A0H         LINE#         219
+  C:30BAH         LINE#         220
+  C:30BAH         LINE#         221
+  C:30BAH         LINE#         222
+  C:30C5H         LINE#         223
+  C:30C5H         LINE#         224
+  C:30C5H         LINE#         225
+  C:30CEH         LINE#         226
+  C:30D1H         LINE#         227
+  C:30D3H         LINE#         228
+  C:30D3H         LINE#         229
+  C:30DCH         LINE#         230
+  C:30DFH         LINE#         231
+  C:30E1H         LINE#         232
+  C:30E1H         LINE#         233
+  C:30E4H         LINE#         234
+  C:30E4H         LINE#         235
+  C:30E4H         LINE#         236
+  C:30EBH         LINE#         237
+  C:30EBH         LINE#         238
+  C:30EEH         LINE#         239
+  C:30EEH         LINE#         240
+  C:30FDH         LINE#         241
+  C:310EH         LINE#         242
+  C:3115H         LINE#         243
+  C:3120H         LINE#         244
+  C:3122H         LINE#         245
+  C:3122H         LINE#         246
+  C:3128H         LINE#         247
+  C:312AH         LINE#         248
+  C:312AH         LINE#         249
+  C:3130H         LINE#         250
+  C:3137H         LINE#         251
+  C:3137H         LINE#         252
+  C:313AH         LINE#         253
+  C:313AH         LINE#         254
+  C:313CH         LINE#         255
+  C:313CH         LINE#         256
+  C:3142H         LINE#         257
+  C:3144H         LINE#         258
+  C:3144H         LINE#         259
+  C:3144H         LINE#         260
+  C:3146H         LINE#         261
+  C:3146H         LINE#         262
+  C:3146H         LINE#         263
+  C:3146H         LINE#         265
+  C:3146H         LINE#         266
+  C:3149H         LINE#         267
+  C:3149H         LINE#         268
+  C:314EH         LINE#         269
+  C:314EH         LINE#         270
+  C:3151H         LINE#         271
+  C:3154H         LINE#         272
+  C:3156H         LINE#         273
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 7
+
+
+  C:315DH         LINE#         274
+  C:315DH         LINE#         275
+  C:3160H         LINE#         276
+  C:3160H         LINE#         277
+  C:3162H         LINE#         279
+  C:3162H         LINE#         280
+  C:3165H         LINE#         281
+  C:3168H         LINE#         282
+  C:3168H         LINE#         283
+  C:316AH         LINE#         284
+  C:316AH         LINE#         285
+  C:3173H         LINE#         286
+  C:3173H         LINE#         287
+  C:3173H         LINE#         288
+  C:3182H         LINE#         289
+  C:3193H         LINE#         290
+  C:319AH         LINE#         291
+  C:31A5H         LINE#         292
+  C:31A8H         LINE#         293
+  C:31ABH         LINE#         294
+  C:31ADH         LINE#         295
+  C:31ADH         LINE#         296
+  C:31B5H         LINE#         297
+  C:31B5H         LINE#         298
+  C:31B7H         LINE#         299
+  C:31B7H         LINE#         300
+  C:31BAH         LINE#         301
+  C:31BAH         LINE#         302
+  C:31BCH         LINE#         303
+  C:31BCH         LINE#         304
+  C:31BCH         LINE#         305
+  C:31BCH         LINE#         306
+  C:31BCH         LINE#         307
+  C:31BCH         LINE#         308
+  C:31BCH         LINE#         309
+  C:31BFH         LINE#         310
+  C:31BFH         LINE#         311
+  C:31BFH         LINE#         312
+  C:31BFH         LINE#         313
+  C:31BFH         LINE#         314
+  C:31BFH         LINE#         315
+  C:31BFH         LINE#         316
+  C:31BFH         LINE#         317
+  C:31C1H         LINE#         318
+  C:31C2H         LINE#         319
+  C:31C5H         LINE#         320
+  C:31C5H         LINE#         321
+  C:31C8H         LINE#         322
+  C:31CBH         LINE#         323
+  C:31CEH         LINE#         324
+  C:31D1H         LINE#         325
+  C:31D3H         LINE#         326
+  C:31D5H         LINE#         327
+  C:31D7H         LINE#         328
+  C:31D8H         LINE#         329
+  C:31DBH         LINE#         330
+  C:31DBH         LINE#         331
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 8
+
+
+  C:31DDH         LINE#         332
+  C:31DEH         LINE#         334
+  C:31DEH         LINE#         335
+  C:31E1H         LINE#         336
+  C:31E1H         LINE#         337
+  -------         ENDPROC       USB_DEVICEINTERRUPT
+  -------         PROC          INITUSB_DEVICE
+  C:3512H         LINE#         346
+  C:3512H         LINE#         347
+  C:3512H         LINE#         348
+  C:3514H         LINE#         349
+  C:3517H         LINE#         350
+  C:351AH         LINE#         351
+  C:351DH         LINE#         352
+  C:3523H         LINE#         353
+  C:3529H         LINE#         354
+  C:352CH         LINE#         355
+  C:352FH         LINE#         356
+  C:3532H         LINE#         357
+  C:3534H         LINE#         358
+  C:3537H         LINE#         359
+  C:353AH         LINE#         360
+  C:353DH         LINE#         361
+  C:3540H         LINE#         362
+  C:3543H         LINE#         363
+  -------         ENDPROC       INITUSB_DEVICE
+  -------         PROC          _MDELAY20US
+  D:0006H         SYMBOL        n
+  C:3591H         LINE#         371
+  C:3591H         LINE#         372
+  C:3591H         LINE#         373
+  C:35A0H         LINE#         374
+  C:35A0H         LINE#         375
+  C:35A1H         LINE#         376
+  C:35A8H         LINE#         377
+  -------         ENDPROC       _MDELAY20US
+  -------         PROC          MAIN
+  -------         DO            
+  D:0008H         SYMBOL        i
+  D:000AH         SYMBOL        j
+  -------         ENDDO         
+  C:3479H         LINE#         386
+  C:3479H         LINE#         387
+  C:3479H         LINE#         388
+  C:347EH         LINE#         389
+  C:3480H         LINE#         390
+  C:3482H         LINE#         391
+  C:3485H         LINE#         392
+  C:3485H         LINE#         393
+  C:3485H         LINE#         394
+  C:348DH         LINE#         395
+  C:3495H         LINE#         396
+  C:349EH         LINE#         397
+  C:349EH         LINE#         398
+  C:34A3H         LINE#         399
+  C:34A7H         LINE#         400
+  C:34A7H         LINE#         401
+BL51 BANKED LINKER/LOCATER V6.22                                                      01/09/2018  18:40:32  PAGE 9
+
+
+  C:34AAH         LINE#         402
+  C:34AAH         LINE#         403
+  C:34AAH         LINE#         404
+  C:34B6H         LINE#         405
+  C:34B6H         LINE#         406
+  C:34BAH         LINE#         407
+  C:34BAH         LINE#         408
+  C:34BAH         LINE#         409
+  C:34BAH         LINE#         410
+  C:34BAH         LINE#         411
+  C:34BAH         LINE#         412
+  C:34BAH         LINE#         414
+  C:34BAH         LINE#         415
+  C:34C1H         LINE#         417
+  C:34C4H         LINE#         418
+  C:34C4H         LINE#         419
+  C:34C7H         LINE#         420
+  C:34CAH         LINE#         421
+  C:34CDH         LINE#         422
+  C:34CDH         LINE#         423
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        CH559_IAP
+
+  -------         MODULE        ?C?COPY
+  C:32B2H         PUBLIC        ?C?COPY
+  -------         ENDMOD        ?C?COPY
+
+  -------         MODULE        ?C?CLDPTR
+  C:32D8H         PUBLIC        ?C?CLDPTR
+  -------         ENDMOD        ?C?CLDPTR
+
+Program Size: data=42.0 xdata=200 code=1467
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

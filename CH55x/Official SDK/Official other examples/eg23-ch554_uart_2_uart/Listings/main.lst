@@ -1,0 +1,407 @@
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil\Install\C51\BIN\C51.EXE main.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Public) DEBUG OBJECT
+                    -EXTEND PRINT(.\Listings\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          
+   2          #include "CH554.H"                                                          //µ÷ÊÔÐÅÏ¢´òÓ¡
+   3          #include "DEBUG.H"
+   4          #include "USBHOST_IF.H"
+   5          #include "DataFlash_IF.H"
+   6          #include "stdio.h"
+   7          #include "string.h"
+   8          
+   9          #pragma  NOAREGS
+  10          
+  11          /*Ê¹ÓÃËµÃ÷:¶Ì½ÓP1.0µ½µØ£¬ÉÏµç½øÈëÅäÖÃÄ£Ê½£¬²¨ÌØÂÊ¹Ì¶¨9600£¬¿ÉÒÔÊ¹ÓÃÅäÖÃÃüÁîÅäÖÃÍ¨Ñ¶²¨ÌØÂÊ
+  12                                  ÅäÖÃÍê³Éºó£¬¿ÉÒÔÊ¹ÓÃENDÍË³ö£¬»òÕßÖØÐÂÉÏµçÍË³öÅäÖÃÄ£Ê½£¬ÍË³öºóÒÔÐÂµÄ²¨ÌØÂÊÍ¨Ñ¶£¬
+  13                                  ÊµÏÖÍ¸´« */
+  14          
+  15          /*´®¿ÚÅäÖÃÃüÁî(ÅäÖÃ×´Ì¬²¨ÌØÂÊÊ¼ÖÕÎª9600£¬³ý·ÇÖØÐÂÉÏµç£¨·ÇÅäÖÃÄ£Ê½£©»òÕß·¢ËÍ"END")       
+  16          "CHECK"       --> "Current COMM Baud is:9600"        µ±Ç°ÅäÖÃµÄ²¨ÌØÂÊ
+  17            "SET115200"   --> "OK" "ERROR"  ÅäÖÃ²¨ÌØÂÊ
+  18            "END"         --> "Quit"        ×Ô¶¯ÍË³öÅäÖÃÄ£Ê½£¬µ«ÊÇÖ®ºóÒªÒÔÐÂÅäÖÃµÄ²¨ÌØÂÊÍ¨Ñ¶
+  19          */
+  20          
+  21          /*»ñÈ¡Éè±¸ÃèÊö·û*/
+  22          UINT8C  SetupGetDevDescr[] = { USB_REQ_TYP_IN, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_DEVICE, 0x00, 0x00,
+             - sizeof( USB_DEV_DESCR ), 0x00 };
+  23          /*»ñÈ¡ÅäÖÃÃèÊö·û*/
+  24          UINT8C  SetupGetCfgDescr[] = { USB_REQ_TYP_IN, USB_GET_DESCRIPTOR, 0x00, USB_DESCR_TYP_CONFIG, 0x00, 0x00,
+             - 0x04, 0x00 };
+  25          /*ÉèÖÃUSBµØÖ·*/
+  26          UINT8C  SetupSetUsbAddr[] = { USB_REQ_TYP_OUT, USB_SET_ADDRESS, USB_DEVICE_ADDR, 0x00, 0x00, 0x00, 0x00, 0
+             -x00 };
+  27          /*ÉèÖÃUSBÅäÖÃ*/
+  28          UINT8C  SetupSetUsbConfig[] = { USB_REQ_TYP_OUT, USB_SET_CONFIGURATION, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+             - };
+  29          /*Çå³ý¶ËµãSTALL*/
+  30          UINT8C  SetupClrEndpStall[] = { USB_REQ_TYP_OUT | USB_REQ_RECIP_ENDP, USB_CLEAR_FEATURE, 0x00, 0x00, 0x00,
+             - 0x00, 0x00, 0x00 };
+  31          
+  32          UINT8X  UsbDevEndp0Size;                                                     //* USBÉè±¸µÄ¶Ëµã0µÄ×î´ó°ü³ß´
+             -ç */
+  33          UINT8X  RxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0000 ;                            // IN, must even address
+  34          UINT8X  TxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0040 ;                            // OUT, must even address
+  35          _RootHubDev xdata ThisUsbDev;
+  36          bit FoundNewDev = 0;
+  37          
+  38          UINT8X Receive_USB_Buf[ USER_BUF_SIZE ];        //USB½ÓÊÕ»º³åÇø
+  39          UINT8X USBByteCount = 0;                        //USB»º³åÇøµ±Ç°Êý¾Ý¸öÊý
+  40          UINT8X USB_Input_Point = 0;                     //USB»º³åÇøÐ´Ö¸Õë
+  41          UINT8X USB_Output_Point = 0;                    //USB»º³åÇø¶ÁÖ¸Õë
+  42          
+  43          UINT8X Receive_Uart0_Buf[USER_BUF_SIZE];   //´®¿Ú½ÓÊÕ»º³åÇø
+  44          UINT8X Uart0_Input_Point = 0;              //´®¿Ú½ÓÊÕ»º³åÇøÐ´Ö¸Õë
+  45          UINT8X Uart0ByteCount = 0;                 //´®¿Ú½ÓÊÕ»º³åÇøµ±Ç°´ý´¦ÀíÊý¾Ý×Ü¸öÊý
+  46          UINT8X Uart0_Output_Point = 0;             //´®¿Ú½ÓÊÕ»º³åÇø¶ÁÖ¸Õë
+  47          
+  48          UINT32 Comm_Baud = 0;                      //Í¨Ñ¶²¨ÌØÂÊ
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 2   
+
+  49          /*******************************************************************************
+  50          * Function Name  : Config_Uart0(UINT8 *cfg_uart)
+  51          * Description    : ÅäÖÃ´®¿Ú1²ÎÊý 
+  52          * Input          : ´®¿ÚÅäÖÃ²ÎÊý ËÄÎ»²¨ÌØÂÊ(´ó¶Ë¸ñÊ½)
+  53          * Output         : None
+  54          * Return         : None
+  55          *******************************************************************************/
+  56          void Config_Uart0(UINT8 *cfg_uart)
+  57          {
+  58   1              UINT32 uart0_buad = 0;
+  59   1          UINT32 x;
+  60   1          UINT8 x2; 
+  61   1              uart0_buad = *(UINT32*)cfg_uart;
+  62   1              ES = 0;
+  63   1              TR1 = 0; 
+  64   1          x = 10 * FREQ_SYS / uart0_buad / 16;                                       //Èç¹û¸ü¸ÄÖ÷Æµ£¬×¢ÒâxµÄÖµ²»
+             -ÒªÒç³ö                            
+  65   1          x2 = x % 10;
+  66   1          x /= 10;
+  67   1          if ( x2 >= 5 ) x ++;                                                       //ËÄÉáÎåÈë       
+  68   1              TH1 = 0-x; 
+  69   1              TR1 = 1; 
+  70   1              ES = 1;
+  71   1      }
+  72          /*******************************************************************************
+  73          * Function Name  : UINT8 HexToChar(UINT32 Pram,UINT8* Buf)
+  74          * Description    : °ÑÒ»¸öÊý×Ö°´Î»Êä³ö 
+  75          * Input          : Pram´ý×ª»»Êý×Ö
+  76          * Output         : BufÊä³öÖ¸Õë£¨µÍÎ»ÔÚÇ°£©
+  77          * Return         : Buf³¤¶È
+  78          *******************************************************************************/
+  79          UINT8 HexToChar(UINT32 Pram,UINT8* Buf)
+  80          {
+  81   1              UINT32 a;
+  82   1              UINT8 s = 0;   //¼ÇÂ¼³¤¶È
+  83   1              do
+  84   1              {
+  85   2                      a = Pram/10;            
+  86   2                      *Buf++ = Pram%10;
+  87   2                      s++;
+  88   2                      Pram = a;
+  89   2              }
+  90   1              while(a);
+  91   1              return s;
+  92   1      }
+  93          /*******************************************************************************
+  94          * Function Name  : UINT32 CharToHex(UINT8* Buf,UINT8 len)
+  95          * Description    : °ÑÒ»¸ö¸öÊý×ÖÖØÐÂ×éºÏ³ÉÊý¾Ý 
+  96          * Input          : Buf´ý×ª»»µÄ×Ö·ûÊý×é£¬len³¤¶È
+  97          * Output         : NULL
+  98          * Return         : ´ýÊä³öµÄÊý¾Ý
+  99          *******************************************************************************/
+ 100          UINT32 xy(UINT8 x,UINT8 j)
+ 101          {
+ 102   1              UINT8 i;
+ 103   1              UINT32 num = 1;
+ 104   1              for(i=0;i<j;i++)
+ 105   1                      num *= x;
+ 106   1              return num;
+ 107   1      }
+ 108          UINT32 CharToHex(UINT8* Buf,UINT8 len)
+ 109          {
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 3   
+
+ 110   1              char i;
+ 111   1              UINT32 num = 0;
+ 112   1              for(i=len-1;i>=0;i--)
+ 113   1              {
+ 114   2                      num += (*Buf-'0') * (xy(10, i));
+ 115   2                      Buf++;
+ 116   2              }
+ 117   1              return num;
+ 118   1      }
+ 119          /*******************************************************************************
+ 120          * Function Name  : Uart0_ISR()
+ 121          * Description    : ´®¿Ú½ÓÊÕÖÐ¶Ïº¯Êý£¬ÊµÏÖÑ­»·»º³å½ÓÊÕ
+ 122          *******************************************************************************/
+ 123          void Uart0_ISR(void) interrupt INT_NO_UART0 using 1
+ 124          {
+ 125   1              if(RI)   //ÊÕµ½Êý¾Ý
+ 126   1              {
+ 127   2                      Receive_Uart0_Buf[Uart0_Input_Point++] = SBUF;
+ 128   2                      Uart0ByteCount++;                    //µ±Ç°»º³åÇøÊ£Óà´ýÈ¡×Ö½ÚÊý
+ 129   2                      if(Uart0_Input_Point>=USER_BUF_SIZE)
+ 130   2                              Uart0_Input_Point = 0;           //Ð´ÈëÖ¸Õë
+ 131   2                      RI =0;          
+ 132   2              }
+ 133   1      }
+ 134          
+ 135          void main()
+ 136          {
+ 137   1              UINT8 i,s,edp_addr;
+ 138   1              UINT8 lenth;
+ 139   1              UINT16 Uart0_Timeout = 0;
+ 140   1              UINT8 USB_Sending= 0;                                                     //USBÏÂ´«±êÖ¾
+ 141   1              if(CHIP_ID != 0x54 ) while(1);                                        //Ð¾Æ¬¼ì²â
+ 142   1              
+ 143   1              CfgFsys( );     
+ 144   1          mDelaymS(50);                                                                   //ÐÞ¸ÄÖ÷Æµ£¬µÈ´ýÊ±ÖÓÎÈ¶¨
+ 145   1          mInitSTDIO( );                                                             //ÊÕ·¢Êý¾Ý
+ 146   1              UART1Setup( );                                                             //printf´òÓ¡¶Ë¿Ú£¨P1.7£©
+ 147   1      
+ 148   1      #if DE_PRINTF
+                  printf( "start\n" );        
+              #endif
+ 151   1              //ÅÐ¶ÏP1.0Òý½ÅÊÇ·ñÊÇµÍµçÆ½
+ 152   1          P1_MOD_OC = P1_MOD_OC | (1<<0);
+ 153   1          P1_DIR_PU = P1_DIR_PU |     (1<<0); 
+ 154   1              if(TIN0==0)
+ 155   1              {
+ 156   2                      mDelaymS(5);
+ 157   2                      if(TIN0==0)
+ 158   2                      {
+ 159   3                              CH554UART0SendString("Enter Command: \"CHECK\" \"SET(baud)\" \"END\"\n");
+ 160   3                              s = 0;
+ 161   3                              Uart0_Timeout = 0;
+ 162   3                              while(1)                    //ÅäÖÃ²¨ÌØÂÊ
+ 163   3                              {
+ 164   4                                      if(Uart0ByteCount>0)
+ 165   4                                      {
+ 166   5                                              Uart0_Timeout++;
+ 167   5                                              if(Uart0ByteCount>s)   //ÔÙ´ÎÊÕµ½ÐÂµÄ×Ö·û£¬ÐèÒªÇå¿Õ³¬Ê±
+ 168   5                                              {
+ 169   6                                                      Uart0_Timeout = 0;
+ 170   6                                              }
+ 171   5                                              s = Uart0ByteCount;   //±¸·Ýµ±Ç°ÊÕµ½µÄ×Ö·ûÊý
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 4   
+
+ 172   5                                      }
+ 173   4                                      if(Uart0_Timeout>5000 || Uart0ByteCount>20 )   //×Ö·û·¢ËÍ¼ä¸ô³¬Ê± »òÕß ³¤¶ÈÌ«³¤£¨²ÎÊý´íÎó£©
+ 174   4                                      {
+ 175   5                                              //·ÖÎö½ÓÊÕµ½µÄ×Ö·û
+ 176   5                                              Uart0_Timeout = 0;
+ 177   5                                              lenth = Uart0ByteCount;
+ 178   5                                              Uart0ByteCount -= lenth;
+ 179   5                                              s = lenth;                                 //³¤¶È±¸·Ý
+ 180   5                                              memset(TxBuffer,0,sizeof(TxBuffer));
+ 181   5                                              if(Uart0_Output_Point+lenth>USER_BUF_SIZE)  //ÐèÒª×ªÕÛ
+ 182   5                                              {
+ 183   6                                                      memcpy(&TxBuffer[0],&Receive_Uart0_Buf[Uart0_Output_Point],USER_BUF_SIZE-Uart0_Output_Point);
+ 184   6                                                      lenth = Uart0_Output_Point+lenth-USER_BUF_SIZE;  //Ê£Óà³¤¶È
+ 185   6                                                      memcpy(&TxBuffer[USER_BUF_SIZE-Uart0_Output_Point],&Receive_Uart0_Buf[0],lenth);
+ 186   6                                                      Uart0_Output_Point = lenth;     
+ 187   6                                              }
+ 188   5                                              else
+ 189   5                                              {
+ 190   6                                                      memcpy(&TxBuffer[0],&Receive_Uart0_Buf[Uart0_Output_Point],lenth);
+ 191   6                                                      Uart0_Output_Point+=lenth;
+ 192   6                                                      if(Uart0_Output_Point==USER_BUF_SIZE)
+ 193   6                                                              Uart0_Output_Point = 0;                                                 
+ 194   6                                              }
+ 195   5                                              //Æ¥ÅäTxBuffer[](³¤¶Ès)ºÍÒÑÓÐÃüÁî£¬Æ¥ÅäÔòÖ´ÐÐ
+ 196   5                                              if(memcmp(&TxBuffer[0],"CHECK",5)==0)
+ 197   5                                              {
+ 198   6                                                      CH554UART0SendString("Current Baud is:");
+ 199   6                                                      ReadDataFlash(0,4,(UINT8 *)&Comm_Baud);
+ 200   6                                                      s = HexToChar(Comm_Baud,&TxBuffer[0]);                                          
+ 201   6                                                      for(i=s-1;i>0;i--)
+ 202   6                                                              CH554UART0SendByte('0'+TxBuffer[i]);
+ 203   6                                                      CH554UART0SendByte('0'+TxBuffer[0]);
+ 204   6                                                      CH554UART0SendByte('\n');
+ 205   6                                              }
+ 206   5                                              else if(memcmp(&TxBuffer[0],"SET",3)==0)
+ 207   5                                              {                                       
+ 208   6                                                      s -= 3;   //µ±Ç°s´ú±í²¨ÌØÂÊ×Ö·û³¤¶È
+ 209   6                                                      if(s==0)
+ 210   6                                                              CH554UART0SendString("Please Enter Baud\n");
+ 211   6                                                      else
+ 212   6                                                      {
+ 213   7                                                              Comm_Baud = CharToHex(&TxBuffer[3],s);                                          
+ 214   7                                                              s = WriteDataFlash(0,(UINT8*)&Comm_Baud,4);
+ 215   7                                                              if(s==4) 
+ 216   7                                                                      CH554UART0SendString("Config Success!\n");
+ 217   7                                                      }
+ 218   6                                              }
+ 219   5                                              else if(memcmp(&TxBuffer[0],"END",3)==0)
+ 220   5                                              {                                               
+ 221   6                                                      CH554UART0SendString("Quit!\n");
+ 222   6                                                      CH554UART0SendString("Please Use New Baud\n");
+ 223   6                                                      break;
+ 224   6                                              }
+ 225   5                                              else
+ 226   5                                              {
+ 227   6                                                      CH554UART0SendString("Enter Error\n");                                          
+ 228   6                                              }                                       
+ 229   5                                              s = 0;              //ÇåÁãs,ÎªÏÂÒ»´Î½ÓÊÕ×ö×¼±¸                                  
+ 230   5                                      }
+ 231   4                              }
+ 232   3                      }
+ 233   2              }
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 5   
+
+ 234   1               //´Ódataflash¶ÁÈ¡²ÎÊý,²¢ÅäÖÃ
+ 235   1              ReadDataFlash(0,4,(UINT8 *)&Comm_Baud); 
+ 236   1      //      Comm_Baud = 9600;
+ 237   1              Config_Uart0((UINT8 *)&Comm_Baud);
+ 238   1              
+ 239   1              InitUSB_Host(); 
+ 240   1          FoundNewDev = 0;
+ 241   1      #if DE_PRINTF   
+                  printf( "Wait Device In\n" );
+              #endif          
+ 244   1              while(1)
+ 245   1              {
+ 246   2                      s = ERR_SUCCESS;
+ 247   2              if ( UIF_DETECT ){                                                     // Èç¹ûÓÐUSBÖ÷»ú¼ì²âÖÐ¶ÏÔò´
+             -¦Àí
+ 248   3                  UIF_DETECT = 0;                                                    // ÇåÖÐ¶Ï±êÖ¾
+ 249   3                  s = AnalyzeRootHub( );                                             // ·ÖÎöROOT-HUB×´Ì¬
+ 250   3                  if ( s == ERR_USB_CONNECT ) FoundNewDev = 1;                                                
+ 251   3              }
+ 252   2              if ( FoundNewDev ){                                                    // ÓÐÐÂµÄUSBÉè±¸²åÈë
+ 253   3                  FoundNewDev = 0;
+ 254   3                  mDelaymS( 200 );                                                    // ÓÉÓÚUSBÉè±¸¸Õ²åÈëÉÐÎ´ÎÈ
+             -¶¨,¹ÊµÈ´ýUSBÉè±¸Êý°ÙºÁÃë,Ïû³ý²å°Î¶¶¶¯
+ 255   3                  s = EnumAllRootDevice( );                                           // Ã¶¾ÙËùÓÐROOT-HUB¶Ë¿ÚµÄU
+             -SBÉè±¸
+ 256   3                  if ( s != ERR_SUCCESS ){
+ 257   4                              #if DE_PRINTF
+                              printf( "EnumAllRootDev err = %02X\n", (UINT16)s );
+                                      #endif          
+ 260   4                  }
+ 261   3              }
+ 262   2                      if(Uart0ByteCount)
+ 263   2                              Uart0_Timeout++;
+ 264   2                      if(ThisUsbDev.DeviceStatus == ROOT_DEV_SUCCESS)
+ 265   2                      {
+ 266   3                              //ÅÐ¶Ï´®¿Ú½ÓÊÕ»º³åÇø£¬ÊÇ·ñÐèÒª·¢ËÍ£¿
+ 267   3                              if(USB_Sending==0)   //µ±Ç°²»ÔÚÏÂ´«
+ 268   3                              {
+ 269   4                                      lenth = Uart0ByteCount;
+ 270   4                                      if(lenth>0)
+ 271   4                                      {
+ 272   5                                              if(lenth>= ThisUsbDev.GpVar0_Lenth || Uart0_Timeout>2000)
+ 273   5                                              {
+ 274   6                                                      Uart0_Timeout = 0;
+ 275   6                                                      if(lenth>= ThisUsbDev.GpVar0_Lenth)
+ 276   6                                                              lenth = ThisUsbDev.GpVar0_Lenth;
+ 277   6                                                      UH_TX_LEN = lenth;
+ 278   6                                                      Uart0ByteCount-=lenth;
+ 279   6                                                      if(Uart0_Output_Point+lenth>USER_BUF_SIZE)
+ 280   6                                                      {
+ 281   7                                                              memcpy(&TxBuffer[0],&Receive_Uart0_Buf[Uart0_Output_Point],USER_BUF_SIZE-Uart0_Output_Point);
+ 282   7                                                              lenth = Uart0_Output_Point+lenth-USER_BUF_SIZE;  //Ê£Óà³¤¶È
+ 283   7                                                              memcpy(&TxBuffer[USER_BUF_SIZE-Uart0_Output_Point],&Receive_Uart0_Buf[0],lenth);
+ 284   7                                                              Uart0_Output_Point = lenth;
+ 285   7                                                      }
+ 286   6                                                      else
+ 287   6                                                      {
+ 288   7                                                              memcpy(&TxBuffer[0],&Receive_Uart0_Buf[Uart0_Output_Point],lenth);
+ 289   7                                                              Uart0_Output_Point+=lenth;
+ 290   7                                                              if(Uart0_Output_Point==USER_BUF_SIZE)
+ 291   7                                                                      Uart0_Output_Point = 0;                                                 
+ 292   7                                                      }
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 6   
+
+ 293   6                                                      USB_Sending = 1;     //usbÕýÔÚÏÂ´«±êÖ¾£¬·¢ËÍÍêÇå³ý
+ 294   6                                              }
+ 295   5                                      }
+ 296   4                              }
+ 297   3                              //·¢ËÍÖÐ
+ 298   3                              if(USB_Sending==1)
+ 299   3                              {
+ 300   4                                      edp_addr = ThisUsbDev.GpVar0 & 0x0f;
+ 301   4                                      s = USBHostTransact( USB_PID_OUT << 4 | edp_addr, ThisUsbDev.GpVar0 & 0x80 ? bUH_R_TOG | bUH_T_TOG : 0
+             -, 0 );// CH554´«ÊäÊÂÎñ,»ñÈ¡Êý¾Ý,NAK²»ÖØÊÔ
+ 302   4                                      if ( s == ERR_SUCCESS ){
+ 303   5                                              ThisUsbDev.GpVar0 ^= 0x80;                                 // Í¬²½±êÖ¾·­×ª
+ 304   5                                              USB_Sending = 0;
+ 305   5                                      }
+ 306   4                                      else if ( s != ( USB_PID_NAK | ERR_USB_TRANSFER ) ){
+ 307   5                                      #if DE_PRINTF
+                                                      printf("keyboard error %02x\n",(UINT16)s);                    // ¿ÉÄÜÊÇ¶Ï¿ªÁË
+                                              #endif
+ 310   5                                      }                               
+ 311   4                              }
+ 312   3                              
+ 313   3                              //USB»º³åÇøÓÐÊý¾Ý£¬ÐèÒª·¢ËÍ
+ 314   3                              if(USBByteCount>0)
+ 315   3                              {
+ 316   4                                      CH554UART0SendByte(Receive_USB_Buf[USB_Output_Point++]);
+ 317   4                                      USBByteCount--; 
+ 318   4                                      if(USB_Output_Point==USER_BUF_SIZE)
+ 319   4                                              USB_Output_Point = 0;
+ 320   4                              }
+ 321   3                              //ÅÐ¶ÏUSB»º³åÇøÊÇ·ñ»¹¿ÉÒÔ½ÓÊÕÏÂÒ»°ü£¿
+ 322   3                              if( USER_BUF_SIZE-USBByteCount >= ThisUsbDev.GpVar1_Lenth )
+ 323   3                              {
+ 324   4                                      edp_addr = ThisUsbDev.GpVar1 & 0x0f;
+ 325   4                                      s = USBHostTransact( USB_PID_IN << 4 | edp_addr, ThisUsbDev.GpVar1 & 0x80 ? bUH_R_TOG | bUH_T_TOG : 0,
+             - 0 );// CH554´«ÊäÊÂÎñ,»ñÈ¡Êý¾Ý,NAK²»ÖØÊÔ
+ 326   4                                      if ( s == ERR_SUCCESS ){
+ 327   5                                              ThisUsbDev.GpVar1 ^= 0x80;                                 // Í¬²½±êÖ¾·­×ª
+ 328   5                                              lenth = USB_RX_LEN;
+ 329   5                                              USBByteCount+=lenth;                                        //¸üÐÂ³¤¶È
+ 330   5                                              if(USB_Input_Point+lenth>USER_BUF_SIZE)   //ÐèÒª×ªÍ·
+ 331   5                                              {
+ 332   6                                                      memcpy(&Receive_USB_Buf[USB_Input_Point],&RxBuffer[0],USER_BUF_SIZE-USB_Input_Point);
+ 333   6                                                      lenth = USB_Input_Point+lenth-USER_BUF_SIZE;  //Ê£Óà³¤¶È
+ 334   6                                                      memcpy(&Receive_USB_Buf[0],&RxBuffer[USER_BUF_SIZE-USB_Input_Point],lenth);
+ 335   6                                                      USB_Input_Point = lenth;
+ 336   6                                              }
+ 337   5                                              else
+ 338   5                                              {
+ 339   6                                                      memcpy(&Receive_USB_Buf[USB_Input_Point],&RxBuffer[0],lenth);
+ 340   6                                                      USB_Input_Point += lenth;
+ 341   6                                                      if(USB_Input_Point==USER_BUF_SIZE)
+ 342   6                                                              USB_Input_Point = 0;                                            
+ 343   6                                              }
+ 344   5                                              
+ 345   5                                      }
+ 346   4                                      else if ( s != ( USB_PID_NAK | ERR_USB_TRANSFER ) ){
+ 347   5                                      #if DE_PRINTF
+                                                      printf("keyboard error %02x\n",(UINT16)s);                    // ¿ÉÄÜÊÇ¶Ï¿ªÁË
+                                              #endif
+ 350   5                                      }                               
+ 351   4                              }
+ 352   3                              
+C51 COMPILER V9.53.0.0   MAIN                                                              04/28/2018 17:12:38 PAGE 7   
+
+ 353   3                              
+ 354   3                              
+ 355   3                      }               
+ 356   2              }
+ 357   1              
+ 358   1              
+ 359   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2067    ----
+   CONSTANT SIZE    =    190    ----
+   XDATA SIZE       =    276      39
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

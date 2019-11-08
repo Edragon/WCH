@@ -1,0 +1,357 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Project:</h2>
+F:\CH559\554\544ÆäËû\EXAM\IAP11\CH554IAP\CH559_IAP.uvproj
+Project File Date:  12/08/2016
+
+<h2>Output:</h2>
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(62): error C202: 'ROM_CMD_ERASE': undefined identifier
+CH559_IAP.C(83): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(467): error C202: 'P0': undefined identifier
+CH559_IAP.C(468): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(469): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(470): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(492): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(494): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(525): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(526): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(551): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(555): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(62): error C202: 'ROM_CMD_ERASE': undefined identifier
+CH559_IAP.C(83): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(467): error C202: 'P0': undefined identifier
+CH559_IAP.C(468): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(469): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(470): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(492): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(494): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(525): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(526): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(551): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(555): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(62): error C202: 'ROM_CMD_ERASE': undefined identifier
+CH559_IAP.C(83): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(467): error C202: 'P0': undefined identifier
+CH559_IAP.C(468): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(469): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(470): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(492): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(494): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(525): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(526): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(551): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(555): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(60): warning C173: missing return-expression
+CH559_IAP.C(58): warning C280: 'Addr': unreferenced local variable
+CH559_IAP.C(77): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(461): error C202: 'P0': undefined identifier
+CH559_IAP.C(462): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(463): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(464): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(486): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(488): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(519): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(520): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(545): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(549): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(60): warning C173: missing return-expression
+CH559_IAP.C(58): warning C280: 'Addr': unreferenced local variable
+CH559_IAP.C(77): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(461): error C202: 'P0': undefined identifier
+CH559_IAP.C(462): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(463): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(464): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(486): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(488): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(519): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(520): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(545): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(549): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(60): warning C173: missing return-expression
+CH559_IAP.C(58): warning C280: 'Addr': unreferenced local variable
+CH559_IAP.C(77): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(461): error C202: 'P0': undefined identifier
+CH559_IAP.C(462): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(463): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(464): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(486): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(488): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(519): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(520): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(545): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(549): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(60): warning C173: missing return-expression
+CH559_IAP.C(58): warning C280: 'Addr': unreferenced local variable
+CH559_IAP.C(77): error C202: 'ROM_CMD_PROG': undefined identifier
+CH559_IAP.C(461): error C202: 'P0': undefined identifier
+CH559_IAP.C(462): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(463): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(464): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(486): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(488): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(519): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(520): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(545): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(549): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(60): warning C173: missing return-expression
+CH559_IAP.C(58): warning C280: 'Addr': unreferenced local variable
+CH559_IAP.C(461): error C202: 'P0': undefined identifier
+CH559_IAP.C(462): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(463): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(464): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(486): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(488): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(519): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(520): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(545): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(549): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(188): warning C206: 'EraseBlock': missing function-prototype
+CH559_IAP.C(188): error C267: 'EraseBlock': requires ANSI-style prototype
+CH559_IAP.C(449): error C202: 'P0': undefined identifier
+CH559_IAP.C(450): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(451): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(452): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(474): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(476): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(507): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(508): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(533): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(537): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(433): error C202: 'P0': undefined identifier
+CH559_IAP.C(434): error C202: 'PORT_CFG': undefined identifier
+CH559_IAP.C(435): error C202: 'P0_DIR': undefined identifier
+CH559_IAP.C(436): error C202: 'P0_PU': undefined identifier
+CH559_IAP.C(458): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(460): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(491): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(492): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(517): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(521): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(435): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(437): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(468): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(469): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(436): error C202: 'UHUB0_CTRL': undefined identifier
+CH559_IAP.C(467): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(468): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(439): error C202: 'Ep1Buffer': undefined identifier
+CH559_IAP.C(478): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(479): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(439): error C202: 'Ep1Buffer': undefined identifier
+CH559_IAP.C(478): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(479): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(439): error C202: 'Ep1Buffer': undefined identifier
+CH559_IAP.C(478): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(479): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(477): error C202: 'P4_DIR': undefined identifier
+CH559_IAP.C(478): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(477): warning C206: 'USB_DeviceInit': missing function-prototype
+CH559_IAP.C(500): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(504): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(500): error C202: 'P4_OUT': undefined identifier
+CH559_IAP.C(504): error C202: 'P4_OUT': undefined identifier
+Target not created
+Build target 'CH559'
+compiling CH559_IAP.C...
+linking...
+Program Size: data=42.0 xdata=200 code=1619
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+compiling CH559_IAP.C...
+CH559_IAP.C - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1619
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Rebuild target 'CH559'
+compiling CH559_IAP.C...
+linking...
+Program Size: data=42.0 xdata=200 code=1619
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+linking...
+Program Size: data=42.0 xdata=200 code=1619
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1619
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(431): warning C206: 'UATR_Handle': missing function-prototype
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_RECEIVE?CH559_IAP
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  UATR_HANDLE
+    MODULE:  CH559_IAP.obj (CH559_IAP)
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  UATR_HANDLE
+    MODULE:  CH559_IAP.obj (CH559_IAP)
+    ADDRESS: EC99H
+Program Size: data=42.0 xdata=200 code=1505
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 4 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(423): warning C206: 'UATR_Handle': missing function-prototype
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_UART_SEND?CH559_IAP
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_RECEIVE?CH559_IAP
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  UATR_HANDLE
+    MODULE:  CH559_IAP.obj (CH559_IAP)
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  UATR_HANDLE
+    MODULE:  CH559_IAP.obj (CH559_IAP)
+    ADDRESS: EC99H
+Program Size: data=42.0 xdata=200 code=1491
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 5 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+CH559_IAP.C(411): warning C206: 'UATR_Handle': missing function-prototype
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_RECEIVE?CH559_IAP
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  UATR_HANDLE
+    MODULE:  CH559_IAP.obj (CH559_IAP)
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  UATR_HANDLE
+    MODULE:  CH559_IAP.obj (CH559_IAP)
+    ADDRESS: EC99H
+Program Size: data=42.0 xdata=200 code=1483
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 4 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_RECEIVE?CH559_IAP
+Program Size: data=42.0 xdata=200 code=1475
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 1 Warning(s).
+compiling CH559_IAP.C...
+CH559_IAP.C - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_RECEIVE?CH559_IAP
+Program Size: data=42.0 xdata=200 code=1475
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 1 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+compiling CH559_IAP.C...
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).
+Build target 'CH559'
+linking...
+Program Size: data=42.0 xdata=200 code=1467
+creating hex file from "CH559_IAP"...
+"CH559_IAP" - 0 Error(s), 0 Warning(s).

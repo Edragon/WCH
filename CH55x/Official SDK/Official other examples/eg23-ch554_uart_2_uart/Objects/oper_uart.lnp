@@ -1,0 +1,6 @@
+".\Objects\main.obj",
+".\Objects\USBHOST_IF.obj",
+".\Objects\DEBUG.obj",
+".\Objects\DataFlash_IF.obj" 
+TO ".\Objects\oper_uart" 
+PRINT(".\Listings\oper_uart.m51") RAMSIZE(256) 
