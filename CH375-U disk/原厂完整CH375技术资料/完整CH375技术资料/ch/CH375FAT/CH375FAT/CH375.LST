@@ -1,0 +1,923 @@
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE CH375
+OBJECT MODULE PLACED IN CH375.OBJ
+COMPILER INVOKED BY: F:\KEIL\C51\BIN\C51.EXE CH375.C DEBUG OBJECTEXTEND CODE
+
+stmt level    source
+
+   1          /* 2004.03.05
+   2          ****************************************
+   3          **                                    **
+   4          **                                    **
+   5          ****************************************
+   6          **  USB 1.1 Host Examples for CH375   **
+   7          **  KC7.0@MCS-51                      **
+   8          ****************************************
+   9          */
+  10          /* CH375作为USB主机接口的程序示例 */
+  11          
+  12          /* MCS-51单片机C语言的示例程序, U盘数据读写 */
+  13          
+  14          #include "common.h"
+  15          
+  16          unsigned char volatile xdata    CH375_CMD_PORT _at_ 0xBDF1;     /* CH375命令端口的I/O地址 */
+  17          unsigned char volatile xdata    CH375_DAT_PORT _at_ 0xBCF0;     /* CH375数据端口的I/O地址 */
+  18          extern unsigned char xdata DBUF[BUFFER_LENGTH];
+  19          
+  20          sbit    CH375_INT_WIRE  =               0xB0^2; /* P3.2, INT0, 连接CH375的INT#引脚,用于查询中断状态 */
+  21          
+  22          #define mDelay1uS( )                    /* 对于MCS51单片机,通常不需要1uS延时 */
+  23          
+  24          /* 延时2微秒,请根据单片机速度 */
+  25          //void  mDelay1uS( )
+  26          //{
+  27          //      unsigned char i;
+  28          //      for ( i = 1; i != 0; i -- );
+  29          //}
+  30          
+  31          /* 延时2微秒,请根据单片机速度 */
+  32          void    mDelay2uS( )
+  33          {
+  34   1              unsigned char i;
+  35   1              for ( i = 2; i != 0; i -- );
+  36   1      }
+  37          
+  38          /* 向CH375命令端口写命令数据 */
+  39          void CH375_CMD_PORT_d_out( INT8 d_out )
+  40          {
+  41   1              mDelay1uS( );
+  42   1              CH375_CMD_PORT=d_out;
+  43   1              mDelay2uS( );  /* 至少延时2uS */
+  44   1      }
+  45          
+  46          /* 向CH375数据端口写数据 */
+  47          void CH375_DAT_PORT_d_out( INT8 d_out )
+  48          {
+  49   1              CH375_DAT_PORT=d_out;
+  50   1              mDelay1uS( );
+  51   1      }
+  52          
+  53          /* 从CH375命令端口读数据 */
+  54          INT8 CH375_DAT_PORT_in( )
+  55          {
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 2   
+
+  56   1              mDelay1uS( );
+  57   1              return( CH375_DAT_PORT );
+  58   1      }
+  59          
+  60          /* 延时毫秒,不精确 */
+  61          void DelayMs(unsigned char nFactor)
+  62          {
+  63   1              unsigned char i;
+  64   1              unsigned int j;
+  65   1              for(i=0; i<nFactor; i++) for(j=0;j<1000;j++) j=j;
+  66   1      }
+  67          
+  68          /* 等待CH375中断并获取状态 */
+  69          unsigned char   mWaitInterrupt( )
+  70          {
+  71   1              unsigned char c;
+  72   1              while ( CH375_INT_WIRE );  /* 如果CH375的中断引脚输出高电平则等待 */
+  73   1              CH375_CMD_PORT_d_out( CMD_GET_STATUS);  /* 获取当前中断状态 */
+  74   1              c = CH375_DAT_PORT_in();  /* 返回中断状态 */
+  75   1      /*      if ( c == USB_INT_DISCONNECT )  /* 检测到USB设备断开事件 */
+  76   1      /*      else if ( c == USB_INT_CONNECT )  /* 检测到USB设备连接事件 */
+  77   1              return( c );
+  78   1      }
+  79          
+  80          /* 设置CH375为USB主机方式 */
+  81          unsigned char   mCH375Init( )
+  82          {
+  83   1              unsigned char i;
+  84   1              CH375_CMD_PORT_d_out( CMD_GET_IC_VER);  /* 获取芯片及固件版本 */
+  85   1              i = CH375_DAT_PORT_in( );  /* 版本 */
+  86   1              if ( i < 0xA2 ) return FALSE;  /* 不支持该芯片 */
+  87   1              CH375_CMD_PORT_d_out( CMD_SET_USB_MODE);  /* 设置USB工作模式 */
+  88   1              CH375_DAT_PORT_d_out( 6);  /* 模式代码,自动检测USB设备连接 */
+  89   1              for ( i = 0xff; i != 0; i -- ) {  /* 等待操作成功,通常需要等待10uS-20uS */
+  90   2                      if ( CH375_DAT_PORT_in() == CMD_RET_SUCCESS ) return TRUE;  /* 操作成功 */
+  91   2              }
+  92   1              return FALSE;  /* CH375出错,例如芯片型号错或者处于串口方式或者不支持 */
+  93   1      }
+  94          
+  95          /* 初始化磁盘 */
+  96          unsigned char   mInitDisk( )
+  97          {
+  98   1              unsigned char mIntStatus;
+  99   1              CH375_CMD_PORT_d_out( CMD_DISK_INIT);  /* 初始化USB存储器 */
+ 100   1              mIntStatus = mWaitInterrupt( );  /* 等待中断并获取状态 */
+ 101   1              if ( mIntStatus == USB_INT_SUCCESS ) return TRUE;  /* U盘已经成功初始化 */
+ 102   1              return FALSE;  /* 出现错误 */
+ 103   1      }
+ 104          
+ 105          unsigned char ReadCapacity(void)
+ 106          {
+ 107   1              unsigned char *buf;
+ 108   1              unsigned char  mIntStatus,mLength;
+ 109   1              CH375_CMD_PORT_d_out( CMD_DISK_SIZE);  /* 读取容量 */
+ 110   1              buf=DBUF;
+ 111   1              mIntStatus = mWaitInterrupt( );
+ 112   1              if ( mIntStatus == USB_INT_SUCCESS ) { 
+ 113   2                      CH375_CMD_PORT_d_out( CMD_RD_USB_DATA);  /* 从CH375缓冲区读取数据块 */
+ 114   2                      mLength = CH375_DAT_PORT_in();  /* 后续数据的长度 */
+ 115   2                      while ( mLength ) {  /* 根据长度读取数据 */
+ 116   3                              *buf = CH375_DAT_PORT_in();  /* 读出数据并保存 */
+ 117   3                              buf ++;
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 3   
+
+ 118   3                              mLength --;
+ 119   3                      }
+ 120   2                      return TRUE;
+ 121   2              }
+ 122   1              return FALSE;
+ 123   1      }
+ 124          
+ 125          unsigned long SwapINT32(unsigned long dData)
+ 126          {
+ 127   1          dData = (dData&0xff)<<24|(dData&0xff00)<<8|(dData&0xff000000)>>24|(dData&0xff0000)>>8;
+ 128   1              return dData;
+ 129   1      }
+ 130          
+ 131          unsigned int SwapINT16(unsigned int dData)
+ 132          {
+ 133   1          dData = (dData&0xff00)>>8|(dData&0x00ff)<<8;
+ 134   1              return dData;
+ 135   1      }
+ 136          
+ 137          /* 从U盘中读取多个扇区的数据块到缓冲区中 */
+ 138          unsigned char RBC_Read(unsigned long iLbaStart, unsigned char iSectorCount,unsigned char *mBufferPoint)
+ 139          /* iLbaStart 是读取的线起始性扇区号, iSectorCount 是读取的扇区数 */
+ 140          {
+ 141   1              unsigned char mIntStatus;
+ 142   1              unsigned int  mBlockCount;
+ 143   1              unsigned char mLength;
+ 144   1              CH375_CMD_PORT_d_out(CMD_DISK_READ);  /* 从USB存储器读数据块 */
+ 145   1              CH375_DAT_PORT_d_out((unsigned char)iLbaStart);  /* LBA的最低8位 */
+ 146   1              CH375_DAT_PORT_d_out ((unsigned char)( iLbaStart >> 8 ));
+ 147   1              CH375_DAT_PORT_d_out((unsigned char)( iLbaStart >> 16 ));
+ 148   1              CH375_DAT_PORT_d_out((unsigned char)( iLbaStart >> 24 ));  /* LBA的最高8位 */
+ 149   1              CH375_DAT_PORT_d_out( iSectorCount);  /* 扇区数 */
+ 150   1              for ( mBlockCount = iSectorCount * CH375_BLK_PER_SEC; mBlockCount != 0; mBlockCount -- ) {  /* 数据块计数
+             - */
+ 151   2                      mIntStatus = mWaitInterrupt( );  /* 等待中断并获取状态 */
+ 152   2                      if ( mIntStatus == USB_INT_DISK_READ ) {  /* USB存储器读数据块,请求数据读出 */
+ 153   3                              CH375_CMD_PORT_d_out(CMD_RD_USB_DATA);  /* 从CH375缓冲区读取数据块 */
+ 154   3                              mLength = CH375_DAT_PORT_in();  /* 后续数据的长度 */
+ 155   3      /* 通常数据长度是64,有些U盘要求单片机必须在2mS之内取走64字节数据,否则U盘可能数据丢失 */
+ 156   3      /* 建议优化下面的循环程序,确保单片机在1mS之内完成64字节的数据传输 */
+ 157   3                              if ( mLength ) {  /* 根据长度读取数据 */
+ 158   4                                      do {  // 对于C51,这个DO+WHILE结构效率高,速度快
+ 159   5                                              *mBufferPoint = CH375_DAT_PORT_in();  /* 读出数据并保存 */
+ 160   5                                              mBufferPoint ++;
+ 161   5                                      } while ( -- mLength );
+ 162   4                              }
+ 163   3                              CH375_CMD_PORT_d_out( CMD_DISK_RD_GO);  /* 继续执行USB存储器的读操作 */
+ 164   3                      }
+ 165   2                      else break;  /* 返回错误状态 */
+ 166   2              }
+ 167   1              if ( mBlockCount == 0 ) {
+ 168   2                      mIntStatus = mWaitInterrupt( );  /* 等待中断并获取状态 */
+ 169   2                      if ( mIntStatus == USB_INT_SUCCESS ) return 1;  /* 操作成功 */
+ 170   2              }
+ 171   1              return 0;  /* 操作失败 */
+ 172   1      }
+ 173          
+ 174          /* 将缓冲区中的多个扇区的数据块写入U盘 */
+ 175          unsigned char   RBC_Write( unsigned long iLbaStart, unsigned char iSectorCount,unsigned char *mBufferPoint )
+ 176          /* iLbaStart 是写入的线起始性扇区号, iSectorCount 是写入的扇区数 */
+ 177          {
+ 178   1              unsigned char mIntStatus;
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 4   
+
+ 179   1              unsigned int  mBlockCount;
+ 180   1              unsigned char mLength;
+ 181   1              CH375_CMD_PORT_d_out( CMD_DISK_WRITE);  /* 向USB存储器写数据块 */
+ 182   1              CH375_DAT_PORT_d_out((unsigned char)iLbaStart);  /* LBA的最低8位 */
+ 183   1              CH375_DAT_PORT_d_out((unsigned char)( iLbaStart >> 8 ));
+ 184   1              CH375_DAT_PORT_d_out((unsigned char)( iLbaStart >> 16 ));
+ 185   1              CH375_DAT_PORT_d_out((unsigned char)( iLbaStart >> 24 ));  /* LBA的最高8位 */
+ 186   1              CH375_DAT_PORT_d_out(iSectorCount);  /* 扇区数 */
+ 187   1              //mBufferPoint = &DATA_BUFFER;  /* 指向缓冲区起始地址 */
+ 188   1              for ( mBlockCount = iSectorCount * CH375_BLK_PER_SEC; mBlockCount != 0; mBlockCount -- ) {  /* 数据块计数
+             - */
+ 189   2                      mIntStatus = mWaitInterrupt( );  /* 等待中断并获取状态 */
+ 190   2                      if ( mIntStatus == USB_INT_DISK_WRITE ) {  /* USB存储器写数据块,请求数据写入 */
+ 191   3                              CH375_CMD_PORT_d_out( CMD_WR_USB_DATA7);  /* 向CH375缓冲区写入数据块 */
+ 192   3                              mLength = CH375_BLOCK_SIZE;
+ 193   3                              CH375_DAT_PORT_d_out(mLength);  /* 后续数据的长度 */
+ 194   3      /* 通常数据长度是64,有些U盘要求单片机必须在2mS之内写入64字节数据,否则U盘可能数据丢失 */
+ 195   3      /* 建议优化下面的循环程序,确保单片机在1mS之内完成64字节的数据传输 */
+ 196   3                              do {  // 对于C51,这个DO+WHILE结构效率高,速度快
+ 197   4                                      CH375_DAT_PORT_d_out(*mBufferPoint);  /* 将数据写入 */
+ 198   4                                      mBufferPoint ++;
+ 199   4                              } while ( -- mLength );
+ 200   3                              CH375_CMD_PORT_d_out( CMD_DISK_WR_GO);  /* 继续执行USB存储器的写操作 */
+ 201   3                      }
+ 202   2                      else break;  /* 返回错误状态 */
+ 203   2              }
+ 204   1              if ( mBlockCount == 0 ) {
+ 205   2                      mIntStatus = mWaitInterrupt( );  /* 等待中断并获取状态 */
+ 206   2                      if ( mIntStatus == USB_INT_SUCCESS ) return 1;  /* 操作成功 */
+ 207   2              }
+ 208   1              return 0;  /* 操作失败 */
+ 209   1      }
+ 210          
+ 211          unsigned char SPC_RequestSense(void)
+ 212          {
+ 213   1              CH375_CMD_PORT_d_out( CMD_DISK_R_SENSE);
+ 214   1              if ( mWaitInterrupt( ) == USB_INT_SUCCESS ) return TRUE;
+ 215   1              return FALSE;
+ 216   1      }
+ 217          
+ 218          unsigned char SPC_TestUnit(void)
+ 219          {
+ 220   1              CH375_CMD_PORT_d_out( CMD_DISK_READY);
+ 221   1              if ( mWaitInterrupt( ) == USB_INT_SUCCESS ) return TRUE;
+ 222   1              return FALSE;
+ 223   1      }
+ 224          
+ 225          unsigned char SPC_LockMedia(void)
+ 226          {
+ 227   1              return TRUE;
+ 228   1      }
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION mDelay2uS (BEGIN)
+                                           ; SOURCE LINE # 32
+                                           ; SOURCE LINE # 33
+                                           ; SOURCE LINE # 35
+;---- Variable 'i' assigned to Register 'R7' ----
+0000 7F02              MOV     R7,#02H
+0002         ?C0001:
+0002 DFFE              DJNZ    R7,?C0001
+                                           ; SOURCE LINE # 36
+0004         ?C0004:
+0004 22                RET     
+             ; FUNCTION mDelay2uS (END)
+
+             ; FUNCTION _CH375_CMD_PORT_d_out (BEGIN)
+                                           ; SOURCE LINE # 39
+;---- Variable 'd_out' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 42
+0000 90BDF1            MOV     DPTR,#CH375_CMD_PORT
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 43
+0005 020000      R     LJMP    mDelay2uS
+             ; FUNCTION _CH375_CMD_PORT_d_out (END)
+
+             ; FUNCTION L?0063 (BEGIN)
+0000 AF00        R     MOV     R7,iLbaStart+03H
+0002 AE00        R     MOV     R6,iLbaStart+02H
+0004 AD00        R     MOV     R5,iLbaStart+01H
+0006 AC00        R     MOV     R4,iLbaStart
+0008 120000      E     LCALL   ?C?ULSHR
+             ; FUNCTION _CH375_DAT_PORT_d_out (BEGIN)
+                                           ; SOURCE LINE # 47
+;---- Variable 'd_out' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 48
+                                           ; SOURCE LINE # 49
+000B 90BCF0            MOV     DPTR,#CH375_DAT_PORT
+000E EF                MOV     A,R7
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 51
+0010 22                RET     
+             ; FUNCTION _CH375_DAT_PORT_d_out (END)
+
+             ; FUNCTION L?0064 (BEGIN)
+0000 7F28              MOV     R7,#028H
+0002 120000      R     LCALL   _CH375_CMD_PORT_d_out
+             ; FUNCTION CH375_DAT_PORT_in (BEGIN)
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+                                           ; SOURCE LINE # 57
+0005 90BCF0            MOV     DPTR,#CH375_DAT_PORT
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+                                           ; SOURCE LINE # 58
+000A         ?C0007:
+000A 22                RET     
+             ; FUNCTION CH375_DAT_PORT_in (END)
+
+             ; FUNCTION _DelayMs (BEGIN)
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 6   
+
+                                           ; SOURCE LINE # 61
+;---- Variable 'nFactor' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 65
+;---- Variable 'i' assigned to Register 'R6' ----
+0000 E4                CLR     A
+0001 FE                MOV     R6,A
+0002         ?C0008:
+0002 EE                MOV     A,R6
+0003 C3                CLR     C
+0004 9F                SUBB    A,R7
+0005 5014              JNC     ?C0014
+;---- Variable 'j' assigned to Register 'R4/R5' ----
+0007 E4                CLR     A
+0008 FD                MOV     R5,A
+0009 FC                MOV     R4,A
+000A         ?C0011:
+000A 0D                INC     R5
+000B BD0001            CJNE    R5,#00H,?C0060
+000E 0C                INC     R4
+000F         ?C0060:
+000F C3                CLR     C
+0010 ED                MOV     A,R5
+0011 94E8              SUBB    A,#0E8H
+0013 EC                MOV     A,R4
+0014 9403              SUBB    A,#03H
+0016 40F2              JC      ?C0011
+0018         ?C0010:
+0018 0E                INC     R6
+0019 80E7              SJMP    ?C0008
+                                           ; SOURCE LINE # 66
+001B         ?C0014:
+001B 22                RET     
+             ; FUNCTION _DelayMs (END)
+
+             ; FUNCTION L?0065 (BEGIN)
+0000 120000      R     LCALL   _CH375_CMD_PORT_d_out
+             ; FUNCTION mWaitInterrupt (BEGIN)
+                                           ; SOURCE LINE # 69
+                                           ; SOURCE LINE # 70
+0003         ?C0015:
+                                           ; SOURCE LINE # 72
+0003 20B2FD            JB      CH375_INT_WIRE,?C0015
+0006         ?C0016:
+                                           ; SOURCE LINE # 73
+0006 7F22              MOV     R7,#022H
+0008 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 74
+000B 120000      R     LCALL   CH375_DAT_PORT_in
+;---- Variable 'c' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 77
+                                           ; SOURCE LINE # 78
+000E         ?C0017:
+000E 22                RET     
+             ; FUNCTION mWaitInterrupt (END)
+
+             ; FUNCTION mCH375Init (BEGIN)
+                                           ; SOURCE LINE # 81
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 84
+0000 7F01              MOV     R7,#01H
+0002 120000      R     LCALL   _CH375_CMD_PORT_d_out
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 7   
+
+                                           ; SOURCE LINE # 85
+0005 120000      R     LCALL   CH375_DAT_PORT_in
+;---- Variable 'i' assigned to Register 'R6' ----
+0008 AE07              MOV     R6,AR7
+                                           ; SOURCE LINE # 86
+000A EE                MOV     A,R6
+000B C3                CLR     C
+000C 94A2              SUBB    A,#0A2H
+000E 5003              JNC     ?C0018
+0010 7F00              MOV     R7,#00H
+0012 22                RET     
+0013         ?C0018:
+                                           ; SOURCE LINE # 87
+0013 7F15              MOV     R7,#015H
+0015 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 88
+0018 7F06              MOV     R7,#06H
+001A 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 89
+001D 7EFF              MOV     R6,#0FFH
+001F         ?C0020:
+                                           ; SOURCE LINE # 90
+001F 120000      R     LCALL   CH375_DAT_PORT_in
+0022 BF5103            CJNE    R7,#051H,?C0022
+0025 7F01              MOV     R7,#01H
+0027 22                RET     
+                                           ; SOURCE LINE # 91
+0028         ?C0022:
+0028 DEF5              DJNZ    R6,?C0020
+002A         ?C0021:
+                                           ; SOURCE LINE # 92
+002A 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 93
+002C         ?C0019:
+002C 22                RET     
+             ; FUNCTION mCH375Init (END)
+
+             ; FUNCTION mInitDisk (BEGIN)
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 97
+                                           ; SOURCE LINE # 99
+0000 7F51              MOV     R7,#051H
+                                           ; SOURCE LINE # 100
+0002 120000      R     LCALL   L?0065
+;---- Variable 'mIntStatus' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 101
+0005 BF1403            CJNE    R7,#014H,?C0024
+0008 7F01              MOV     R7,#01H
+000A 22                RET     
+000B         ?C0024:
+                                           ; SOURCE LINE # 102
+000B 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 103
+000D         ?C0025:
+000D 22                RET     
+             ; FUNCTION mInitDisk (END)
+
+             ; FUNCTION ReadCapacity (BEGIN)
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 109
+0000 7F53              MOV     R7,#053H
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 8   
+
+0002 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 110
+0005 7B01              MOV     R3,#01H
+0007 7A00        E     MOV     R2,#HIGH DBUF
+0009 7900        E     MOV     R1,#LOW DBUF
+;---- Variable 'buf' assigned to Register 'R1/R2/R3' ----
+                                           ; SOURCE LINE # 111
+000B 120000      R     LCALL   mWaitInterrupt
+;---- Variable 'mIntStatus' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 112
+000E EF                MOV     A,R7
+000F 6414              XRL     A,#014H
+0011 701C              JNZ     ?C0026
+                                           ; SOURCE LINE # 113
+                                           ; SOURCE LINE # 114
+0013 120000      R     LCALL   L?0064
+;---- Variable 'mLength' assigned to Register 'R6' ----
+0016 AE07              MOV     R6,AR7
+0018         ?C0027:
+                                           ; SOURCE LINE # 115
+0018 EE                MOV     A,R6
+0019 6011              JZ      ?C0028
+                                           ; SOURCE LINE # 116
+001B 120000      R     LCALL   CH375_DAT_PORT_in
+001E EF                MOV     A,R7
+001F 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 117
+0022 7401              MOV     A,#01H
+0024 29                ADD     A,R1
+0025 F9                MOV     R1,A
+0026 E4                CLR     A
+0027 3A                ADDC    A,R2
+0028 FA                MOV     R2,A
+                                           ; SOURCE LINE # 118
+0029 1E                DEC     R6
+                                           ; SOURCE LINE # 119
+002A 80EC              SJMP    ?C0027
+002C         ?C0028:
+                                           ; SOURCE LINE # 120
+002C 7F01              MOV     R7,#01H
+002E 22                RET     
+                                           ; SOURCE LINE # 121
+002F         ?C0026:
+                                           ; SOURCE LINE # 122
+002F 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 123
+0031         ?C0029:
+0031 22                RET     
+             ; FUNCTION ReadCapacity (END)
+
+             ; FUNCTION _SwapINT32 (BEGIN)
+                                           ; SOURCE LINE # 125
+0000 8F00        R     MOV     dData+03H,R7
+0002 8E00        R     MOV     dData+02H,R6
+0004 8D00        R     MOV     dData+01H,R5
+0006 8C00        R     MOV     dData,R4
+                                           ; SOURCE LINE # 126
+                                           ; SOURCE LINE # 127
+0008 E4                CLR     A
+0009 FF                MOV     R7,A
+000A E4                CLR     A
+000B FD                MOV     R5,A
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 9   
+
+000C FC                MOV     R4,A
+000D 7808              MOV     R0,#08H
+000F 120000      E     LCALL   ?C?LSHL
+0012 C004              PUSH    AR4
+0014 C005              PUSH    AR5
+0016 C006              PUSH    AR6
+0018 C007              PUSH    AR7
+001A E500        R     MOV     A,dData+03H
+001C FF                MOV     R7,A
+001D E4                CLR     A
+001E FE                MOV     R6,A
+001F FD                MOV     R5,A
+0020 FC                MOV     R4,A
+0021 7818              MOV     R0,#018H
+0023 120000      E     LCALL   ?C?LSHL
+0026 D003              POP     AR3
+0028 D002              POP     AR2
+002A D001              POP     AR1
+002C D000              POP     AR0
+002E EF                MOV     A,R7
+002F 4B                ORL     A,R3
+0030 FF                MOV     R7,A
+0031 EE                MOV     A,R6
+0032 4A                ORL     A,R2
+0033 FE                MOV     R6,A
+0034 ED                MOV     A,R5
+0035 49                ORL     A,R1
+0036 FD                MOV     R5,A
+0037 EC                MOV     A,R4
+0038 48                ORL     A,R0
+0039 FC                MOV     R4,A
+003A C004              PUSH    AR4
+003C C005              PUSH    AR5
+003E C006              PUSH    AR6
+0040 C007              PUSH    AR7
+0042 E4                CLR     A
+0043 FF                MOV     R7,A
+0044 FE                MOV     R6,A
+0045 FD                MOV     R5,A
+0046 E500        R     MOV     A,dData
+0048 FC                MOV     R4,A
+0049 7818              MOV     R0,#018H
+004B 120000      E     LCALL   ?C?ULSHR
+004E D003              POP     AR3
+0050 D002              POP     AR2
+0052 D001              POP     AR1
+0054 D000              POP     AR0
+0056 EF                MOV     A,R7
+0057 4B                ORL     A,R3
+0058 FF                MOV     R7,A
+0059 EE                MOV     A,R6
+005A 4A                ORL     A,R2
+005B FE                MOV     R6,A
+005C ED                MOV     A,R5
+005D 49                ORL     A,R1
+005E FD                MOV     R5,A
+005F EC                MOV     A,R4
+0060 48                ORL     A,R0
+0061 FC                MOV     R4,A
+0062 C004              PUSH    AR4
+0064 C005              PUSH    AR5
+0066 C006              PUSH    AR6
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 10  
+
+0068 C007              PUSH    AR7
+006A E4                CLR     A
+006B FF                MOV     R7,A
+006C FE                MOV     R6,A
+006D E500        R     MOV     A,dData+01H
+006F FD                MOV     R5,A
+0070 E4                CLR     A
+0071 FC                MOV     R4,A
+0072 7808              MOV     R0,#08H
+0074 120000      E     LCALL   ?C?ULSHR
+0077 D003              POP     AR3
+0079 D002              POP     AR2
+007B D001              POP     AR1
+007D D000              POP     AR0
+007F EF                MOV     A,R7
+0080 4B                ORL     A,R3
+0081 F500        R     MOV     dData+03H,A
+0083 EE                MOV     A,R6
+0084 4A                ORL     A,R2
+0085 F500        R     MOV     dData+02H,A
+0087 ED                MOV     A,R5
+0088 49                ORL     A,R1
+0089 F500        R     MOV     dData+01H,A
+008B EC                MOV     A,R4
+008C 48                ORL     A,R0
+008D F500        R     MOV     dData,A
+                                           ; SOURCE LINE # 128
+008F AF00        R     MOV     R7,dData+03H
+0091 AE00        R     MOV     R6,dData+02H
+0093 AD00        R     MOV     R5,dData+01H
+0095 FC                MOV     R4,A
+                                           ; SOURCE LINE # 129
+0096         ?C0030:
+0096 22                RET     
+             ; FUNCTION _SwapINT32 (END)
+
+             ; FUNCTION _SwapINT16 (BEGIN)
+                                           ; SOURCE LINE # 131
+;---- Variable 'dData' assigned to Register 'R4/R5' ----
+                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 133
+0000 EF                MOV     A,R7
+0001 FA                MOV     R2,A
+0002 EE                MOV     A,R6
+0003 FF                MOV     R7,A
+0004 EA                MOV     A,R2
+0005 FC                MOV     R4,A
+                                           ; SOURCE LINE # 134
+0006 AE04              MOV     R6,AR4
+                                           ; SOURCE LINE # 135
+0008         ?C0031:
+0008 22                RET     
+             ; FUNCTION _SwapINT16 (END)
+
+             ; FUNCTION _RBC_Read (BEGIN)
+                                           ; SOURCE LINE # 138
+0000 8F00        R     MOV     iLbaStart+03H,R7
+0002 8E00        R     MOV     iLbaStart+02H,R6
+0004 8D00        R     MOV     iLbaStart+01H,R5
+0006 8C00        R     MOV     iLbaStart,R4
+                                           ; SOURCE LINE # 140
+                                           ; SOURCE LINE # 144
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 11  
+
+0008 7F54              MOV     R7,#054H
+000A 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 145
+000D AF00        R     MOV     R7,iLbaStart+03H
+000F 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 146
+0012 7808              MOV     R0,#08H
+0014 120000      R     LCALL   L?0063
+                                           ; SOURCE LINE # 147
+0017 7810              MOV     R0,#010H
+0019 120000      R     LCALL   L?0063
+                                           ; SOURCE LINE # 148
+001C AF00        R     MOV     R7,iLbaStart+03H
+001E AE00        R     MOV     R6,iLbaStart+02H
+0020 AD00        R     MOV     R5,iLbaStart+01H
+0022 AC00        R     MOV     R4,iLbaStart
+0024 7818              MOV     R0,#018H
+0026 120000      E     LCALL   ?C?ULSHR
+0029 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 149
+002C AF00        R     MOV     R7,iSectorCount
+002E 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 150
+0031 E500        R     MOV     A,iSectorCount
+0033 75F008            MOV     B,#08H
+0036 A4                MUL     AB
+;---- Variable 'mBlockCount' assigned to Register 'R4/R5' ----
+0037 FD                MOV     R5,A
+0038 ACF0              MOV     R4,B
+003A         ?C0032:
+003A ED                MOV     A,R5
+003B 4C                ORL     A,R4
+003C 6039              JZ      ?C0033
+                                           ; SOURCE LINE # 151
+003E 120000      R     LCALL   mWaitInterrupt
+0041 8F00        R     MOV     mIntStatus,R7
+                                           ; SOURCE LINE # 152
+0043 E500        R     MOV     A,mIntStatus
+0045 641D              XRL     A,#01DH
+0047 702E              JNZ     ?C0033
+                                           ; SOURCE LINE # 153
+                                           ; SOURCE LINE # 154
+0049 120000      R     LCALL   L?0064
+;---- Variable 'mLength' assigned to Register 'R6' ----
+004C AE07              MOV     R6,AR7
+                                           ; SOURCE LINE # 157
+004E EE                MOV     A,R6
+004F 601A              JZ      ?C0036
+0051         ?C0039:
+                                           ; SOURCE LINE # 158
+                                           ; SOURCE LINE # 159
+0051 120000      R     LCALL   CH375_DAT_PORT_in
+0054 AB00        R     MOV     R3,mBufferPoint
+0056 AA00        R     MOV     R2,mBufferPoint+01H
+0058 A900        R     MOV     R1,mBufferPoint+02H
+005A EF                MOV     A,R7
+005B 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 160
+005E 7401              MOV     A,#01H
+0060 2500        R     ADD     A,mBufferPoint+02H
+0062 F500        R     MOV     mBufferPoint+02H,A
+0064 E4                CLR     A
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 12  
+
+0065 3500        R     ADDC    A,mBufferPoint+01H
+0067 F500        R     MOV     mBufferPoint+01H,A
+                                           ; SOURCE LINE # 161
+0069 DEE6              DJNZ    R6,?C0039
+                                           ; SOURCE LINE # 162
+006B         ?C0036:
+                                           ; SOURCE LINE # 163
+006B 7F55              MOV     R7,#055H
+006D 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 164
+                                           ; SOURCE LINE # 165
+                                           ; SOURCE LINE # 166
+0070         ?C0034:
+0070 ED                MOV     A,R5
+0071 1D                DEC     R5
+0072 70C6              JNZ     ?C0032
+0074 1C                DEC     R4
+0075         ?C0061:
+0075 80C3              SJMP    ?C0032
+0077         ?C0033:
+                                           ; SOURCE LINE # 167
+0077 ED                MOV     A,R5
+0078 4C                ORL     A,R4
+0079 700D              JNZ     ?C0041
+                                           ; SOURCE LINE # 168
+007B 120000      R     LCALL   mWaitInterrupt
+007E 8F00        R     MOV     mIntStatus,R7
+                                           ; SOURCE LINE # 169
+0080 E500        R     MOV     A,mIntStatus
+0082 B41403            CJNE    A,#014H,?C0041
+0085 7F01              MOV     R7,#01H
+0087 22                RET     
+                                           ; SOURCE LINE # 170
+0088         ?C0041:
+                                           ; SOURCE LINE # 171
+0088 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 172
+008A         ?C0043:
+008A 22                RET     
+             ; FUNCTION _RBC_Read (END)
+
+             ; FUNCTION _RBC_Write (BEGIN)
+                                           ; SOURCE LINE # 175
+0000 8F00        R     MOV     iLbaStart+03H,R7
+0002 8E00        R     MOV     iLbaStart+02H,R6
+0004 8D00        R     MOV     iLbaStart+01H,R5
+0006 8C00        R     MOV     iLbaStart,R4
+                                           ; SOURCE LINE # 177
+                                           ; SOURCE LINE # 181
+0008 7F56              MOV     R7,#056H
+000A 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 182
+000D AF00        R     MOV     R7,iLbaStart+03H
+000F 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 183
+0012 AF00        R     MOV     R7,iLbaStart+03H
+0014 AE00        R     MOV     R6,iLbaStart+02H
+0016 AD00        R     MOV     R5,iLbaStart+01H
+0018 AC00        R     MOV     R4,iLbaStart
+001A 7808              MOV     R0,#08H
+001C 120000      E     LCALL   ?C?ULSHR
+001F 120000      R     LCALL   _CH375_DAT_PORT_d_out
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 13  
+
+                                           ; SOURCE LINE # 184
+0022 AF00        R     MOV     R7,iLbaStart+03H
+0024 AE00        R     MOV     R6,iLbaStart+02H
+0026 AD00        R     MOV     R5,iLbaStart+01H
+0028 AC00        R     MOV     R4,iLbaStart
+002A 7810              MOV     R0,#010H
+002C 120000      E     LCALL   ?C?ULSHR
+002F 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 185
+0032 AF00        R     MOV     R7,iLbaStart+03H
+0034 AE00        R     MOV     R6,iLbaStart+02H
+0036 AD00        R     MOV     R5,iLbaStart+01H
+0038 AC00        R     MOV     R4,iLbaStart
+003A 7818              MOV     R0,#018H
+003C 120000      E     LCALL   ?C?ULSHR
+003F 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 186
+0042 AF00        R     MOV     R7,iSectorCount
+0044 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 188
+0047 E500        R     MOV     A,iSectorCount
+0049 75F008            MOV     B,#08H
+004C A4                MUL     AB
+;---- Variable 'mBlockCount' assigned to Register 'R4/R5' ----
+004D FD                MOV     R5,A
+004E ACF0              MOV     R4,B
+0050         ?C0044:
+0050 ED                MOV     A,R5
+0051 4C                ORL     A,R4
+0052 603D              JZ      ?C0045
+                                           ; SOURCE LINE # 189
+0054 120000      R     LCALL   mWaitInterrupt
+0057 8F00        R     MOV     mIntStatus,R7
+                                           ; SOURCE LINE # 190
+0059 E500        R     MOV     A,mIntStatus
+005B 641E              XRL     A,#01EH
+005D 7032              JNZ     ?C0045
+                                           ; SOURCE LINE # 191
+005F 7F2B              MOV     R7,#02BH
+0061 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 192
+;---- Variable 'mLength' assigned to Register 'R6' ----
+0064 7E40              MOV     R6,#040H
+                                           ; SOURCE LINE # 193
+0066 7F40              MOV     R7,#040H
+0068 120000      R     LCALL   _CH375_DAT_PORT_d_out
+006B         ?C0050:
+                                           ; SOURCE LINE # 196
+                                           ; SOURCE LINE # 197
+006B AB00        R     MOV     R3,mBufferPoint
+006D AA00        R     MOV     R2,mBufferPoint+01H
+006F A900        R     MOV     R1,mBufferPoint+02H
+0071 120000      E     LCALL   ?C?CLDPTR
+0074 FF                MOV     R7,A
+0075 120000      R     LCALL   _CH375_DAT_PORT_d_out
+                                           ; SOURCE LINE # 198
+0078 7401              MOV     A,#01H
+007A 2500        R     ADD     A,mBufferPoint+02H
+007C F500        R     MOV     mBufferPoint+02H,A
+007E E4                CLR     A
+007F 3500        R     ADDC    A,mBufferPoint+01H
+0081 F500        R     MOV     mBufferPoint+01H,A
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 14  
+
+                                           ; SOURCE LINE # 199
+0083 DEE6              DJNZ    R6,?C0050
+                                           ; SOURCE LINE # 200
+0085 7F57              MOV     R7,#057H
+0087 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+008A         ?C0046:
+008A ED                MOV     A,R5
+008B 1D                DEC     R5
+008C 70C2              JNZ     ?C0044
+008E 1C                DEC     R4
+008F         ?C0062:
+008F 80BF              SJMP    ?C0044
+0091         ?C0045:
+                                           ; SOURCE LINE # 204
+0091 ED                MOV     A,R5
+0092 4C                ORL     A,R4
+0093 700D              JNZ     ?C0052
+                                           ; SOURCE LINE # 205
+0095 120000      R     LCALL   mWaitInterrupt
+0098 8F00        R     MOV     mIntStatus,R7
+                                           ; SOURCE LINE # 206
+009A E500        R     MOV     A,mIntStatus
+009C B41403            CJNE    A,#014H,?C0052
+009F 7F01              MOV     R7,#01H
+00A1 22                RET     
+                                           ; SOURCE LINE # 207
+00A2         ?C0052:
+                                           ; SOURCE LINE # 208
+00A2 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 209
+00A4         ?C0054:
+00A4 22                RET     
+             ; FUNCTION _RBC_Write (END)
+
+             ; FUNCTION SPC_RequestSense (BEGIN)
+                                           ; SOURCE LINE # 211
+                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 213
+0000 7F5A              MOV     R7,#05AH
+                                           ; SOURCE LINE # 214
+0002 120000      R     LCALL   L?0065
+0005 BF1403            CJNE    R7,#014H,?C0055
+0008 7F01              MOV     R7,#01H
+000A 22                RET     
+000B         ?C0055:
+                                           ; SOURCE LINE # 215
+000B 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 216
+000D         ?C0056:
+000D 22                RET     
+             ; FUNCTION SPC_RequestSense (END)
+
+             ; FUNCTION SPC_TestUnit (BEGIN)
+                                           ; SOURCE LINE # 218
+                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 220
+0000 7F59              MOV     R7,#059H
+0002 120000      R     LCALL   _CH375_CMD_PORT_d_out
+                                           ; SOURCE LINE # 221
+C51 COMPILER V7.06   CH375                                                                 02/24/2005 15:49:31 PAGE 15  
+
+0005 120000      R     LCALL   mWaitInterrupt
+0008 BF1403            CJNE    R7,#014H,?C0057
+000B 7F01              MOV     R7,#01H
+000D 22                RET     
+000E         ?C0057:
+                                           ; SOURCE LINE # 222
+000E 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 223
+0010         ?C0058:
+0010 22                RET     
+             ; FUNCTION SPC_TestUnit (END)
+
+             ; FUNCTION SPC_LockMedia (BEGIN)
+                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 227
+0000 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 228
+0002         ?C0059:
+0002 22                RET     
+             ; FUNCTION SPC_LockMedia (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    691    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      22
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

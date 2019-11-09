@@ -1,0 +1,1715 @@
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE FAT
+OBJECT MODULE PLACED IN FAT.OBJ
+COMPILER INVOKED BY: F:\KEIL\C51\BIN\C51.EXE FAT.C DEBUG OBJECTEXTEND CODE
+
+stmt level    source
+
+   1          #include "common.h"
+   2          
+   3          ////////////////////////////////////////
+   4          extern XXGFLAGS bdata bXXGFlags;
+   5          extern SYS_INFO_BLOCK xdata DeviceInfo;
+   6          extern FILE_INFO xdata ThisFile;
+   7          extern unsigned char xdata DBUF[BUFFER_LENGTH];
+   8          unsigned char xdata FATBUF[512];
+   9          unsigned char xdata CurFatSector[512];
+  10          FREE_FAT_INFO xdata FreeFat;
+  11          ////////////////////////////////////////
+  12          unsigned long FirstSectorofCluster(unsigned int clusterNum)
+  13          {
+  14   1              unsigned long temp;
+  15   1              temp=clusterNum-2;
+  16   1              temp=temp*DeviceInfo.BPB_SecPerClus;
+  17   1              temp=temp+DeviceInfo.FirstDataSector;
+  18   1              return temp;
+  19   1      }
+  20          
+  21          unsigned int ThisFatSecNum(unsigned int clusterNum)
+  22          {
+  23   1         unsigned int temp;
+  24   1         temp=clusterNum*2;
+  25   1         temp=temp/DeviceInfo.BPB_BytesPerSec;
+  26   1         temp=temp+DeviceInfo.FatStartSector;
+  27   1         return temp;
+  28   1      }
+  29          
+  30          unsigned int ThisFatEntOffset(unsigned int clusterNum)
+  31          {
+  32   1              unsigned int temp1,temp2;
+  33   1              temp1=2*clusterNum;
+  34   1              temp2=temp1/DeviceInfo.BPB_BytesPerSec;
+  35   1              temp1=temp1-temp2*DeviceInfo.BPB_BytesPerSec;
+  36   1              return temp1;
+  37   1      }
+  38          
+  39          unsigned int GetNextClusterNum(unsigned int clusterNum)
+  40          {
+  41   1              unsigned int xxgFatSecNum,xxgFatEntOffset;
+  42   1              
+  43   1              xxgFatSecNum=ThisFatSecNum(clusterNum);
+  44   1              xxgFatEntOffset=ThisFatEntOffset(clusterNum);
+  45   1              if(ThisFile.FatSectorPointer!=xxgFatSecNum)
+  46   1              {       
+  47   2                      
+  48   2                      if(!RBC_Read(xxgFatSecNum,1,FATBUF))
+  49   2                              return 0xFFFF;
+  50   2                      ThisFile.FatSectorPointer=xxgFatSecNum;
+  51   2              }
+  52   1              clusterNum=FATBUF[xxgFatEntOffset+1];
+  53   1              clusterNum=clusterNum<<8;
+  54   1              clusterNum+=FATBUF[xxgFatEntOffset];    
+  55   1              return clusterNum;
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 2   
+
+  56   1      }
+  57          
+  58          unsigned char DeleteClusterLink(unsigned int clusterNum)
+  59          {
+  60   1              unsigned int xxgFatSecNum,xxgFatEntOffset;
+  61   1              while((clusterNum>1)&&(clusterNum<0xfff0))
+  62   1              {
+  63   2              xxgFatSecNum=ThisFatSecNum(clusterNum);
+  64   2              xxgFatEntOffset=ThisFatEntOffset(clusterNum);
+  65   2              if(RBC_Read(xxgFatSecNum,1,DBUF))
+  66   2                      {
+  67   3                      clusterNum=DBUF[xxgFatEntOffset+1];
+  68   3                      clusterNum=clusterNum<<8;
+  69   3                      clusterNum+=DBUF[xxgFatEntOffset];      
+  70   3                      }
+  71   2              else
+  72   2                      return FALSE;
+  73   2              DBUF[xxgFatEntOffset]=0x00;
+  74   2              DBUF[xxgFatEntOffset+1]=0x00;   
+  75   2              //DelayMs(5);
+  76   2              if(!RBC_Write(xxgFatSecNum,1,DBUF))
+  77   2                      return FALSE;
+  78   2              //DelayMs(5);
+  79   2              if(!RBC_Write(xxgFatSecNum+DeviceInfo.BPB_FATSz16,1,DBUF))
+  80   2                      return FALSE;
+  81   2              ////////////////////////////////////////////
+  82   2              }
+  83   1              return TRUE;
+  84   1      }
+  85          
+  86          unsigned char GoToPointer(unsigned long pointer)
+  87          {
+  88   1              unsigned int clusterSize;
+  89   1              clusterSize=DeviceInfo.BPB_SecPerClus*DeviceInfo.BPB_BytesPerSec;
+  90   1              ThisFile.ClusterPointer=ThisFile.StartCluster;
+  91   1              while(pointer>clusterSize)
+  92   1              {
+  93   2                      pointer-=clusterSize;   
+  94   2                      ThisFile.ClusterPointer=GetNextClusterNum(ThisFile.ClusterPointer);
+  95   2                      if(ThisFile.ClusterPointer==0xffff)
+  96   2                      {
+  97   3                      return FALSE;
+  98   3                      }
+  99   2              }
+ 100   1              ThisFile.SectorofCluster=pointer/DeviceInfo.BPB_BytesPerSec;
+ 101   1              ThisFile.SectorPointer=FirstSectorofCluster(ThisFile.ClusterPointer)+ThisFile.SectorofCluster;
+ 102   1              ThisFile.OffsetofSector=pointer-ThisFile.SectorofCluster*DeviceInfo.BPB_BytesPerSec;
+ 103   1              ThisFile.FatSectorPointer=0;
+ 104   1              return TRUE;
+ 105   1              
+ 106   1      }
+ 107          
+ 108          unsigned int GetFreeCusterNum(void)
+ 109          {
+ 110   1              unsigned int clusterNum,i;
+ 111   1              unsigned long sectorNum;
+ 112   1              clusterNum=0;
+ 113   1              sectorNum=DeviceInfo.FatStartSector;
+ 114   1              while(sectorNum<DeviceInfo.BPB_FATSz16+DeviceInfo.FatStartSector)
+ 115   1              {
+ 116   2                      
+ 117   2                      if(!RBC_Read(sectorNum,1,DBUF))
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 3   
+
+ 118   2                              return 0x0;
+ 119   2                      for(i=0;i<DeviceInfo.BPB_BytesPerSec;i=i+2)
+ 120   2                              {
+ 121   3                               if((DBUF[i]==0)&&(DBUF[i+1]==0))
+ 122   3                                      {       
+ 123   4                                      DBUF[i]=0xff;
+ 124   4                                      DBUF[i+1]=0xff;
+ 125   4                                      //DelayMs(10);
+ 126   4                                      if(!RBC_Write(sectorNum,1,DBUF))
+ 127   4                                              return 0x00;
+ 128   4                                      //DelayMs(10);
+ 129   4                                      if(!RBC_Write(sectorNum+DeviceInfo.BPB_FATSz16,1,DBUF))
+ 130   4                                              return 0x00;
+ 131   4                                      
+ 132   4                                      return  clusterNum; 
+ 133   4                                      }
+ 134   3                               clusterNum++;
+ 135   3                              }       
+ 136   2                                      
+ 137   2                      sectorNum=2*clusterNum/DeviceInfo.BPB_BytesPerSec+DeviceInfo.FatStartSector;    
+ 138   2                      //DelayMs(10);
+ 139   2              }
+ 140   1              
+ 141   1              return 0x0;
+ 142   1      }
+ 143          
+ 144          unsigned int CreateClusterLink(unsigned int currentCluster)
+ 145          {
+ 146   1              unsigned char bFound;
+ 147   1              unsigned int clusterNum;
+ 148   1              unsigned int xxgFatSecNum,xxgFatEntOffset;
+ 149   1              unsigned long temp;
+ 150   1              bFound=0;
+ 151   1              //µÚÒ»´Î¶ÁFAT
+ 152   1              if((FreeFat.SectorNum==DeviceInfo.FatStartSector)&&(FreeFat.OffsetofSector<3))
+ 153   1                      {       
+ 154   2                      if(!RBC_Read(FreeFat.SectorNum,1,CurFatSector))
+ 155   2                              return 0x0;     
+ 156   2                      }
+ 157   1              temp=FreeFat.SectorNum-DeviceInfo.FatStartSector;
+ 158   1              temp=temp*DeviceInfo.BPB_BytesPerSec;
+ 159   1              temp=temp/2;
+ 160   1              clusterNum=temp+FreeFat.OffsetofSector/2;
+ 161   1              while(FreeFat.SectorNum<DeviceInfo.BPB_FATSz16+DeviceInfo.FatStartSector)
+ 162   1              {
+ 163   2                      while(FreeFat.OffsetofSector<DeviceInfo.BPB_BytesPerSec)
+ 164   2                              {
+ 165   3                               if((CurFatSector[FreeFat.OffsetofSector]==0)&&(CurFatSector[FreeFat.OffsetofSector+1]==0))
+ 166   3                                      {       
+ 167   4                                      CurFatSector[FreeFat.OffsetofSector]=0xff;
+ 168   4                                      CurFatSector[FreeFat.OffsetofSector+1]=0xff;
+ 169   4                                      
+ 170   4                                      FreeFat.OffsetofSector=FreeFat.OffsetofSector+2;
+ 171   4                                      bXXGFlags.bits.bFatChanged=1;
+ 172   4                                      bFound=1;
+ 173   4                                      break;
+ 174   4                                      }
+ 175   3                               FreeFat.OffsetofSector=FreeFat.OffsetofSector+2;
+ 176   3                               clusterNum++;
+ 177   3                              }       
+ 178   2                      if(bFound==1)
+ 179   2                              break;  
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 4   
+
+ 180   2                      //FreeFat.SectorNum=2*clusterNum/DeviceInfo.BPB_BytesPerSec+DeviceInfo.FatStartSector;  
+ 181   2                      //FreeFat.OldSectorNum=FreeFat.SectorNum;
+ 182   2                      //FreeFat.SectorNum++;
+ 183   2                      //FreeFat.OffsetofSector=0;
+ 184   2                      UpdateFat(FreeFat.SectorNum);
+ 185   2                      
+ 186   2                      FreeFat.SectorNum++;
+ 187   2                      FreeFat.OffsetofSector=0;
+ 188   2                      
+ 189   2                      if(!RBC_Read(FreeFat.SectorNum,1,CurFatSector))
+ 190   2                              return 0x0;     
+ 191   2                      //DelayMs(10);
+ 192   2              }
+ 193   1              if(bFound==0)
+ 194   1                      return 0x00;
+ 195   1              xxgFatSecNum=ThisFatSecNum(currentCluster);
+ 196   1              xxgFatEntOffset=ThisFatEntOffset(currentCluster);
+ 197   1              
+ 198   1              if(xxgFatSecNum!=FreeFat.SectorNum)
+ 199   1                {
+ 200   2                      RBC_Read(xxgFatSecNum,1,DBUF);
+ 201   2              //FreeFat.OffsetofSector=FreeFat.OffsetofSector+2;
+ 202   2                      DBUF[xxgFatEntOffset]=clusterNum;
+ 203   2                      DBUF[xxgFatEntOffset+1]=clusterNum>>8;
+ 204   2                      //DelayMs(5);
+ 205   2                      if(!RBC_Write(xxgFatSecNum,1,DBUF))
+ 206   2                              return 0x00;
+ 207   2                      //DelayMs(10);
+ 208   2                      if(!RBC_Write(xxgFatSecNum+DeviceInfo.BPB_FATSz16,1,DBUF))
+ 209   2                              return 0x00;
+ 210   2                 }
+ 211   1               else
+ 212   1                 {
+ 213   2                      CurFatSector[xxgFatEntOffset]=clusterNum;
+ 214   2                      CurFatSector[xxgFatEntOffset+1]=clusterNum>>8;
+ 215   2                      bXXGFlags.bits.bFatChanged=1;
+ 216   2                 }    
+ 217   1              return clusterNum;
+ 218   1      }
+ 219          
+ 220          void UpdateFat(unsigned long sectorNum)
+ 221          {
+ 222   1              if(bXXGFlags.bits.bFatChanged==1)
+ 223   1                              {
+ 224   2                              if(!RBC_Write(sectorNum,1,CurFatSector))
+ 225   2                                      return ;
+ 226   2                              //DelayMs(10);
+ 227   2                              if(!RBC_Write(sectorNum+DeviceInfo.BPB_FATSz16,1,CurFatSector))
+ 228   2                                      return ;
+ 229   2                              bXXGFlags.bits.bFatChanged=0;
+ 230   2                              }
+ 231   1      }
+ 232          
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _FirstSectorofCluster (BEGIN)
+                                           ; SOURCE LINE # 12
+;---- Variable 'clusterNum' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 13
+                                           ; SOURCE LINE # 15
+0000 EF                MOV     A,R7
+0001 24FE              ADD     A,#0FEH
+0003 FF                MOV     R7,A
+0004 EE                MOV     A,R6
+0005 34FF              ADDC    A,#0FFH
+0007 FE                MOV     R6,A
+0008 E4                CLR     A
+0009 8F00        R     MOV     temp+03H,R7
+000B 8E00        R     MOV     temp+02H,R6
+000D F500        R     MOV     temp+01H,A
+000F F500        R     MOV     temp,A
+                                           ; SOURCE LINE # 16
+0011 900000      E     MOV     DPTR,#DeviceInfo+0AH
+0014 E0                MOVX    A,@DPTR
+0015 FF                MOV     R7,A
+0016 E4                CLR     A
+0017 FC                MOV     R4,A
+0018 FD                MOV     R5,A
+0019 FE                MOV     R6,A
+001A AB00        R     MOV     R3,temp+03H
+001C AA00        R     MOV     R2,temp+02H
+001E A900        R     MOV     R1,temp+01H
+0020 A800        R     MOV     R0,temp
+0022 120000      E     LCALL   ?C?LMUL
+0025 8F00        R     MOV     temp+03H,R7
+0027 8E00        R     MOV     temp+02H,R6
+0029 8D00        R     MOV     temp+01H,R5
+002B 8C00        R     MOV     temp,R4
+                                           ; SOURCE LINE # 17
+002D 900000      E     MOV     DPTR,#DeviceInfo+040H
+0030 E0                MOVX    A,@DPTR
+0031 FC                MOV     R4,A
+0032 A3                INC     DPTR
+0033 E0                MOVX    A,@DPTR
+0034 FD                MOV     R5,A
+0035 A3                INC     DPTR
+0036 E0                MOVX    A,@DPTR
+0037 FE                MOV     R6,A
+0038 A3                INC     DPTR
+0039 E0                MOVX    A,@DPTR
+003A 2500        R     ADD     A,temp+03H
+003C F500        R     MOV     temp+03H,A
+003E EE                MOV     A,R6
+003F 3500        R     ADDC    A,temp+02H
+0041 F500        R     MOV     temp+02H,A
+0043 ED                MOV     A,R5
+0044 3500        R     ADDC    A,temp+01H
+0046 F500        R     MOV     temp+01H,A
+0048 EC                MOV     A,R4
+0049 3500        R     ADDC    A,temp
+004B F500        R     MOV     temp,A
+                                           ; SOURCE LINE # 18
+004D AF00        R     MOV     R7,temp+03H
+004F AE00        R     MOV     R6,temp+02H
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 6   
+
+0051 AD00        R     MOV     R5,temp+01H
+0053 FC                MOV     R4,A
+                                           ; SOURCE LINE # 19
+0054         ?C0001:
+0054 22                RET     
+             ; FUNCTION _FirstSectorofCluster (END)
+
+             ; FUNCTION _ThisFatSecNum (BEGIN)
+                                           ; SOURCE LINE # 21
+;---- Variable 'clusterNum' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 22
+                                           ; SOURCE LINE # 24
+0000 EF                MOV     A,R7
+0001 25E0              ADD     A,ACC
+0003 FF                MOV     R7,A
+0004 EE                MOV     A,R6
+0005 33                RLC     A
+0006 FE                MOV     R6,A
+;---- Variable 'temp' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 25
+0007 900000      E     MOV     DPTR,#DeviceInfo+08H
+000A E0                MOVX    A,@DPTR
+000B FC                MOV     R4,A
+000C A3                INC     DPTR
+000D E0                MOVX    A,@DPTR
+000E FD                MOV     R5,A
+000F 120000      E     LCALL   ?C?UIDIV
+                                           ; SOURCE LINE # 26
+0012 900000      E     MOV     DPTR,#DeviceInfo+03AH
+0015 E0                MOVX    A,@DPTR
+0016 FC                MOV     R4,A
+0017 A3                INC     DPTR
+0018 E0                MOVX    A,@DPTR
+0019 2F                ADD     A,R7
+001A FF                MOV     R7,A
+001B EC                MOV     A,R4
+001C 3E                ADDC    A,R6
+001D FE                MOV     R6,A
+                                           ; SOURCE LINE # 27
+                                           ; SOURCE LINE # 28
+001E         ?C0002:
+001E 22                RET     
+             ; FUNCTION _ThisFatSecNum (END)
+
+             ; FUNCTION _ThisFatEntOffset (BEGIN)
+                                           ; SOURCE LINE # 30
+;---- Variable 'clusterNum' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 31
+                                           ; SOURCE LINE # 33
+0000 EF                MOV     A,R7
+0001 25E0              ADD     A,ACC
+0003 FF                MOV     R7,A
+0004 EE                MOV     A,R6
+0005 33                RLC     A
+;---- Variable 'temp1' assigned to Register 'R2/R3' ----
+0006 AB07              MOV     R3,AR7
+0008 FA                MOV     R2,A
+                                           ; SOURCE LINE # 34
+0009 900000      E     MOV     DPTR,#DeviceInfo+08H
+000C E0                MOVX    A,@DPTR
+000D FC                MOV     R4,A
+000E A3                INC     DPTR
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 7   
+
+000F E0                MOVX    A,@DPTR
+0010 FD                MOV     R5,A
+0011 AE02              MOV     R6,AR2
+0013 120000      E     LCALL   ?C?UIDIV
+;---- Variable 'temp2' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 35
+0016 900000      E     MOV     DPTR,#DeviceInfo+08H
+0019 E0                MOVX    A,@DPTR
+001A FC                MOV     R4,A
+001B A3                INC     DPTR
+001C E0                MOVX    A,@DPTR
+001D FD                MOV     R5,A
+001E 120000      E     LCALL   ?C?IMUL
+0021 C3                CLR     C
+0022 EB                MOV     A,R3
+0023 9F                SUBB    A,R7
+0024 FB                MOV     R3,A
+0025 EA                MOV     A,R2
+0026 9E                SUBB    A,R6
+                                           ; SOURCE LINE # 36
+0027 FE                MOV     R6,A
+0028 AF03              MOV     R7,AR3
+                                           ; SOURCE LINE # 37
+002A         ?C0003:
+002A 22                RET     
+             ; FUNCTION _ThisFatEntOffset (END)
+
+             ; FUNCTION _GetNextClusterNum (BEGIN)
+                                           ; SOURCE LINE # 39
+0000 8E00        R     MOV     clusterNum,R6
+0002 8F00        R     MOV     clusterNum+01H,R7
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 43
+0004 120000      R     LCALL   _ThisFatSecNum
+0007 8E00        R     MOV     xxgFatSecNum,R6
+0009 8F00        R     MOV     xxgFatSecNum+01H,R7
+                                           ; SOURCE LINE # 44
+000B AF00        R     MOV     R7,clusterNum+01H
+000D AE00        R     MOV     R6,clusterNum
+000F 120000      R     LCALL   _ThisFatEntOffset
+0012 8E00        R     MOV     xxgFatEntOffset,R6
+0014 8F00        R     MOV     xxgFatEntOffset+01H,R7
+                                           ; SOURCE LINE # 45
+0016 900000      E     MOV     DPTR,#ThisFile+014H
+0019 E0                MOVX    A,@DPTR
+001A 6500        R     XRL     A,xxgFatSecNum
+001C 7004              JNZ     ?C0047
+001E A3                INC     DPTR
+001F E0                MOVX    A,@DPTR
+0020 6500        R     XRL     A,xxgFatSecNum+01H
+0022         ?C0047:
+0022 6028              JZ      ?C0004
+                                           ; SOURCE LINE # 46
+                                           ; SOURCE LINE # 48
+0024 AE00        R     MOV     R6,xxgFatSecNum
+0026 AF00        R     MOV     R7,xxgFatSecNum+01H
+0028 E4                CLR     A
+0029 FC                MOV     R4,A
+002A FD                MOV     R5,A
+002B 750001      E     MOV     ?_RBC_Read?BYTE+04H,#01H
+002E 750001      E     MOV     ?_RBC_Read?BYTE+05H,#01H
+0031 750000      R     MOV     ?_RBC_Read?BYTE+06H,#HIGH FATBUF
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 8   
+
+0034 750000      R     MOV     ?_RBC_Read?BYTE+07H,#LOW FATBUF
+0037 120000      E     LCALL   _RBC_Read
+003A EF                MOV     A,R7
+003B 7005              JNZ     ?C0005
+                                           ; SOURCE LINE # 49
+003D 7EFF              MOV     R6,#0FFH
+003F 7FFF              MOV     R7,#0FFH
+0041 22                RET     
+0042         ?C0005:
+                                           ; SOURCE LINE # 50
+0042 900000      E     MOV     DPTR,#ThisFile+014H
+0045 E500        R     MOV     A,xxgFatSecNum
+0047 F0                MOVX    @DPTR,A
+0048 A3                INC     DPTR
+0049 E500        R     MOV     A,xxgFatSecNum+01H
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 51
+004C         ?C0004:
+                                           ; SOURCE LINE # 52
+004C 7400        R     MOV     A,#LOW FATBUF+01H
+004E 2500        R     ADD     A,xxgFatEntOffset+01H
+0050 F582              MOV     DPL,A
+0052 7400        R     MOV     A,#HIGH FATBUF+01H
+0054 3500        R     ADDC    A,xxgFatEntOffset
+0056 F583              MOV     DPH,A
+0058 E0                MOVX    A,@DPTR
+0059 750000      R     MOV     clusterNum,#00H
+005C F500        R     MOV     clusterNum+01H,A
+                                           ; SOURCE LINE # 53
+005E 750000      R     MOV     clusterNum+01H,#00H
+0061 F500        R     MOV     clusterNum,A
+                                           ; SOURCE LINE # 54
+0063 7400        R     MOV     A,#LOW FATBUF
+0065 2500        R     ADD     A,xxgFatEntOffset+01H
+0067 F582              MOV     DPL,A
+0069 7400        R     MOV     A,#HIGH FATBUF
+006B 3500        R     ADDC    A,xxgFatEntOffset
+006D F583              MOV     DPH,A
+006F E0                MOVX    A,@DPTR
+0070 2500        R     ADD     A,clusterNum+01H
+0072 F500        R     MOV     clusterNum+01H,A
+0074 E4                CLR     A
+0075 3500        R     ADDC    A,clusterNum
+0077 F500        R     MOV     clusterNum,A
+                                           ; SOURCE LINE # 55
+0079 FE                MOV     R6,A
+007A AF00        R     MOV     R7,clusterNum+01H
+                                           ; SOURCE LINE # 56
+007C         ?C0006:
+007C 22                RET     
+             ; FUNCTION _GetNextClusterNum (END)
+
+             ; FUNCTION _DeleteClusterLink (BEGIN)
+                                           ; SOURCE LINE # 58
+0000 8E00        R     MOV     clusterNum,R6
+0002 8F00        R     MOV     clusterNum+01H,R7
+                                           ; SOURCE LINE # 59
+0004         ?C0007:
+                                           ; SOURCE LINE # 61
+0004 D3                SETB    C
+0005 E500        R     MOV     A,clusterNum+01H
+0007 9401              SUBB    A,#01H
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 9   
+
+0009 E500        R     MOV     A,clusterNum
+000B 9400              SUBB    A,#00H
+000D 5003              JNC     $ + 5H
+000F 020000      R     LJMP    ?C0008
+0012 E500        R     MOV     A,clusterNum+01H
+0014 94F0              SUBB    A,#0F0H
+0016 E500        R     MOV     A,clusterNum
+0018 94FF              SUBB    A,#0FFH
+001A 4003              JC      $ + 5H
+001C 020000      R     LJMP    ?C0008
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 63
+001F AF00        R     MOV     R7,clusterNum+01H
+0021 AE00        R     MOV     R6,clusterNum
+0023 120000      R     LCALL   _ThisFatSecNum
+0026 8E00        R     MOV     xxgFatSecNum,R6
+0028 8F00        R     MOV     xxgFatSecNum+01H,R7
+                                           ; SOURCE LINE # 64
+002A AF00        R     MOV     R7,clusterNum+01H
+002C AE00        R     MOV     R6,clusterNum
+002E 120000      R     LCALL   _ThisFatEntOffset
+0031 8E00        R     MOV     xxgFatEntOffset,R6
+0033 8F00        R     MOV     xxgFatEntOffset+01H,R7
+                                           ; SOURCE LINE # 65
+0035 AE00        R     MOV     R6,xxgFatSecNum
+0037 AF00        R     MOV     R7,xxgFatSecNum+01H
+0039 E4                CLR     A
+003A FC                MOV     R4,A
+003B FD                MOV     R5,A
+003C 750001      E     MOV     ?_RBC_Read?BYTE+04H,#01H
+003F 750001      E     MOV     ?_RBC_Read?BYTE+05H,#01H
+0042 750000      E     MOV     ?_RBC_Read?BYTE+06H,#HIGH DBUF
+0045 750000      E     MOV     ?_RBC_Read?BYTE+07H,#LOW DBUF
+0048 120000      E     LCALL   _RBC_Read
+004B EF                MOV     A,R7
+004C 602F              JZ      ?C0009
+                                           ; SOURCE LINE # 66
+                                           ; SOURCE LINE # 67
+004E 7400        E     MOV     A,#LOW DBUF+01H
+0050 2500        R     ADD     A,xxgFatEntOffset+01H
+0052 F582              MOV     DPL,A
+0054 7400        E     MOV     A,#HIGH DBUF+01H
+0056 3500        R     ADDC    A,xxgFatEntOffset
+0058 F583              MOV     DPH,A
+005A E0                MOVX    A,@DPTR
+005B 750000      R     MOV     clusterNum,#00H
+005E F500        R     MOV     clusterNum+01H,A
+                                           ; SOURCE LINE # 68
+0060 750000      R     MOV     clusterNum+01H,#00H
+0063 F500        R     MOV     clusterNum,A
+                                           ; SOURCE LINE # 69
+0065 7400        E     MOV     A,#LOW DBUF
+0067 2500        R     ADD     A,xxgFatEntOffset+01H
+0069 F582              MOV     DPL,A
+006B 7400        E     MOV     A,#HIGH DBUF
+006D 3500        R     ADDC    A,xxgFatEntOffset
+006F F583              MOV     DPH,A
+0071 E0                MOVX    A,@DPTR
+0072 2500        R     ADD     A,clusterNum+01H
+0074 F500        R     MOV     clusterNum+01H,A
+0076 E4                CLR     A
+0077 3500        R     ADDC    A,clusterNum
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 10  
+
+0079 F500        R     MOV     clusterNum,A
+                                           ; SOURCE LINE # 70
+007B 8003              SJMP    ?C0010
+007D         ?C0009:
+                                           ; SOURCE LINE # 72
+007D 7F00              MOV     R7,#00H
+007F 22                RET     
+0080         ?C0010:
+                                           ; SOURCE LINE # 73
+0080 7400        E     MOV     A,#LOW DBUF
+0082 2500        R     ADD     A,xxgFatEntOffset+01H
+0084 F582              MOV     DPL,A
+0086 7400        E     MOV     A,#HIGH DBUF
+0088 3500        R     ADDC    A,xxgFatEntOffset
+008A F583              MOV     DPH,A
+008C E4                CLR     A
+008D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 74
+008E 7400        E     MOV     A,#LOW DBUF+01H
+0090 2500        R     ADD     A,xxgFatEntOffset+01H
+0092 F582              MOV     DPL,A
+0094 7400        E     MOV     A,#HIGH DBUF+01H
+0096 3500        R     ADDC    A,xxgFatEntOffset
+0098 F583              MOV     DPH,A
+009A E4                CLR     A
+009B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 76
+009C AE00        R     MOV     R6,xxgFatSecNum
+009E AF00        R     MOV     R7,xxgFatSecNum+01H
+00A0 FC                MOV     R4,A
+00A1 FD                MOV     R5,A
+00A2 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+00A5 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+00A8 750000      E     MOV     ?_RBC_Write?BYTE+06H,#HIGH DBUF
+00AB 750000      E     MOV     ?_RBC_Write?BYTE+07H,#LOW DBUF
+00AE 120000      E     LCALL   _RBC_Write
+00B1 EF                MOV     A,R7
+00B2 7002              JNZ     ?C0012
+                                           ; SOURCE LINE # 77
+00B4 FF                MOV     R7,A
+00B5 22                RET     
+00B6         ?C0012:
+                                           ; SOURCE LINE # 79
+00B6 900000      E     MOV     DPTR,#DeviceInfo+012H
+00B9 E0                MOVX    A,@DPTR
+00BA 2500        R     ADD     A,xxgFatSecNum+01H
+00BC FF                MOV     R7,A
+00BD 900000      E     MOV     DPTR,#DeviceInfo+011H
+00C0 E0                MOVX    A,@DPTR
+00C1 3500        R     ADDC    A,xxgFatSecNum
+00C3 FE                MOV     R6,A
+00C4 E4                CLR     A
+00C5 FC                MOV     R4,A
+00C6 FD                MOV     R5,A
+00C7 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+00CA 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+00CD 750000      E     MOV     ?_RBC_Write?BYTE+06H,#HIGH DBUF
+00D0 750000      E     MOV     ?_RBC_Write?BYTE+07H,#LOW DBUF
+00D3 120000      E     LCALL   _RBC_Write
+00D6 EF                MOV     A,R7
+00D7 6003              JZ      $ + 5H
+00D9 020000      R     LJMP    ?C0007
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 11  
+
+                                           ; SOURCE LINE # 80
+00DC FF                MOV     R7,A
+00DD 22                RET     
+                                           ; SOURCE LINE # 82
+00DE         ?C0008:
+                                           ; SOURCE LINE # 83
+00DE 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 84
+00E0         ?C0011:
+00E0 22                RET     
+             ; FUNCTION _DeleteClusterLink (END)
+
+             ; FUNCTION _GoToPointer (BEGIN)
+                                           ; SOURCE LINE # 86
+0000 8F00        R     MOV     pointer+03H,R7
+0002 8E00        R     MOV     pointer+02H,R6
+0004 8D00        R     MOV     pointer+01H,R5
+0006 8C00        R     MOV     pointer,R4
+                                           ; SOURCE LINE # 87
+                                           ; SOURCE LINE # 89
+0008 900000      E     MOV     DPTR,#DeviceInfo+0AH
+000B E0                MOVX    A,@DPTR
+000C FF                MOV     R7,A
+000D 7E00              MOV     R6,#00H
+000F 900000      E     MOV     DPTR,#DeviceInfo+08H
+0012 E0                MOVX    A,@DPTR
+0013 FC                MOV     R4,A
+0014 A3                INC     DPTR
+0015 E0                MOVX    A,@DPTR
+0016 FD                MOV     R5,A
+0017 120000      E     LCALL   ?C?IMUL
+001A 8E00        R     MOV     clusterSize,R6
+001C 8F00        R     MOV     clusterSize+01H,R7
+                                           ; SOURCE LINE # 90
+001E 900000      E     MOV     DPTR,#ThisFile+01H
+0021 E0                MOVX    A,@DPTR
+0022 FF                MOV     R7,A
+0023 A3                INC     DPTR
+0024 E0                MOVX    A,@DPTR
+0025 900000      E     MOV     DPTR,#ThisFile+07H
+0028 CF                XCH     A,R7
+0029 F0                MOVX    @DPTR,A
+002A A3                INC     DPTR
+002B EF                MOV     A,R7
+002C F0                MOVX    @DPTR,A
+002D         ?C0014:
+                                           ; SOURCE LINE # 91
+002D AE00        R     MOV     R6,clusterSize
+002F AF00        R     MOV     R7,clusterSize+01H
+0031 E4                CLR     A
+0032 FC                MOV     R4,A
+0033 FD                MOV     R5,A
+0034 AB00        R     MOV     R3,pointer+03H
+0036 AA00        R     MOV     R2,pointer+02H
+0038 A900        R     MOV     R1,pointer+01H
+003A A800        R     MOV     R0,pointer
+003C D3                SETB    C
+003D 120000      E     LCALL   ?C?ULCMP
+0040 403A              JC      ?C0015
+                                           ; SOURCE LINE # 92
+                                           ; SOURCE LINE # 93
+0042 AE00        R     MOV     R6,clusterSize
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 12  
+
+0044 AF00        R     MOV     R7,clusterSize+01H
+0046 AB07              MOV     R3,AR7
+0048 AA06              MOV     R2,AR6
+004A E500        R     MOV     A,pointer+03H
+004C 9B                SUBB    A,R3
+004D F500        R     MOV     pointer+03H,A
+004F E500        R     MOV     A,pointer+02H
+0051 9A                SUBB    A,R2
+0052 F500        R     MOV     pointer+02H,A
+0054 E500        R     MOV     A,pointer+01H
+0056 9400              SUBB    A,#00H
+0058 F500        R     MOV     pointer+01H,A
+005A E500        R     MOV     A,pointer
+005C 9400              SUBB    A,#00H
+005E F500        R     MOV     pointer,A
+                                           ; SOURCE LINE # 94
+0060 900000      E     MOV     DPTR,#ThisFile+07H
+0063 E0                MOVX    A,@DPTR
+0064 FE                MOV     R6,A
+0065 A3                INC     DPTR
+0066 E0                MOVX    A,@DPTR
+0067 FF                MOV     R7,A
+0068 120000      R     LCALL   _GetNextClusterNum
+006B 900000      E     MOV     DPTR,#ThisFile+07H
+006E EE                MOV     A,R6
+006F F0                MOVX    @DPTR,A
+0070 A3                INC     DPTR
+0071 EF                MOV     A,R7
+0072 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 95
+0073 BEFFB7            CJNE    R6,#0FFH,?C0014
+0076 BFFFB4            CJNE    R7,#0FFH,?C0014
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 97
+0079 7F00              MOV     R7,#00H
+007B 22                RET     
+                                           ; SOURCE LINE # 98
+                                           ; SOURCE LINE # 99
+007C         ?C0015:
+                                           ; SOURCE LINE # 100
+007C 900000      E     MOV     DPTR,#DeviceInfo+08H
+007F E0                MOVX    A,@DPTR
+0080 FE                MOV     R6,A
+0081 A3                INC     DPTR
+0082 E0                MOVX    A,@DPTR
+0083 FB                MOV     R3,A
+0084 AA06              MOV     R2,AR6
+0086 E4                CLR     A
+0087 F9                MOV     R1,A
+0088 F8                MOV     R0,A
+0089 AF00        R     MOV     R7,pointer+03H
+008B AE00        R     MOV     R6,pointer+02H
+008D AD00        R     MOV     R5,pointer+01H
+008F AC00        R     MOV     R4,pointer
+0091 120000      E     LCALL   ?C?ULDIV
+0094 900000      E     MOV     DPTR,#ThisFile+0FH
+0097 EF                MOV     A,R7
+0098 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+0099 900000      E     MOV     DPTR,#ThisFile+07H
+009C E0                MOVX    A,@DPTR
+009D FE                MOV     R6,A
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 13  
+
+009E A3                INC     DPTR
+009F E0                MOVX    A,@DPTR
+00A0 FF                MOV     R7,A
+00A1 120000      R     LCALL   _FirstSectorofCluster
+00A4 A804              MOV     R0,AR4
+00A6 A905              MOV     R1,AR5
+00A8 AA06              MOV     R2,AR6
+00AA AB07              MOV     R3,AR7
+00AC 900000      E     MOV     DPTR,#ThisFile+0FH
+00AF E0                MOVX    A,@DPTR
+00B0 FF                MOV     R7,A
+00B1 E4                CLR     A
+00B2 FC                MOV     R4,A
+00B3 FD                MOV     R5,A
+00B4 FE                MOV     R6,A
+00B5 EB                MOV     A,R3
+00B6 2F                ADD     A,R7
+00B7 FF                MOV     R7,A
+00B8 EE                MOV     A,R6
+00B9 3A                ADDC    A,R2
+00BA FE                MOV     R6,A
+00BB ED                MOV     A,R5
+00BC 39                ADDC    A,R1
+00BD FD                MOV     R5,A
+00BE EC                MOV     A,R4
+00BF 38                ADDC    A,R0
+00C0 FC                MOV     R4,A
+00C1 900000      E     MOV     DPTR,#ThisFile+09H
+00C4 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 102
+00C7 900000      E     MOV     DPTR,#ThisFile+0FH
+00CA E0                MOVX    A,@DPTR
+00CB FF                MOV     R7,A
+00CC 7E00              MOV     R6,#00H
+00CE 900000      E     MOV     DPTR,#DeviceInfo+08H
+00D1 E0                MOVX    A,@DPTR
+00D2 FC                MOV     R4,A
+00D3 A3                INC     DPTR
+00D4 E0                MOVX    A,@DPTR
+00D5 FD                MOV     R5,A
+00D6 120000      E     LCALL   ?C?IMUL
+00D9 C3                CLR     C
+00DA E500        R     MOV     A,pointer+03H
+00DC 9F                SUBB    A,R7
+00DD FF                MOV     R7,A
+00DE E500        R     MOV     A,pointer+02H
+00E0 9E                SUBB    A,R6
+00E1 900000      E     MOV     DPTR,#ThisFile+0DH
+00E4 F0                MOVX    @DPTR,A
+00E5 A3                INC     DPTR
+00E6 EF                MOV     A,R7
+00E7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+00E8 E4                CLR     A
+00E9 900000      E     MOV     DPTR,#ThisFile+014H
+00EC F0                MOVX    @DPTR,A
+00ED A3                INC     DPTR
+00EE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 104
+00EF 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 106
+00F1         ?C0017:
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 14  
+
+00F1 22                RET     
+             ; FUNCTION _GoToPointer (END)
+
+             ; FUNCTION GetFreeCusterNum (BEGIN)
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 112
+0000 E4                CLR     A
+0001 F500        R     MOV     clusterNum,A
+0003 F500        R     MOV     clusterNum+01H,A
+                                           ; SOURCE LINE # 113
+0005 900000      E     MOV     DPTR,#DeviceInfo+038H
+0008 E0                MOVX    A,@DPTR
+0009 FC                MOV     R4,A
+000A A3                INC     DPTR
+000B E0                MOVX    A,@DPTR
+000C FD                MOV     R5,A
+000D A3                INC     DPTR
+000E E0                MOVX    A,@DPTR
+000F FE                MOV     R6,A
+0010 A3                INC     DPTR
+0011 E0                MOVX    A,@DPTR
+0012 F500        R     MOV     sectorNum+03H,A
+0014 8E00        R     MOV     sectorNum+02H,R6
+0016 8D00        R     MOV     sectorNum+01H,R5
+0018 8C00        R     MOV     sectorNum,R4
+001A         ?C0018:
+                                           ; SOURCE LINE # 114
+001A 900000      E     MOV     DPTR,#DeviceInfo+011H
+001D E0                MOVX    A,@DPTR
+001E FE                MOV     R6,A
+001F A3                INC     DPTR
+0020 E0                MOVX    A,@DPTR
+0021 FF                MOV     R7,A
+0022 E4                CLR     A
+0023 FC                MOV     R4,A
+0024 FD                MOV     R5,A
+0025 900000      E     MOV     DPTR,#DeviceInfo+038H
+0028 E0                MOVX    A,@DPTR
+0029 F8                MOV     R0,A
+002A A3                INC     DPTR
+002B E0                MOVX    A,@DPTR
+002C F9                MOV     R1,A
+002D A3                INC     DPTR
+002E E0                MOVX    A,@DPTR
+002F FA                MOV     R2,A
+0030 A3                INC     DPTR
+0031 E0                MOVX    A,@DPTR
+0032 2F                ADD     A,R7
+0033 FF                MOV     R7,A
+0034 EA                MOV     A,R2
+0035 3E                ADDC    A,R6
+0036 FE                MOV     R6,A
+0037 ED                MOV     A,R5
+0038 39                ADDC    A,R1
+0039 FD                MOV     R5,A
+003A EC                MOV     A,R4
+003B 38                ADDC    A,R0
+003C FC                MOV     R4,A
+003D AB00        R     MOV     R3,sectorNum+03H
+003F AA00        R     MOV     R2,sectorNum+02H
+0041 A900        R     MOV     R1,sectorNum+01H
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 15  
+
+0043 A800        R     MOV     R0,sectorNum
+0045 C3                CLR     C
+0046 120000      E     LCALL   ?C?ULCMP
+0049 4003              JC      $ + 5H
+004B 020000      R     LJMP    ?C0019
+                                           ; SOURCE LINE # 115
+                                           ; SOURCE LINE # 117
+004E AF00        R     MOV     R7,sectorNum+03H
+0050 AE00        R     MOV     R6,sectorNum+02H
+0052 AD00        R     MOV     R5,sectorNum+01H
+0054 AC00        R     MOV     R4,sectorNum
+0056 750001      E     MOV     ?_RBC_Read?BYTE+04H,#01H
+0059 750001      E     MOV     ?_RBC_Read?BYTE+05H,#01H
+005C 750000      E     MOV     ?_RBC_Read?BYTE+06H,#HIGH DBUF
+005F 750000      E     MOV     ?_RBC_Read?BYTE+07H,#LOW DBUF
+0062 120000      E     LCALL   _RBC_Read
+0065 EF                MOV     A,R7
+0066 7003              JNZ     ?C0020
+                                           ; SOURCE LINE # 118
+0068 FE                MOV     R6,A
+0069 FF                MOV     R7,A
+006A 22                RET     
+006B         ?C0020:
+                                           ; SOURCE LINE # 119
+006B E4                CLR     A
+006C F500        R     MOV     i,A
+006E F500        R     MOV     i+01H,A
+0070         ?C0022:
+0070 D3                SETB    C
+0071 900000      E     MOV     DPTR,#DeviceInfo+09H
+0074 E0                MOVX    A,@DPTR
+0075 9500        R     SUBB    A,i+01H
+0077 900000      E     MOV     DPTR,#DeviceInfo+08H
+007A E0                MOVX    A,@DPTR
+007B 9500        R     SUBB    A,i
+007D 5003              JNC     $ + 5H
+007F 020000      R     LJMP    ?C0023
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+0082 7400        E     MOV     A,#LOW DBUF
+0084 2500        R     ADD     A,i+01H
+0086 F582              MOV     DPL,A
+0088 7400        E     MOV     A,#HIGH DBUF
+008A 3500        R     ADDC    A,i
+008C F583              MOV     DPH,A
+008E E0                MOVX    A,@DPTR
+008F 707C              JNZ     ?C0025
+0091 7400        E     MOV     A,#LOW DBUF+01H
+0093 2500        R     ADD     A,i+01H
+0095 F582              MOV     DPL,A
+0097 7400        E     MOV     A,#HIGH DBUF+01H
+0099 3500        R     ADDC    A,i
+009B F583              MOV     DPH,A
+009D E0                MOVX    A,@DPTR
+009E 706D              JNZ     ?C0025
+                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 123
+00A0 7400        E     MOV     A,#LOW DBUF
+00A2 2500        R     ADD     A,i+01H
+00A4 F582              MOV     DPL,A
+00A6 7400        E     MOV     A,#HIGH DBUF
+00A8 3500        R     ADDC    A,i
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 16  
+
+00AA F583              MOV     DPH,A
+00AC 74FF              MOV     A,#0FFH
+00AE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+00AF 7400        E     MOV     A,#LOW DBUF+01H
+00B1 2500        R     ADD     A,i+01H
+00B3 F582              MOV     DPL,A
+00B5 7400        E     MOV     A,#HIGH DBUF+01H
+00B7 3500        R     ADDC    A,i
+00B9 F583              MOV     DPH,A
+00BB 74FF              MOV     A,#0FFH
+00BD F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 126
+00BE AF00        R     MOV     R7,sectorNum+03H
+00C0 AE00        R     MOV     R6,sectorNum+02H
+00C2 AD00        R     MOV     R5,sectorNum+01H
+00C4 AC00        R     MOV     R4,sectorNum
+00C6 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+00C9 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+00CC 750000      E     MOV     ?_RBC_Write?BYTE+06H,#HIGH DBUF
+00CF 750000      E     MOV     ?_RBC_Write?BYTE+07H,#LOW DBUF
+00D2 120000      E     LCALL   _RBC_Write
+00D5 EF                MOV     A,R7
+00D6 7003              JNZ     ?C0026
+                                           ; SOURCE LINE # 127
+00D8 FE                MOV     R6,A
+00D9 FF                MOV     R7,A
+00DA 22                RET     
+00DB         ?C0026:
+                                           ; SOURCE LINE # 129
+00DB 900000      E     MOV     DPTR,#DeviceInfo+011H
+00DE E0                MOVX    A,@DPTR
+00DF FE                MOV     R6,A
+00E0 A3                INC     DPTR
+00E1 E0                MOVX    A,@DPTR
+00E2 FF                MOV     R7,A
+00E3 EF                MOV     A,R7
+00E4 2500        R     ADD     A,sectorNum+03H
+00E6 FF                MOV     R7,A
+00E7 EE                MOV     A,R6
+00E8 3500        R     ADDC    A,sectorNum+02H
+00EA FE                MOV     R6,A
+00EB E4                CLR     A
+00EC 3500        R     ADDC    A,sectorNum+01H
+00EE FD                MOV     R5,A
+00EF E4                CLR     A
+00F0 3500        R     ADDC    A,sectorNum
+00F2 FC                MOV     R4,A
+00F3 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+00F6 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+00F9 750000      E     MOV     ?_RBC_Write?BYTE+06H,#HIGH DBUF
+00FC 750000      E     MOV     ?_RBC_Write?BYTE+07H,#LOW DBUF
+00FF 120000      E     LCALL   _RBC_Write
+0102 EF                MOV     A,R7
+0103 7003              JNZ     ?C0027
+                                           ; SOURCE LINE # 130
+0105 FE                MOV     R6,A
+0106 FF                MOV     R7,A
+0107 22                RET     
+0108         ?C0027:
+                                           ; SOURCE LINE # 132
+0108 AE00        R     MOV     R6,clusterNum
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 17  
+
+010A AF00        R     MOV     R7,clusterNum+01H
+010C 22                RET     
+                                           ; SOURCE LINE # 133
+010D         ?C0025:
+                                           ; SOURCE LINE # 134
+010D 0500        R     INC     clusterNum+01H
+010F E500        R     MOV     A,clusterNum+01H
+0111 7002              JNZ     ?C0048
+0113 0500        R     INC     clusterNum
+0115         ?C0048:
+                                           ; SOURCE LINE # 135
+0115 7402              MOV     A,#02H
+0117 2500        R     ADD     A,i+01H
+0119 F500        R     MOV     i+01H,A
+011B E4                CLR     A
+011C 3500        R     ADDC    A,i
+011E F500        R     MOV     i,A
+0120 020000      R     LJMP    ?C0022
+0123         ?C0023:
+                                           ; SOURCE LINE # 137
+0123 E500        R     MOV     A,clusterNum+01H
+0125 25E0              ADD     A,ACC
+0127 FF                MOV     R7,A
+0128 E500        R     MOV     A,clusterNum
+012A 33                RLC     A
+012B FE                MOV     R6,A
+012C 900000      E     MOV     DPTR,#DeviceInfo+08H
+012F E0                MOVX    A,@DPTR
+0130 FC                MOV     R4,A
+0131 A3                INC     DPTR
+0132 E0                MOVX    A,@DPTR
+0133 FD                MOV     R5,A
+0134 120000      E     LCALL   ?C?UIDIV
+0137 E4                CLR     A
+0138 FC                MOV     R4,A
+0139 FD                MOV     R5,A
+013A 900000      E     MOV     DPTR,#DeviceInfo+038H
+013D E0                MOVX    A,@DPTR
+013E F8                MOV     R0,A
+013F A3                INC     DPTR
+0140 E0                MOVX    A,@DPTR
+0141 F9                MOV     R1,A
+0142 A3                INC     DPTR
+0143 E0                MOVX    A,@DPTR
+0144 FA                MOV     R2,A
+0145 A3                INC     DPTR
+0146 E0                MOVX    A,@DPTR
+0147 2F                ADD     A,R7
+0148 F500        R     MOV     sectorNum+03H,A
+014A EA                MOV     A,R2
+014B 3E                ADDC    A,R6
+014C F500        R     MOV     sectorNum+02H,A
+014E ED                MOV     A,R5
+014F 39                ADDC    A,R1
+0150 F500        R     MOV     sectorNum+01H,A
+0152 EC                MOV     A,R4
+0153 38                ADDC    A,R0
+0154 F500        R     MOV     sectorNum,A
+                                           ; SOURCE LINE # 139
+0156 020000      R     LJMP    ?C0018
+0159         ?C0019:
+                                           ; SOURCE LINE # 141
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 18  
+
+0159 E4                CLR     A
+015A FE                MOV     R6,A
+015B FF                MOV     R7,A
+                                           ; SOURCE LINE # 142
+015C         ?C0021:
+015C 22                RET     
+             ; FUNCTION GetFreeCusterNum (END)
+
+             ; FUNCTION _CreateClusterLink (BEGIN)
+                                           ; SOURCE LINE # 144
+0000 8E00        R     MOV     currentCluster,R6
+0002 8F00        R     MOV     currentCluster+01H,R7
+                                           ; SOURCE LINE # 145
+                                           ; SOURCE LINE # 150
+0004 E4                CLR     A
+0005 F500        R     MOV     bFound,A
+                                           ; SOURCE LINE # 152
+0007 900000      E     MOV     DPTR,#DeviceInfo+038H
+000A E0                MOVX    A,@DPTR
+000B FC                MOV     R4,A
+000C A3                INC     DPTR
+000D E0                MOVX    A,@DPTR
+000E FD                MOV     R5,A
+000F A3                INC     DPTR
+0010 E0                MOVX    A,@DPTR
+0011 FE                MOV     R6,A
+0012 A3                INC     DPTR
+0013 E0                MOVX    A,@DPTR
+0014 FF                MOV     R7,A
+0015 900000      R     MOV     DPTR,#FreeFat
+0018 E0                MOVX    A,@DPTR
+0019 F8                MOV     R0,A
+001A A3                INC     DPTR
+001B E0                MOVX    A,@DPTR
+001C F9                MOV     R1,A
+001D A3                INC     DPTR
+001E E0                MOVX    A,@DPTR
+001F FA                MOV     R2,A
+0020 A3                INC     DPTR
+0021 E0                MOVX    A,@DPTR
+0022 FB                MOV     R3,A
+0023 C3                CLR     C
+0024 120000      E     LCALL   ?C?ULCMP
+0027 7032              JNZ     ?C0028
+0029 C3                CLR     C
+002A 900000      R     MOV     DPTR,#FreeFat+05H
+002D E0                MOVX    A,@DPTR
+002E 9403              SUBB    A,#03H
+0030 900000      R     MOV     DPTR,#FreeFat+04H
+0033 E0                MOVX    A,@DPTR
+0034 9400              SUBB    A,#00H
+0036 5023              JNC     ?C0028
+                                           ; SOURCE LINE # 153
+                                           ; SOURCE LINE # 154
+0038 900000      R     MOV     DPTR,#FreeFat
+003B E0                MOVX    A,@DPTR
+003C FC                MOV     R4,A
+003D A3                INC     DPTR
+003E E0                MOVX    A,@DPTR
+003F FD                MOV     R5,A
+0040 A3                INC     DPTR
+0041 E0                MOVX    A,@DPTR
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 19  
+
+0042 FE                MOV     R6,A
+0043 A3                INC     DPTR
+0044 E0                MOVX    A,@DPTR
+0045 FF                MOV     R7,A
+0046 750001      E     MOV     ?_RBC_Read?BYTE+04H,#01H
+0049 750001      E     MOV     ?_RBC_Read?BYTE+05H,#01H
+004C 750000      R     MOV     ?_RBC_Read?BYTE+06H,#HIGH CurFatSector
+004F 750000      R     MOV     ?_RBC_Read?BYTE+07H,#LOW CurFatSector
+0052 120000      E     LCALL   _RBC_Read
+0055 EF                MOV     A,R7
+0056 7003              JNZ     ?C0028
+                                           ; SOURCE LINE # 155
+0058 FE                MOV     R6,A
+0059 FF                MOV     R7,A
+005A 22                RET     
+                                           ; SOURCE LINE # 156
+005B         ?C0028:
+                                           ; SOURCE LINE # 157
+005B 900000      E     MOV     DPTR,#DeviceInfo+038H
+005E E0                MOVX    A,@DPTR
+005F F8                MOV     R0,A
+0060 A3                INC     DPTR
+0061 E0                MOVX    A,@DPTR
+0062 F9                MOV     R1,A
+0063 A3                INC     DPTR
+0064 E0                MOVX    A,@DPTR
+0065 FA                MOV     R2,A
+0066 A3                INC     DPTR
+0067 E0                MOVX    A,@DPTR
+0068 FB                MOV     R3,A
+0069 900000      R     MOV     DPTR,#FreeFat
+006C E0                MOVX    A,@DPTR
+006D FC                MOV     R4,A
+006E A3                INC     DPTR
+006F E0                MOVX    A,@DPTR
+0070 FD                MOV     R5,A
+0071 A3                INC     DPTR
+0072 E0                MOVX    A,@DPTR
+0073 FE                MOV     R6,A
+0074 A3                INC     DPTR
+0075 E0                MOVX    A,@DPTR
+0076 C3                CLR     C
+0077 9B                SUBB    A,R3
+0078 F500        R     MOV     temp+03H,A
+007A EE                MOV     A,R6
+007B 9A                SUBB    A,R2
+007C F500        R     MOV     temp+02H,A
+007E ED                MOV     A,R5
+007F 99                SUBB    A,R1
+0080 F500        R     MOV     temp+01H,A
+0082 EC                MOV     A,R4
+0083 98                SUBB    A,R0
+0084 F500        R     MOV     temp,A
+                                           ; SOURCE LINE # 158
+0086 900000      E     MOV     DPTR,#DeviceInfo+08H
+0089 E0                MOVX    A,@DPTR
+008A FE                MOV     R6,A
+008B A3                INC     DPTR
+008C E0                MOVX    A,@DPTR
+008D FF                MOV     R7,A
+008E E4                CLR     A
+008F FC                MOV     R4,A
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 20  
+
+0090 FD                MOV     R5,A
+0091 AB00        R     MOV     R3,temp+03H
+0093 AA00        R     MOV     R2,temp+02H
+0095 A900        R     MOV     R1,temp+01H
+0097 A800        R     MOV     R0,temp
+0099 120000      E     LCALL   ?C?LMUL
+009C 8F00        R     MOV     temp+03H,R7
+009E 8E00        R     MOV     temp+02H,R6
+00A0 8D00        R     MOV     temp+01H,R5
+00A2 8C00        R     MOV     temp,R4
+                                           ; SOURCE LINE # 159
+00A4 E4                CLR     A
+00A5 7B02              MOV     R3,#02H
+00A7 FA                MOV     R2,A
+00A8 F9                MOV     R1,A
+00A9 F8                MOV     R0,A
+00AA 120000      E     LCALL   ?C?ULDIV
+00AD 8F00        R     MOV     temp+03H,R7
+00AF 8E00        R     MOV     temp+02H,R6
+00B1 8D00        R     MOV     temp+01H,R5
+00B3 8C00        R     MOV     temp,R4
+                                           ; SOURCE LINE # 160
+00B5 900000      R     MOV     DPTR,#FreeFat+04H
+00B8 E0                MOVX    A,@DPTR
+00B9 C3                CLR     C
+00BA 13                RRC     A
+00BB FE                MOV     R6,A
+00BC A3                INC     DPTR
+00BD E0                MOVX    A,@DPTR
+00BE 13                RRC     A
+00BF 2500        R     ADD     A,temp+03H
+00C1 F500        R     MOV     clusterNum+01H,A
+00C3 EE                MOV     A,R6
+00C4 3500        R     ADDC    A,temp+02H
+00C6 F500        R     MOV     clusterNum,A
+00C8         ?C0031:
+                                           ; SOURCE LINE # 161
+00C8 900000      E     MOV     DPTR,#DeviceInfo+011H
+00CB E0                MOVX    A,@DPTR
+00CC FE                MOV     R6,A
+00CD A3                INC     DPTR
+00CE E0                MOVX    A,@DPTR
+00CF FF                MOV     R7,A
+00D0 E4                CLR     A
+00D1 FC                MOV     R4,A
+00D2 FD                MOV     R5,A
+00D3 900000      E     MOV     DPTR,#DeviceInfo+038H
+00D6 E0                MOVX    A,@DPTR
+00D7 F8                MOV     R0,A
+00D8 A3                INC     DPTR
+00D9 E0                MOVX    A,@DPTR
+00DA F9                MOV     R1,A
+00DB A3                INC     DPTR
+00DC E0                MOVX    A,@DPTR
+00DD FA                MOV     R2,A
+00DE A3                INC     DPTR
+00DF E0                MOVX    A,@DPTR
+00E0 2F                ADD     A,R7
+00E1 FF                MOV     R7,A
+00E2 EA                MOV     A,R2
+00E3 3E                ADDC    A,R6
+00E4 FE                MOV     R6,A
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 21  
+
+00E5 ED                MOV     A,R5
+00E6 39                ADDC    A,R1
+00E7 FD                MOV     R5,A
+00E8 EC                MOV     A,R4
+00E9 38                ADDC    A,R0
+00EA FC                MOV     R4,A
+00EB 900000      R     MOV     DPTR,#FreeFat
+00EE E0                MOVX    A,@DPTR
+00EF F8                MOV     R0,A
+00F0 A3                INC     DPTR
+00F1 E0                MOVX    A,@DPTR
+00F2 F9                MOV     R1,A
+00F3 A3                INC     DPTR
+00F4 E0                MOVX    A,@DPTR
+00F5 FA                MOV     R2,A
+00F6 A3                INC     DPTR
+00F7 E0                MOVX    A,@DPTR
+00F8 FB                MOV     R3,A
+00F9 C3                CLR     C
+00FA 120000      E     LCALL   ?C?ULCMP
+00FD 4003              JC      $ + 5H
+00FF 020000      R     LJMP    ?C0032
+                                           ; SOURCE LINE # 162
+0102         ?C0033:
+                                           ; SOURCE LINE # 163
+0102 900000      E     MOV     DPTR,#DeviceInfo+08H
+0105 E0                MOVX    A,@DPTR
+0106 FE                MOV     R6,A
+0107 A3                INC     DPTR
+0108 E0                MOVX    A,@DPTR
+0109 FF                MOV     R7,A
+010A 900000      R     MOV     DPTR,#FreeFat+04H
+010D E0                MOVX    A,@DPTR
+010E FC                MOV     R4,A
+010F A3                INC     DPTR
+0110 E0                MOVX    A,@DPTR
+0111 FD                MOV     R5,A
+0112 C3                CLR     C
+0113 9F                SUBB    A,R7
+0114 EC                MOV     A,R4
+0115 9E                SUBB    A,R6
+0116 506E              JNC     ?C0034
+                                           ; SOURCE LINE # 164
+                                           ; SOURCE LINE # 165
+0118 7400        R     MOV     A,#LOW CurFatSector
+011A 2D                ADD     A,R5
+011B F582              MOV     DPL,A
+011D 7400        R     MOV     A,#HIGH CurFatSector
+011F 3C                ADDC    A,R4
+0120 F583              MOV     DPH,A
+0122 E0                MOVX    A,@DPTR
+0123 7048              JNZ     ?C0035
+0125 7400        R     MOV     A,#LOW CurFatSector+01H
+0127 2D                ADD     A,R5
+0128 F582              MOV     DPL,A
+012A 7400        R     MOV     A,#HIGH CurFatSector+01H
+012C 3C                ADDC    A,R4
+012D F583              MOV     DPH,A
+012F E0                MOVX    A,@DPTR
+0130 703B              JNZ     ?C0035
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 22  
+
+0132 900000      R     MOV     DPTR,#FreeFat+04H
+0135 E0                MOVX    A,@DPTR
+0136 FE                MOV     R6,A
+0137 A3                INC     DPTR
+0138 E0                MOVX    A,@DPTR
+0139 FF                MOV     R7,A
+013A 2400        R     ADD     A,#LOW CurFatSector
+013C F582              MOV     DPL,A
+013E 7400        R     MOV     A,#HIGH CurFatSector
+0140 3E                ADDC    A,R6
+0141 F583              MOV     DPH,A
+0143 74FF              MOV     A,#0FFH
+0145 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 168
+0146 7400        R     MOV     A,#LOW CurFatSector+01H
+0148 2F                ADD     A,R7
+0149 F582              MOV     DPL,A
+014B 7400        R     MOV     A,#HIGH CurFatSector+01H
+014D 3E                ADDC    A,R6
+014E F583              MOV     DPH,A
+0150 74FF              MOV     A,#0FFH
+0152 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 170
+0153 900000      R     MOV     DPTR,#FreeFat+05H
+0156 E0                MOVX    A,@DPTR
+0157 2402              ADD     A,#02H
+0159 F0                MOVX    @DPTR,A
+015A 900000      R     MOV     DPTR,#FreeFat+04H
+015D E0                MOVX    A,@DPTR
+015E 3400              ADDC    A,#00H
+0160 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 171
+0161 AF00        E     MOV     R7,bXXGFlags+01H
+0163 EF                MOV     A,R7
+0164 4440              ORL     A,#040H
+0166 F500        E     MOV     bXXGFlags+01H,A
+                                           ; SOURCE LINE # 172
+0168 750001      R     MOV     bFound,#01H
+                                           ; SOURCE LINE # 173
+016B 8019              SJMP    ?C0034
+                                           ; SOURCE LINE # 174
+016D         ?C0035:
+                                           ; SOURCE LINE # 175
+016D 900000      R     MOV     DPTR,#FreeFat+05H
+0170 E0                MOVX    A,@DPTR
+0171 2402              ADD     A,#02H
+0173 F0                MOVX    @DPTR,A
+0174 900000      R     MOV     DPTR,#FreeFat+04H
+0177 E0                MOVX    A,@DPTR
+0178 3400              ADDC    A,#00H
+017A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 176
+017B 0500        R     INC     clusterNum+01H
+017D E500        R     MOV     A,clusterNum+01H
+017F 7002              JNZ     ?C0049
+0181 0500        R     INC     clusterNum
+0183         ?C0049:
+                                           ; SOURCE LINE # 177
+0183 020000      R     LJMP    ?C0033
+0186         ?C0034:
+                                           ; SOURCE LINE # 178
+0186 E500        R     MOV     A,bFound
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 23  
+
+0188 6401              XRL     A,#01H
+018A 605D              JZ      ?C0032
+                                           ; SOURCE LINE # 179
+018C         ?C0036:
+                                           ; SOURCE LINE # 184
+018C 900000      R     MOV     DPTR,#FreeFat
+018F E0                MOVX    A,@DPTR
+0190 FC                MOV     R4,A
+0191 A3                INC     DPTR
+0192 E0                MOVX    A,@DPTR
+0193 FD                MOV     R5,A
+0194 A3                INC     DPTR
+0195 E0                MOVX    A,@DPTR
+0196 FE                MOV     R6,A
+0197 A3                INC     DPTR
+0198 E0                MOVX    A,@DPTR
+0199 FF                MOV     R7,A
+019A 120000      R     LCALL   _UpdateFat
+                                           ; SOURCE LINE # 186
+019D 900000      R     MOV     DPTR,#FreeFat
+01A0 E0                MOVX    A,@DPTR
+01A1 FC                MOV     R4,A
+01A2 A3                INC     DPTR
+01A3 E0                MOVX    A,@DPTR
+01A4 FD                MOV     R5,A
+01A5 A3                INC     DPTR
+01A6 E0                MOVX    A,@DPTR
+01A7 FE                MOV     R6,A
+01A8 A3                INC     DPTR
+01A9 E0                MOVX    A,@DPTR
+01AA 2401              ADD     A,#01H
+01AC FF                MOV     R7,A
+01AD E4                CLR     A
+01AE 3E                ADDC    A,R6
+01AF FE                MOV     R6,A
+01B0 E4                CLR     A
+01B1 3D                ADDC    A,R5
+01B2 FD                MOV     R5,A
+01B3 E4                CLR     A
+01B4 3C                ADDC    A,R4
+01B5 FC                MOV     R4,A
+01B6 900000      R     MOV     DPTR,#FreeFat
+01B9 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 187
+01BC E4                CLR     A
+01BD 900000      R     MOV     DPTR,#FreeFat+04H
+01C0 F0                MOVX    @DPTR,A
+01C1 A3                INC     DPTR
+01C2 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 189
+01C3 900000      R     MOV     DPTR,#FreeFat
+01C6 E0                MOVX    A,@DPTR
+01C7 FC                MOV     R4,A
+01C8 A3                INC     DPTR
+01C9 E0                MOVX    A,@DPTR
+01CA FD                MOV     R5,A
+01CB A3                INC     DPTR
+01CC E0                MOVX    A,@DPTR
+01CD FE                MOV     R6,A
+01CE A3                INC     DPTR
+01CF E0                MOVX    A,@DPTR
+01D0 FF                MOV     R7,A
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 24  
+
+01D1 750001      E     MOV     ?_RBC_Read?BYTE+04H,#01H
+01D4 750001      E     MOV     ?_RBC_Read?BYTE+05H,#01H
+01D7 750000      R     MOV     ?_RBC_Read?BYTE+06H,#HIGH CurFatSector
+01DA 750000      R     MOV     ?_RBC_Read?BYTE+07H,#LOW CurFatSector
+01DD 120000      E     LCALL   _RBC_Read
+01E0 EF                MOV     A,R7
+01E1 6003              JZ      $ + 5H
+01E3 020000      R     LJMP    ?C0031
+                                           ; SOURCE LINE # 190
+01E6 FE                MOV     R6,A
+01E7 FF                MOV     R7,A
+01E8 22                RET     
+                                           ; SOURCE LINE # 192
+01E9         ?C0032:
+                                           ; SOURCE LINE # 193
+01E9 E500        R     MOV     A,bFound
+01EB 7003              JNZ     ?C0038
+                                           ; SOURCE LINE # 194
+01ED FE                MOV     R6,A
+01EE FF                MOV     R7,A
+01EF 22                RET     
+01F0         ?C0038:
+                                           ; SOURCE LINE # 195
+01F0 AF00        R     MOV     R7,currentCluster+01H
+01F2 AE00        R     MOV     R6,currentCluster
+01F4 120000      R     LCALL   _ThisFatSecNum
+01F7 8E00        R     MOV     xxgFatSecNum,R6
+01F9 8F00        R     MOV     xxgFatSecNum+01H,R7
+                                           ; SOURCE LINE # 196
+01FB AF00        R     MOV     R7,currentCluster+01H
+01FD AE00        R     MOV     R6,currentCluster
+01FF 120000      R     LCALL   _ThisFatEntOffset
+0202 8E00        R     MOV     xxgFatEntOffset,R6
+0204 8F00        R     MOV     xxgFatEntOffset+01H,R7
+                                           ; SOURCE LINE # 198
+0206 AE00        R     MOV     R6,xxgFatSecNum
+0208 AF00        R     MOV     R7,xxgFatSecNum+01H
+020A E4                CLR     A
+020B FC                MOV     R4,A
+020C FD                MOV     R5,A
+020D 900000      R     MOV     DPTR,#FreeFat
+0210 E0                MOVX    A,@DPTR
+0211 F8                MOV     R0,A
+0212 A3                INC     DPTR
+0213 E0                MOVX    A,@DPTR
+0214 F9                MOV     R1,A
+0215 A3                INC     DPTR
+0216 E0                MOVX    A,@DPTR
+0217 FA                MOV     R2,A
+0218 A3                INC     DPTR
+0219 E0                MOVX    A,@DPTR
+021A FB                MOV     R3,A
+021B C3                CLR     C
+021C 120000      E     LCALL   ?C?ULCMP
+021F 6078              JZ      ?C0039
+                                           ; SOURCE LINE # 199
+                                           ; SOURCE LINE # 200
+0221 AE00        R     MOV     R6,xxgFatSecNum
+0223 AF00        R     MOV     R7,xxgFatSecNum+01H
+0225 E4                CLR     A
+0226 FC                MOV     R4,A
+0227 FD                MOV     R5,A
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 25  
+
+0228 750001      E     MOV     ?_RBC_Read?BYTE+04H,#01H
+022B 750001      E     MOV     ?_RBC_Read?BYTE+05H,#01H
+022E 750000      E     MOV     ?_RBC_Read?BYTE+06H,#HIGH DBUF
+0231 750000      E     MOV     ?_RBC_Read?BYTE+07H,#LOW DBUF
+0234 120000      E     LCALL   _RBC_Read
+                                           ; SOURCE LINE # 202
+0237 7400        E     MOV     A,#LOW DBUF
+0239 2500        R     ADD     A,xxgFatEntOffset+01H
+023B F582              MOV     DPL,A
+023D 7400        E     MOV     A,#HIGH DBUF
+023F 3500        R     ADDC    A,xxgFatEntOffset
+0241 F583              MOV     DPH,A
+0243 E500        R     MOV     A,clusterNum+01H
+0245 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 203
+0246 E500        R     MOV     A,clusterNum
+0248 FF                MOV     R7,A
+0249 7400        E     MOV     A,#LOW DBUF+01H
+024B 2500        R     ADD     A,xxgFatEntOffset+01H
+024D F582              MOV     DPL,A
+024F 7400        E     MOV     A,#HIGH DBUF+01H
+0251 3500        R     ADDC    A,xxgFatEntOffset
+0253 F583              MOV     DPH,A
+0255 EF                MOV     A,R7
+0256 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 205
+0257 AE00        R     MOV     R6,xxgFatSecNum
+0259 AF00        R     MOV     R7,xxgFatSecNum+01H
+025B E4                CLR     A
+025C FC                MOV     R4,A
+025D FD                MOV     R5,A
+025E 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+0261 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+0264 750000      E     MOV     ?_RBC_Write?BYTE+06H,#HIGH DBUF
+0267 750000      E     MOV     ?_RBC_Write?BYTE+07H,#LOW DBUF
+026A 120000      E     LCALL   _RBC_Write
+026D EF                MOV     A,R7
+026E 7003              JNZ     ?C0040
+                                           ; SOURCE LINE # 206
+0270 FE                MOV     R6,A
+0271 FF                MOV     R7,A
+0272 22                RET     
+0273         ?C0040:
+                                           ; SOURCE LINE # 208
+0273 900000      E     MOV     DPTR,#DeviceInfo+012H
+0276 E0                MOVX    A,@DPTR
+0277 2500        R     ADD     A,xxgFatSecNum+01H
+0279 FF                MOV     R7,A
+027A 900000      E     MOV     DPTR,#DeviceInfo+011H
+027D E0                MOVX    A,@DPTR
+027E 3500        R     ADDC    A,xxgFatSecNum
+0280 FE                MOV     R6,A
+0281 E4                CLR     A
+0282 FC                MOV     R4,A
+0283 FD                MOV     R5,A
+0284 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+0287 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+028A 750000      E     MOV     ?_RBC_Write?BYTE+06H,#HIGH DBUF
+028D 750000      E     MOV     ?_RBC_Write?BYTE+07H,#LOW DBUF
+0290 120000      E     LCALL   _RBC_Write
+0293 EF                MOV     A,R7
+0294 702A              JNZ     ?C0042
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 26  
+
+                                           ; SOURCE LINE # 209
+0296 FE                MOV     R6,A
+0297 FF                MOV     R7,A
+0298 22                RET     
+                                           ; SOURCE LINE # 210
+0299         ?C0039:
+                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 213
+0299 7400        R     MOV     A,#LOW CurFatSector
+029B 2500        R     ADD     A,xxgFatEntOffset+01H
+029D F582              MOV     DPL,A
+029F 7400        R     MOV     A,#HIGH CurFatSector
+02A1 3500        R     ADDC    A,xxgFatEntOffset
+02A3 F583              MOV     DPH,A
+02A5 E500        R     MOV     A,clusterNum+01H
+02A7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 214
+02A8 E500        R     MOV     A,clusterNum
+02AA FF                MOV     R7,A
+02AB 7400        R     MOV     A,#LOW CurFatSector+01H
+02AD 2500        R     ADD     A,xxgFatEntOffset+01H
+02AF F582              MOV     DPL,A
+02B1 7400        R     MOV     A,#HIGH CurFatSector+01H
+02B3 3500        R     ADDC    A,xxgFatEntOffset
+02B5 F583              MOV     DPH,A
+02B7 EF                MOV     A,R7
+02B8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 215
+02B9 AF00        E     MOV     R7,bXXGFlags+01H
+02BB EF                MOV     A,R7
+02BC 4440              ORL     A,#040H
+02BE F500        E     MOV     bXXGFlags+01H,A
+                                           ; SOURCE LINE # 216
+02C0         ?C0042:
+                                           ; SOURCE LINE # 217
+02C0 AE00        R     MOV     R6,clusterNum
+02C2 AF00        R     MOV     R7,clusterNum+01H
+                                           ; SOURCE LINE # 218
+02C4         ?C0030:
+02C4 22                RET     
+             ; FUNCTION _CreateClusterLink (END)
+
+             ; FUNCTION _UpdateFat (BEGIN)
+                                           ; SOURCE LINE # 220
+0000 8F00        R     MOV     sectorNum+03H,R7
+0002 8E00        R     MOV     sectorNum+02H,R6
+0004 8D00        R     MOV     sectorNum+01H,R5
+0006 8C00        R     MOV     sectorNum,R4
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+0008 AF00        E     MOV     R7,bXXGFlags+01H
+000A EF                MOV     A,R7
+000B C4                SWAP    A
+000C 13                RRC     A
+000D 13                RRC     A
+000E 5403              ANL     A,#03H
+0010 30E045            JNB     ACC.0,?C0045
+                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 224
+0013 AF00        R     MOV     R7,sectorNum+03H
+0015 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+0018 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+C51 COMPILER V7.06   FAT                                                                   02/24/2005 15:49:32 PAGE 27  
+
+001B 750000      R     MOV     ?_RBC_Write?BYTE+06H,#HIGH CurFatSector
+001E 750000      R     MOV     ?_RBC_Write?BYTE+07H,#LOW CurFatSector
+0021 120000      E     LCALL   _RBC_Write
+0024 EF                MOV     A,R7
+0025 6031              JZ      ?C0045
+0027         ?C0044:
+                                           ; SOURCE LINE # 227
+0027 900000      E     MOV     DPTR,#DeviceInfo+011H
+002A E0                MOVX    A,@DPTR
+002B FE                MOV     R6,A
+002C A3                INC     DPTR
+002D E0                MOVX    A,@DPTR
+002E FF                MOV     R7,A
+002F EF                MOV     A,R7
+0030 2500        R     ADD     A,sectorNum+03H
+0032 FF                MOV     R7,A
+0033 EE                MOV     A,R6
+0034 3500        R     ADDC    A,sectorNum+02H
+0036 FE                MOV     R6,A
+0037 E4                CLR     A
+0038 3500        R     ADDC    A,sectorNum+01H
+003A FD                MOV     R5,A
+003B E4                CLR     A
+003C 3500        R     ADDC    A,sectorNum
+003E FC                MOV     R4,A
+003F 750001      E     MOV     ?_RBC_Write?BYTE+04H,#01H
+0042 750001      E     MOV     ?_RBC_Write?BYTE+05H,#01H
+0045 750000      R     MOV     ?_RBC_Write?BYTE+06H,#HIGH CurFatSector
+0048 750000      R     MOV     ?_RBC_Write?BYTE+07H,#LOW CurFatSector
+004B 120000      E     LCALL   _RBC_Write
+004E EF                MOV     A,R7
+004F 6007              JZ      ?C0045
+0051         ?C0046:
+                                           ; SOURCE LINE # 229
+0051 AF00        E     MOV     R7,bXXGFlags+01H
+0053 EF                MOV     A,R7
+0054 54BF              ANL     A,#0BFH
+0056 F500        E     MOV     bXXGFlags+01H,A
+                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 231
+0058         ?C0045:
+0058 22                RET     
+             ; FUNCTION _UpdateFat (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1898    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   1034    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      47
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

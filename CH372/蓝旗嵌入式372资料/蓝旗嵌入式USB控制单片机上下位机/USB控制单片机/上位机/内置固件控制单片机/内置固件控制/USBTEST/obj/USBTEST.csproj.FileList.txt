@@ -1,0 +1,8 @@
+obj\Debug\ResolveAssemblyReference.cache
+obj\Debug\USBTEST.Form1.resources
+obj\Debug\USBTEST.Properties.Resources.resources
+obj\Debug\USBTEST.csproj.GenerateResource.Cache
+bin\Debug\USBTEST.exe
+bin\Debug\USBTEST.pdb
+obj\Debug\USBTEST.exe
+obj\Debug\USBTEST.pdb
