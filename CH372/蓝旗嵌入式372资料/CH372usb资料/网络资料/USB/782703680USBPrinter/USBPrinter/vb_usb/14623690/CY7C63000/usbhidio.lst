@@ -1,0 +1,1942 @@
+CYASM Version 1.75
+(C) 1997 Cypress Semiconductor Corp.
+
+0000            ;Filename: usbhidio.asm
+0000            ;Version: 1.3
+0000            ;Date: 11/5/99
+0000            ;Copyright 1999 by Jan Axelson (jan@lvr.com)
+0000            ;
+0000            ;Chip: Cypress Semiconductor CY7C63001 USB Microcontroller
+0000            ;Assembler: cyasm.exe
+0000            ;Purpose: demonstrates USB communications with an HID-class device
+0000            ;Description:
+0000            ;Handles all required standard USB and HID-class requests.
+0000            ;Receives data from the host in output reports
+0000            ;using Interrupt transfers on endpoint 1.
+0000            ;Sends data to the host in input reports
+0000            ;using Control transfers on endpoint 0
+0000            ;(because the chip doesn't support OUT transfers on endpoint 1).
+0000            ;I used Cypress Semiconductor's js50.asm joystick example code as a base 
+0000            ;in creating this program.
+0000            ;The companion host software is the Visual-Basic project usbhidio.vbp.
+0000            ;For more information, visit Lakeview Research at http://www.lvr.com .
+0000            ;Send comments, bug reports, etc. to jan@lvr.com .
+0000            
+0000            ;Changes:
+0000            
+0000            ;V1.3: 11/20/99
+0000            ;The length of the string descriptors is now correct.
+0000            ;(Thanks, John Hyde)
+0000            ;Changed the control_read routine to prevent error when sending a 
+0000            ;multiple of 8 bytes.
+0000            ;(Thanks, Dave Wright)
+0000            
+0000            ;V1.2:
+0000            ;added watchdog resets in wait loops,
+0000            ;no watchdog reset in the 1-msec. timer ISR.
+0000            
+0000            ;V1.1:
+0000            ;Clears the watchdog only in the main routine
+0000            ;(so the watchdog will detect if the main routine crashes).
+0000            ;Some additions to the comments.
+0000            
+0000            ;V1.0:
+0000            ;Clears the Watchdog timer on 1-msec. interrupt.
+0000            ;(Not needed on the development board, but needed for stand-alone.)
+0000            ;The Endpoint 1 ISR now sets bit 7 of Endpoint 1 TX config to 1.
+0000            ;(The bit is cleared on EP1 interrupt.)
+0000            
+0000            ;======================================================================
+0000            ;assembler directives (equates)
+0000            ;======================================================================
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ;I/O registers
+0000            ;----------------------------------------------------------------------
+0000            
+0000            ;I/O ports
+0000            Port0_Data:            equ     00h      ; GPIO data port 0
+0000            Port1_Data:            equ     01h      ; GPIO data port 1
+0000            Port0_Interrupt:       equ     04h      ; Interrupt enable for port 0
+0000            Port1_Interrupt:       equ     05h      ; Interrupt enable for port 1
+0000            Port0_Pullup:          equ     08h      ; Pullup resistor control for port 0
+0000            Port1_Pullup:          equ     09h      ; Pullup resistor control for port 1
+0000            
+0000            ;USB ports
+0000            USB_EP0_TX_Config:      equ     10h     ; USB EP0 transmit configuration
+0000            USB_EP1_TX_Config:      equ     11h     ; USB EP1 transmit configuration
+0000            USB_Device_Address:     equ     12h     ; USB device address assigned by host
+0000            USB_Status_Control:     equ     13h     ; USB status and control register
+0000            USB_EP0_RX_Status:      equ     14h     ; USB EP0 receive status
+0000            
+0000            ;Control ports
+0000            Global_Interrupt:       equ     20h     ; Global interrupt enable
+0000            Watchdog:               equ     21h     ; clear watchdog Timer
+0000            Timer:                  equ     23h     ; free-running Timer
+0000            
+0000            ;GPIO Isink registers
+0000            Port0_Isink:            equ     30h
+0000            Port0_Isink0:           equ     30h
+0000            Port0_Isink1:           equ     31h
+0000            Port0_Isink2:           equ     32h
+0000            Port0_Isink3:           equ     33h
+0000            Port0_Isink4:           equ     34h
+0000            Port0_Isink5:           equ     35h
+0000            Port0_Isink6:           equ     36h
+0000            Port0_Isink7:           equ     37h
+0000            Port1_Isink:            equ     38h
+0000            Port1_Isink0:           equ     38h
+0000            Port1_Isink1:           equ     39h
+0000            Port1_Isink2:           equ     3Ah
+0000            Port1_Isink3:           equ     3Bh
+0000            
+0000            ;Control port
+0000            Status_Control:         equ     FFh
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ;Register bit values
+0000            ;----------------------------------------------------------------------
+0000            
+0000            ;CPU Status and Control (Status_Control)
+0000            RunBit:                 equ     1h     ; CPU Run bit
+0000            USBReset:               equ    20h     ; USB Bus Reset bit
+0000            WatchDogReset:          equ    40h     ; Watchdog Reset bit
+0000            
+0000            ; USB EP1 transmit configuration (USB_EP1_TX_Config)
+0000            DataToggle:               equ     40h     ; Data 0/1 bit
+0000            
+0000            DISABLE_REMOTE_WAKEUP:  equ   0         ; bit[1] = 0
+0000            ENABLE_REMOTE_WAKEUP:   equ   2         ; bit[1] = 1
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ;Interrupt masks
+0000            ;----------------------------------------------------------------------
+0000            
+0000            ;The timer-only mask enables the 1-millisecond timer interrupt.
+0000            TIMER_ONLY:               equ      4h
+0000            
+0000            ;The enumerate mask enables the following interrupts:
+0000            ;1-millisecond timer, USB Endpoint 0
+0000            ENUMERATE_MASK:          equ     0Ch
+0000            
+0000            ;The runtime mask enables the following interrupts:
+0000            ;1-millisecond timer, USB Endpoint 0, USB Endpoint 1, GPIO
+0000            RUNTIME_MASK:          equ     5Ch
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ; USB Constants
+0000            ; from the USB Spec v1.1
+0000            ;----------------------------------------------------------------------
+0000            
+0000            ;standard request codes
+0000            get_status:             equ   0
+0000            clear_feature:          equ   1
+0000            set_feature:            equ   3
+0000            set_address:            equ   5
+0000            get_descriptor:         equ   6
+0000            set_descriptor:         equ   7
+0000            get_configuration:      equ   8
+0000            set_configuration:      equ   9
+0000            get_interface:          equ  10
+0000            set_interface:          equ  11
+0000            synch_frame:            equ  12
+0000            
+0000            ; standard descriptor types
+0000            device:              equ  1
+0000            configuration:       equ  2
+0000            string:              equ  3
+0000            interface:           equ  4
+0000            endpoint:            equ  5
+0000            
+0000            ; standard feature selectors
+0000            endpoint_stalled:       equ  0              ; recipient endpoint
+0000            device_remote_wakeup:   equ  1              ; recipient device
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ;HID-class descriptors
+0000            ;from HID Class Definition v1.1 Draft
+0000            ;----------------------------------------------------------------------
+0000            
+0000            ;Class-specific descriptor types from section 7.1 Standard Requests
+0000            HID:                    equ  21h
+0000            report:                 equ  22h
+0000            physical:               equ  23h
+0000              
+0000            ;Class-specific request codes from section 7.2 Class Specific Requests
+0000            get_report:             equ   1
+0000            get_idle:               equ   2
+0000            get_protocol:           equ   3
+0000            set_report:             equ   9
+0000            set_idle:               equ  10
+0000            set_protocol:           equ  11
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ;USB buffer bytes
+0000            ;----------------------------------------------------------------------
+0000            
+0000            ;Control Endpoint 0 buffer
+0000            Endpoint_0:             equ  70h        ; control endpoint
+0000            Endpoint0_Byte0:        equ  70h        ; Endpoint 0, byte 0
+0000            Endpoint0_Byte1:        equ  71h        ; Endpoint 0 byte 1
+0000            Endpoint0_Byte2:        equ  72h        ; Endpoint 0 byte 2
+0000            Endpoint0_Byte3:        equ  73h        ; Endpoint 0 byte 3
+0000            Endpoint0_Byte4:        equ  74h        ; Endpoint 0 byte 4
+0000            Endpoint0_Byte5:        equ  75h        ; Endpoint 0 byte 5
+0000            Endpoint0_Byte6:        equ  76h        ; Endpoint 0 byte 6
+0000            Endpoint0_Byte7:        equ  77h        ; Endpoint 0 byte 7
+0000            
+0000            
+0000            ;Endpoint 0 SETUP packet bytes
+0000            bmRequestType:          equ  70h
+0000            bRequest:               equ  71h
+0000            wValue:                 equ  72h        ; default wValue (8 bits)
+0000            wValueHi:               equ  73h
+0000            wIndex:                 equ  74h        ; default wIndex (8 bits)
+0000            wIndexHi:               equ  75h
+0000            wLength:                equ  76h        ; default wLength (8 bits)
+0000            wLengthHi:              equ  77h
+0000            
+0000            ;Endpoint 1 buffer
+0000            endpoint_1:             equ  78h
+0000            Endpoint1_Byte0:        equ  78h        ; Endpoint 1, byte 0
+0000            Endpoint1_Byte1:        equ  79h        ; Endpoint 1 byte 1
+0000            Endpoint1_Byte2:        equ  7Ah        ; Endpoint 1 byte 2
+0000            Endpoint1_Byte3:        equ  7Bh        ; Endpoint 1 byte 3
+0000            Endpoint1_Byte4:        equ  7Ch        ; Endpoint 1 byte 4
+0000            Endpoint1_Byte5:        equ  7Dh        ; Endpoint 1 byte 5
+0000            Endpoint1_Byte6:        equ  7Eh        ; Endpoint 1 byte 6
+0000            Endpoint1_Byte7:        equ  7Fh        ; Endpoint 1 byte 7
+0000            
+0000            ;----------------------------------------------------------------------
+0000            ; Variables stored in data memory
+0000            ;----------------------------------------------------------------------
+0000            ;USB status
+0000            remote_wakeup_status:   equ  30h          ;0=disabled, 2-enabled
+0000            configuration_status:   equ  31h          ;0=unconfigured, 1=configured
+0000            ;idle_status:           equ  33h          ;support SetIdle and GetIdle
+0000            protocol_status:        equ  34h          ;0=boot protocol, 1=report protocol
+0000            
+0000            ;Other variables:
+0000            suspend_counter:        equ  35h          ;number of idle bus milliseconds 
+0000            loop_temp:              equ  37h          ;temporary loop variable
+0000            start_send:             equ  32h          ;0=false, 1=true
+0000            
+0000            ;Received data:
+0000            Data_Byte0:               equ  38h
+0000            Data_Byte1:               equ  39h
+0000            Data_Byte2:               equ  3Ah
+0000            Data_Byte3:               equ  3Bh
+0000            Data_Byte4:               equ  3Ch
+0000            Data_Byte5:               equ  3Dh
+0000            Data_Byte6:               equ  3Eh
+0000            Data_Byte7:               equ  3Fh
+0000            
+0000            temp:                   equ  25h
+0000            start_time:             equ  21h
+0000            testbit:                equ  22h
+0000            interrupt_mask:         equ  20h
+0000            endp0_data_toggle:      equ  23h
+0000            loop_counter:           equ  24h
+0000            data_start:             equ  27h
+0000            data_count:             equ  28h
+0000            endpoint_stall:         equ  29h
+0000            
+0000            ;======================================================================
+0000            ;interrupt vectors
+0000            ;======================================================================
+0000            
+0000            org  00h                ; Reset vector; begin here after a reset.
+0000 80 99 [05] jmp  Reset
+0002            
+0002            org  02h                ; 128-microsecond interrupt
+0002 80 10 [05] jmp  DoNothing_ISR
+0004            
+0004            org  04h                ; 1024-millisecond interrupt 
+0004 80 15 [05] jmp  One_mSec_ISR
+0006            
+0006            org  06h                ; endpoint 0 interrupt 
+0006 81 24 [05] jmp  USB_EP0_ISR
+0008            
+0008            org  08h                ; endpoint 1 interrupt 
+0008 80 8C [05] jmp  USB_EP1_ISR
+000A            
+000A            org  0Ah                ; reserved interrupt 
+000A 80 99 [05] jmp  Reset
+000C            
+000C            org  0Ch                ; general purpose I/O interrupt 
+000C 80 85 [05] jmp  GPIO_ISR           ; not used
+000E            
+000E            org  0Eh                ; Wakeup_ISR or resume interrupt 
+000E 80 10 [05] jmp  DoNothing_ISR      ; not used
+0010            
+0010            ORG  10h
+0010            
+0010            ;======================================================================
+0010            ;Interrupt routines
+0010            ;======================================================================
+0010            
+0010            ;----------------------------------------------------------------------
+0010            ; 128-microsecond interrupt, Cext
+0010            ; Unused. If this interrupt occurs, just push the accumulator (because
+0010            ; ipret pops it) and re-enable the interrupts.
+0010            ;----------------------------------------------------------------------
+0010            
+0010            DoNothing_ISR:
+0010 2D    [05]      push A
+0011                 ;Enable interrupts and return
+0011 1A 20 [06]      mov A,[interrupt_mask]
+0013 1E 20 [13]      ipret Global_Interrupt
+0015            
+0015            ;----------------------------------------------------------------------
+0015            ; 1-millisecond interrupt
+0015            ; Check to see if the chip is in suspend mode and take appropriate action.
+0015            ; Copy values to Endpoint 1's buffer for sending.
+0015            ;----------------------------------------------------------------------
+0015            
+0015            One_mSec_ISR:
+0015 2D    [05]      push A
+0016 2A 21 [05] iowr Watchdog
+0018            ;Find out if enumeration is complete.
+0018            ;If enumerating is in progress, loop_temp = 0.
+0018 1A 37 [06]      mov A, [loop_temp]
+001A 16 00 [04]      cmp A, 0h
+001C            ;If enumeration is still in progress, jump.
+001C A0 20 [05]      jz not_main
+001E            ;Enumeration has ended, so decrement the loop counter
+001E            ;(so it no longer = 0).
+001E 27 37 [07]      dec [loop_temp]
+0020            
+0020            not_main:                         
+0020            ;Check for bus activity.
+0020 29 13 [05]      iord USB_Status_Control
+0022 10 01 [04]      and A, 01h
+0024 16 00 [04]      cmp A,0h
+0026            ;If no bus activity, increment the suspend counter.
+0026 A0 34 [05]      jz Inc_counter
+0028            ;If bus activity detected, clear the bus-activity bit,
+0028 29 13 [05]      iord USB_Status_Control
+002A 10 FE [04]      and A, 0FEh
+002C 2A 13 [05]      iowr USB_Status_Control
+002E            ;and clear the suspend counter.
+002E 19 00 [04]      mov A, 0h
+0030 31 35 [05]      mov [suspend_counter], A
+0032 80 57 [05]      jmp Suspend_end
+0034            
+0034            Inc_counter:
+0034            ;Keep track of the amount of time with no bus activity.
+0034 23 35 [07]      inc [suspend_counter]
+0036            ;Get the number of milliseconds the bus has been idle.
+0036 1A 35 [06]      mov A, [suspend_counter]
+0038            ;Has it been 3 milliseconds?
+0038 16 03 [04]      cmp A, 03h
+003A            ;If no, there's nothing else to do.
+003A B0 57 [05]      jnz Suspend_end
+003C            ;If yes, put the chip in Suspend mode.
+003C            ;Clear the Suspend counter.
+003C 19 00 [04]      mov A, 0h
+003E 31 35 [05]      mov [suspend_counter], A
+0040            ;Enable pullups on Port 1; disable the output DAC.
+0040 19 00 [04]      mov A, 0h
+0042 2A 09 [05]      iowr Port1_Pullup
+0044 19 FF [04]      mov A, 0ffh
+0046 2A 01 [05]      iowr Port1_Data
+0048            ;Set the Suspend bit. 
+0048 29 FF [05]      iord Status_Control
+004A 0D 08 [04]      or A, 08h
+004C 2A FF [05]      iowr Status_Control
+004E            ;The chip is now in Suspend mode. 
+004E            ;On exiting Suspend mode, the chip will begin 
+004E            ;executing instructions here:
+004E 20    [04]      nop     
+004F            ;Disable pullups on Port 1. Enable the output DAC.
+004F 19 FF [04]      mov A, 0ffh
+0051 2A 09 [05]      iowr Port1_Pullup
+0053 19 00 [04]      mov A, 0h
+0055 2A 01 [05]      iowr Port1_Data
+0057            
+0057            Suspend_end:
+0057            ;Is endpoint 1 enabled?
+0057 29 11 [05]      iord USB_EP1_TX_Config
+0059 16 00 [04]      cmp A,0
+005B            ;If no, do nothing.
+005B A0 7D [05]      jz Select
+005D            ;If yes, is start_send = 1?
+005D            ;(Start_send adds a short delay after enumeration.)
+005D 1A 32 [06]      mov A, [start_send]
+005F 16 01 [04]      cmp A, 01h
+0061            ;If no, do nothing
+0061 B0 7D [05]      jnz Select
+0063            ;If yes, send data:
+0063 80 65 [05]      jmp send_value
+0065            
+0065            send_value:
+0065            ;Copies values from RAM into Endpoint 1's buffer
+0065            ;and enables sending the bytes on the next poll.
+0065            
+0065            ;disable Endpoint 1 interrupts
+0065 1A 20 [06]      mov A,[interrupt_mask]
+0067 10 EF [04]      and A, EFh
+0069 31 20 [05]      mov [interrupt_mask],A
+006B 2A 20 [05]      iowr Global_Interrupt
+006D            
+006D            ;Copy values from RAM to Endpoint 1's buffer for transmitting to the host.
+006D            ;Two bytes:
+006D 1A 38 [06]      mov A, [Data_Byte0]
+006F 31 78 [05]      mov [Endpoint1_Byte0], A
+0071 1A 39 [06]      mov A, [Data_Byte1]
+0073 31 79 [05]      mov [Endpoint1_Byte1], A
+0075            ;Add more bytes if the report format specifies it:
+0075            ;     mov A, [Data_Byte2]
+0075            ;     mov [Endpoint1_Byte2], A
+0075            ;     mov A, [Data_Byte3]
+0075            ;     mov [Endpoint1_Byte3], A
+0075            ;     mov A, [Data_Byte4]
+0075            ;     mov [Endpoint1_Byte4], A
+0075            ;     mov A, [Data_Byte5]
+0075            ;     mov [Endpoint1_Byte5], A
+0075            ;     mov A, [Data_Byte6]
+0075            ;     mov [Endpoint1_Byte6], A
+0075            ;     mov A, [Data_Byte7]
+0075            ;     mov [Endpoint1_Byte7], A
+0075            
+0075            ;Other things to try:
+0075            ;Set the value at Port 0 to equal byte 0 in Endpoint 1's buffer:
+0075            ;     iord Port0_Data
+0075            ;     mov [Endpoint1_Byte0], A
+0075            
+0075            ;Or set a value here and copy to Endpoint 1's buffer, byte 1:
+0075            ;     mov A, A5h
+0075            ;      mov [Endpoint1_Byte1], A
+0075            
+0075            ;Configure Endpoint 1's transmit register 
+0075            ;so that the bytes will transmit on the next poll.
+0075 29 11 [05]      iord USB_EP1_TX_Config
+0077            ;Don't change the Data 0/1 bit.
+0077 10 40 [04]      and A,40h
+0079            ;Set bits 4 and 7 to 1 enable transmitting.
+0079            ;The low nibble is the number of data bytes (2).
+0079 0D 92 [04]      or A,92h
+007B 2A 11 [05]      iowr USB_EP1_TX_Config
+007D            
+007D            Select:
+007D            ;Enable Endpoint 1 interrupts.
+007D 1A 20 [06]      mov A,[interrupt_mask]
+007F 0D 10 [04]      or A, 10h
+0081 31 20 [05]      mov [interrupt_mask],A
+0083 1E 20 [13]      ipret Global_Interrupt
+0085            
+0085            ;----------------------------------------------------------------------
+0085            ;GPIO interrupt
+0085            ;Can be configured to trigger when a port bit toggles.
+0085            ;Unused here.
+0085            ;----------------------------------------------------------------------
+0085            
+0085            GPIO_ISR:
+0085 2D    [05]      push A
+0086 2E    [05]      push X
+0087            
+0087 2C    [04]      pop X
+0088 31 20 [05]      mov [interrupt_mask],A
+008A 1E 20 [13]      ipret Global_Interrupt
+008C            
+008C            ;----------------------------------------------------------------------
+008C            ;Endpoint 1 ISR
+008C            ;Endpoint 1 can do IN (device to host) transfers only.
+008C            ;This interrupt triggers when the host acknowledges
+008C            ;receiving data from endpoint 1.
+008C            ;The ISR toggles the data 0/1 bit for the next transaction and
+008C            ;sets the EnableRespondToIN bit so the chip will respond to the 
+008C            ;next poll of the endpoint.
+008C            ;----------------------------------------------------------------------
+008C            
+008C            USB_EP1_ISR:
+008C 2D    [05]      push A
+008D            ;Toggle the data 0/1 bit so it's correct for the next transaction.
+008D 29 11 [05]      iord USB_EP1_TX_Config  
+008F 13 40 [04]      xor A,40h
+0091            ;The interrupt clears the EnableRespondToIN bit (bit 7) in the TX Config.
+0091            ;Set this bit to 1 so data will go out on the next poll.
+0091 0D 92 [04]      or A, 92h
+0093 2A 11 [05]      iowr USB_EP1_TX_Config
+0095            ;Enable interrupts and return.
+0095 1A 20 [06]      mov A, [interrupt_mask]
+0097 1E 20 [13]      ipret Global_Interrupt
+0099            
+0099            ;----------------------------------------------------------------------
+0099            ; Reset processing
+0099            ; Triggers on Reset or "reserved" interrupt.
+0099            ;To be safe, initialize everything.
+0099            ;----------------------------------------------------------------------
+0099            
+0099            Reset:
+0099            ;Place the data stack pointer at the lowest address of Endpoint 0's buffer.
+0099            ;This keeps the stack from writing over the USB buffers.
+0099            ;The USB buffers are in high RAM;
+0099            ;the data stack pointer pre-decrements on a Push instruction.
+0099            
+0099 19 70 [04]      mov A, Endpoint_0
+009B 30    [05]      swap A, dsp
+009C            
+009C            ;Initialize to FFh
+009C 19 FF [04]      mov A, 0ffh
+009E 2A 00 [05]      iowr Port0_Data                 ; output ones to port 0
+00A0 2A 09 [05]      iowr Port1_Pullup               ; disable port 1 pullups
+00A2                                                 ; select rising edge interrupts
+00A2 2A 38 [05]      iowr Port1_Isink0               ; maximum isink current Port1 bit 0
+00A4 2A 39 [05]      iowr Port1_Isink1               ; maximum isink current Port1 bit 1
+00A6 2A 3A [05]      iowr Port1_Isink2               ; maximum isink current Port1 bit 2
+00A8 2A 3B [05]      iowr Port1_Isink3               ; maximum isink current Port1 bit 3
+00AA            
+00AA            ;Initialize to 00h
+00AA 19 00 [04]      mov A, 0h
+00AC 2A 01 [05]      iowr Port1_Data                 ; output zeros to port 1
+00AE 2A 04 [05]      iowr Port0_Interrupt            ; disable port 0 interrupts
+00B0 2A 08 [05]      iowr Port0_Pullup               ; enable port 0 pullups
+00B2 2A 30 [05]      iowr Port0_Isink0               ; minimum sink current Port0 bit 0
+00B4 2A 31 [05]      iowr Port0_Isink1               ; minimum sink current Port0 bit 1
+00B6 2A 32 [05]      iowr Port0_Isink2               ; minimum sink current Port0 bit 2
+00B8 2A 33 [05]      iowr Port0_Isink3               ; minimum sink current Port0 bit 3
+00BA 2A 34 [05]      iowr Port0_Isink4               ; minimum sink current Port0 bit 4
+00BC 2A 35 [05]      iowr Port0_Isink5               ; minimum sink current Port0 bit 5
+00BE 2A 36 [05]      iowr Port0_Isink6               ; minimum sink current Port0 bit 6
+00C0 2A 37 [05]      iowr Port0_Isink7               ; minimum sink current Port0 bit 7
+00C2 31 78 [05]      mov [Endpoint1_Byte0],A
+00C4 31 79 [05]      mov [Endpoint1_Byte1],A
+00C6 31 7A [05]      mov [Endpoint1_Byte2],A
+00C8 31 29 [05]      mov [endpoint_stall], A
+00CA 31 30 [05]      mov [remote_wakeup_status], A
+00CC 31 31 [05]      mov [configuration_status], A
+00CE 31 37 [05]      mov [loop_temp], A
+00D0 31 32 [05]      mov [start_send], A
+00D2 2A 21 [05]      iowr Watchdog                   ; clear watchdog timer
+00D4            
+00D4            ;initialize values to transmit at Endpoint 1.
+00D4 19 A5 [04]      mov A, A5h
+00D6 31 38 [05]      mov [Data_Byte0], A
+00D8 19 F0 [04]      mov A, F0h
+00DA 31 39 [05]      mov [Data_Byte1], A
+00DC            
+00DC            ;Enable Port 1, bit 0 interrupts.
+00DC            ;     mov A, 01h
+00DC            ;     iowr Port1_Interrupt
+00DC            ;
+00DC            ;Test what kind of reset occurred: bus or watchdog?
+00DC 29 FF [05]      iord Status_Control
+00DE            ;Was it a bus reset?
+00DE 10 20 [04]      and A, USBReset
+00E0            ;If yes, jump to handle it.
+00E0 B0 F7 [05]      jnz BusReset
+00E2 29 FF [05]      iord Status_Control
+00E4            ;Was it a watchdog reset?
+00E4 10 40 [04]      and A, WatchDogReset
+00E6            ;If no, continue to wait for a bus reset
+00E6 A0 F0 [05]      jz suspendReset
+00E8            ;
+00E8            ;Watchog reset:
+00E8            ;A watchdog reset means that the watchdog timer
+00E8            ;wasn't cleared for 8.192 milliseconds.
+00E8            ;Wait for a bus reset to bring the system alive again.
+00E8            ;Enable 1-millisecond interrupt only
+00E8 19 04 [04]      mov A, TIMER_ONLY
+00EA 31 20 [05]      mov [interrupt_mask],A
+00EC 2A 20 [05]      iowr Global_Interrupt
+00EE            ;Wait for a bus reset.
+00EE            WatchdogHandler:
+00EE 80 EE [05]      jmp WatchdogHandler
+00F0            
+00F0            suspendReset:
+00F0            ;Return to suspend mode to wait for a USB bus reset.
+00F0 19 09 [04]      mov A, 09h
+00F2 2A FF [05]      iowr Status_Control
+00F4 20    [04]      nop
+00F5 80 F0 [05]      jmp suspendReset
+00F7            
+00F7            BusReset:
+00F7            ;Clear all reset bits.
+00F7            ;Set bit 0 (the run bit).
+00F7 19 01 [04]      mov A, RunBit
+00F9 2A FF [05]      iowr Status_Control
+00FB            ;Set up for enumeration (Endpoint 0 and 1-millisecond interrupts enabled)
+00FB 19 0C [04]      mov A, ENUMERATE_MASK
+00FD 31 20 [05]      mov [interrupt_mask],A
+00FF 1F    [04]         XPAGE
+0100 2A 20 [05]      iowr Global_Interrupt
+0102            
+0102            wait:
+0102            ;Wait until configured.
+0102 29 11 [05]      iord USB_EP1_TX_Config
+0104 16 00 [04]      cmp A, 0
+0106            ;Clear the watchdog timer
+0106 2A 21 [05]      iowr Watchdog
+0108            ;If not configured, continue to wait.
+0108 A1 02 [05]      jz wait     
+010A            ;When configured, initialize loop_temp.
+010A            ;Loop_temp adds a delay in the start of transmission of data.
+010A            ;The chip will respond to the first IN packet no sooner than 
+010A            ;230 milliseconds after enumeration is complete.
+010A            ;The delay was included in Cypress' joystick code to prevents problems 
+010A            ;that occurred when power cycled off and on or the joystick was plugged
+010A            ;in before the host powered up.
+010A            ;I've left it in because it does no harm and 
+010A            ;other hardware might have similar behavior.
+010A            ;During the delay, the chip will send a NAK in response to any IN packet.
+010A 19 FF [04]      mov A, 0ffh
+010C 31 37 [05]      mov [loop_temp], A
+010E            
+010E            ;Enable endpoint 1
+010E 29 11 [05]      iord USB_EP1_TX_Config
+0110 0D 92 [04]      or A, 92h
+0112 2A 11 [05]      iowr USB_EP1_TX_Config
+0114            
+0114            ;======================================================================
+0114            ; The main program loop.
+0114            ;======================================================================
+0114            
+0114            main:
+0114            ;Find out if the loop_temp delay has timed out.
+0114            ;Loop_temp =0 if not timed out, FFh if timed out.
+0114 1A 37 [06]      mov A, [loop_temp]
+0116 16 0A [04]      cmp A, 0Ah
+0118            ;If no, don't enable transmitting.
+0118 D1 1E [05]      jnc no_set
+011A            ;If yes, enable transmitting.
+011A 19 01 [04]      mov A, 01h
+011C 31 32 [05]      mov [start_send], A
+011E            no_set:
+011E            ;Clear the watchdog timer.
+011E            ;This has to be done at least once every 8 milliseconds!
+011E 2A 21 [05]      iowr Watchdog
+0120 29 00 [05]      iord Port0_Data
+0122            nochange:
+0122 81 14 [05]      jmp main
+0124            
+0124            ;----------------------------------------------------------------------
+0124            ;The endpoint 0 ISR supports the control endpoint.
+0124            ;This code enumerates and configures the hardware.
+0124            ;It also responds to Set Report requests that receive data from the host.
+0124            ;----------------------------------------------------------------------
+0124            
+0124            USB_EP0_ISR:
+0124 2D    [05]      push A
+0125 29 14 [05]      iord USB_EP0_RX_Status
+0127            ;Has a Setup packet been received?
+0127 10 01 [04]      and A, 01h
+0129            ;If no, find out if it's an OUT packet.
+0129 A1 3D [05]      jz check_for_out_packet
+012B            ;If yes, handle it.
+012B            ;Disable endpoint 0 interrupts.
+012B 1A 20 [06]      mov A,[interrupt_mask]
+012D 10 F7 [04]      and A, 0F7h
+012F 31 20 [05]      mov [interrupt_mask], A
+0131 2A 20 [05]      iowr Global_Interrupt
+0133            ;Find out what the Setup packet contains and handle the request.
+0133 91 83 [10]       call StageOne
+0135            ;Re-enable Endpoint 0 interrupts.
+0135 1A 20 [06]      mov A, [interrupt_mask]
+0137 0D 08 [04]      or A, 08h
+0139 31 20 [05]      mov [interrupt_mask], A
+013B 81 7B [05]      jmp done_with_packet
+013D            
+013D            check_for_out_packet:
+013D 29 14 [05]      iord USB_EP0_RX_Status
+013F            ;Is it an OUT packet?
+013F 10 02 [04]      and A, 02h
+0141            ;If no, ignore it.
+0141 A1 7B [05]      jz done_with_packet
+0143            ;If yes, process the received data.
+0143            ;Disable Endpoint 0 interrupts.
+0143 1A 20 [06]      mov A,[interrupt_mask]
+0145 10 F7 [04]      and A, 0F7h
+0147 31 20 [05]      mov [interrupt_mask], A
+0149 2A 20 [05]      iowr Global_Interrupt
+014B            
+014B            ;For debugging: set Port 0, bit 1 to show that we're here.
+014B 29 00 [05]     iord Port0_Data
+014D 0D 02 [04]     or a, 2
+014F 2A 00 [05]     iowr Port0_Data
+0151            
+0151            ;Read the first byte in the buffer
+0151 1A 70 [06]      mov a, [Endpoint_0]
+0153            ;For debugging: if the first byte =12h, bring Port 0, bit 0 high
+0153 16 12 [04]       cmp a, 12h
+0155 B1 5D [05]       jnz not_a_match
+0157 29 00 [05]       iord Port0_Data
+0159 0D 04 [04]       or a, 4
+015B 2A 00 [05]       iowr Port0_Data
+015D            
+015D            not_a_match:
+015D            
+015D            ;For debugging, add 1 to each byte read
+015D            ;and copy the bytes to RAM.
+015D            ;These bytes will be sent back to the host.
+015D            
+015D 2E    [05]       push X
+015E                  ;data_count holds the number of bytes left to read.
+015E                  ;X holds the index of the address to read
+015E                  ;and the index of the address to store the received data.
+015E                  ;Initialize the X register.
+015E 1C 00 [04]       mov X, 0
+0160                  
+0160                  Get_Received_Data:
+0160                  ;Find out if there are any bytes to read.
+0160 19 00 [04]       mov A, 0
+0162 17 28 [06]       cmp A, [data_count]
+0164                  ;Jump if nothing to read.
+0164 A1 78 [05]       jz DoneWithReceivedData
+0166            
+0166                  ;Get a byte.
+0166 1B 70 [07]       mov A, [X + Endpoint_0]
+0168                  ;For debugging, increment the received value.
+0168                  ;(Endpoint 1 will send it back to the host.)
+0168                  ;If the value is 255, reset to 0.
+0168                  ;Otherwise increment it.
+0168 16 FF [04]       cmp A, 255
+016A A1 6F [05]       jz ResetToZero
+016C 21    [04]       inc A
+016D 81 71 [05]       jmp NewValueSet
+016F                  ResetToZero:
+016F 19 00 [04]       mov A, 0
+0171                  NewValueSet:
+0171                  ;Save the value.
+0171 32 38 [06]       mov [X + Data_Byte0], A
+0173                  ;Decrement the number of bytes to read.
+0173 27 28 [07]       dec [data_count]
+0175                  ;Increment the address to read.
+0175 22    [04]       inc X
+0176                  ;Do another
+0176 81 60 [05]       jmp Get_Received_Data
+0178            
+0178                  DoneWithReceivedData:
+0178 2C    [04]       pop X
+0179            
+0179            ;For debugging, set Port 0 to match the value written
+0179            ;IN transfers can read this value back.
+0179            ;     iowr Port0_Data
+0179            
+0179            ;Handshake by sending a 0-byte data packet.
+0179 93 79 [10] call Send0ByteDataPacket
+017B            
+017B            done_with_packet:
+017B            ;Re-enable Endpoint 0 interrupts.
+017B 1A 20 [06]      mov A,[interrupt_mask]
+017D 0D 08 [04]      or A, 08h
+017F 31 20 [05]      mov [interrupt_mask], A
+0181 1E 20 [13]      ipret Global_Interrupt
+0183            
+0183            ;========================================================================
+0183            ;Control transfers
+0183            ;========================================================================
+0183            
+0183            ;------------------------------------------------------------------------
+0183            ;Control transfer, stage one.
+0183            ;Find out whether the request is a standard device or HID request,
+0183            ;the direction of data transfer, 
+0183            ;and whether the request is to a device, interface, or endpoint.
+0183            ;(from Table 9.2 in the USB spec)
+0183            ;------------------------------------------------------------------------
+0183            
+0183            StageOne:
+0183            ;Clear the setup flag
+0183 19 00 [04]      mov A, 00h
+0185 2A 14 [05]      iowr USB_EP0_RX_Status
+0187            ;Set the StatusOuts bit to cause auto-handshake after receiving a data packet.
+0187 19 08 [04]      mov A, 8
+0189 2A 13 [05]      iowr USB_Status_Control
+018B            ;bmRequestType contains the request.
+018B 1A 70 [06]       mov A, [bmRequestType]
+018D            
+018D            ;Standard device requests. From the USB spec.
+018D            ; host to device requests
+018D 16 00 [04]         cmp A, 00h
+018F A1 B2 [05]         jz RequestType00                 ; bmRequestType = 00000000 device
+0191            ;       cmp A, 01h                       *** not required ***  
+0191            ;       jz RequestType01                 ; bmRequestType = 00000001 interface
+0191 16 02 [04]         cmp A, 02h              
+0193 A1 C6 [05]         jz RequestType02                 ; bmRequestType = 00000010 endpoint
+0195 16 80 [04]         cmp A, 80h             
+0197            ; device to host requests
+0197 A1 D2 [05]         jz RequestType80                 ; bmRequestType = 10000000 device
+0199 16 81 [04]         cmp A, 81h
+019B A1 E2 [05]         jz RequestType81                 ; bmRequestType = 10000001 interface
+019D 16 82 [04]         cmp A, 82h
+019F A1 EE [05]         jz RequestType82                 ; bmRequestType = 10000010 endpoint
+01A1            
+01A1            ;HID-class device requests. From the HID spec
+01A1            ; host to device requests
+01A1 16 21 [04]         cmp A, 21h
+01A3 A1 FA [05]         jz RequestType21                 ; bmRequestType = 00100001 interface
+01A5 16 22 [04]         cmp A, 22h                       ; *** not in HID spec ***
+01A7 A2 0C [05]         jz RequestType22                 ; bmRequestType = 00100010 endpoint
+01A9            ; device to host requests
+01A9 16 A1 [04]         cmp A, A1h
+01AB A2 14 [05]         jz RequestTypeA1                 ; bmRequestType = 10100001 interface
+01AD            
+01AD            ; Stall unsupported requests
+01AD            SendStall:
+01AD 19 A0 [04]       mov A, A0h
+01AF 2A 10 [05]      iowr USB_EP0_TX_Config
+01B1 3F    [08]       ret
+01B2            
+01B2            ;----------------------------------------------------------------------
+01B2            ;Control transfer, stage two
+01B2            ;Find out which request it is.
+01B2            ;----------------------------------------------------------------------
+01B2            
+01B2            ;Host to device with device as recipient
+01B2            RequestType00:
+01B2            
+01B2            ;The Remote Wakeup feature is disabled on reset.
+01B2 1A 71 [06]      mov A, [bRequest]     ; load bRequest
+01B4            ; Clear Feature                      bRequest = 1
+01B4 16 01 [04]      cmp A, clear_feature
+01B6 A2 24 [05]      jz ClearRemoteWakeup 
+01B8            ; Set Feature                     bRequest = 3
+01B8 16 03 [04]      cmp A, set_feature
+01BA A2 31 [05]      jz SetRemoteWakeup
+01BC            
+01BC            ; Set the device address to a non-zero value.
+01BC            ; Set Address                     bRequest = 5
+01BC 16 05 [04]      cmp A, set_address
+01BE A2 3E [05]      jz SetAddress
+01C0            
+01C0            ; Set Descriptor is optional.
+01C0            ; Set Descriptor                bRequest = 7    *** not supported ***
+01C0            
+01C0            ;If wValue is zero, the device is not configured.
+01C0            ;The only other legal value for this firmware is 1.
+01C0            ;Set Configuration           bRequest = 9
+01C0 16 09 [04]     cmp A, set_configuration
+01C2 A2 45 [05]     jz SetConfiguration
+01C4            
+01C4            ;Stall unsupported requests.
+01C4 81 AD [05]     jmp SendStall
+01C6            
+01C6            
+01C6            ;Host to device with interface as recipient    *** not required ***
+01C6            ; RequestType01:
+01C6            ;        mov A, [bRequest]       ; load bRequest
+01C6            
+01C6            ; There are no interface features defined in the spec.
+01C6            ; Clear Feature                 bRequest = 1    *** not supported ***
+01C6            ; Set Feature                   bRequest = 3    *** not supported ***
+01C6            
+01C6            ; Set Interface is optional.
+01C6            ; Set Interface                 bRequest = 11   *** not supported ***
+01C6            
+01C6            ;Stall unsupported requests.
+01C6            ;        jmp SendStall
+01C6            
+01C6            ;Host to device with endpoint as recipient
+01C6            RequestType02:
+01C6 1A 71 [06]      mov A, [bRequest]     ; load bRequest
+01C8            
+01C8            ; The only standard feature defined for an endpoint is endpoint_stalled.
+01C8            ; Clear Feature               bRequest = 1
+01C8 16 01 [04]      cmp A, clear_feature
+01CA A2 7E [05]      jz ClearEndpointStall
+01CC            ; Set Feature               bRequest = 3
+01CC 16 03 [04]      cmp A, set_feature
+01CE A2 97 [05]      jz SetEndpointStall
+01D0             
+01D0            ;Stall unsupported functions.
+01D0 81 AD [05]     jmp SendStall
+01D2            
+01D2            ;Device to host with device as recipient
+01D2            RequestType80:
+01D2 1A 71 [06]      mov A, [bRequest]          ; load bRequest
+01D4            
+01D4            ; Get Status               bRequest = 0
+01D4 16 00 [04]      cmp A, get_status
+01D6 A2 A8 [05]      jz GetDeviceStatus
+01D8            
+01D8            ; Get Descriptor               bRequest = 6
+01D8 16 06 [04]      cmp A, get_descriptor
+01DA A2 B2 [05]      jz GetDescriptor
+01DC            
+01DC            ; Get Configuration          bRequest = 8
+01DC 16 08 [04]      cmp A, get_configuration
+01DE A2 CA [05]      jz GetConfiguration
+01E0            
+01E0            ;Stall unsupported requests.
+01E0 81 AD [05]      jmp SendStall
+01E2            
+01E2            ;Device to host with interface as recipient
+01E2            RequestType81:
+01E2 1A 71 [06]      mov A, [bRequest]     ; load bRequest
+01E4            
+01E4            ; Get Status               bRequest = 0
+01E4 16 00 [04]       cmp A, get_status
+01E6 A2 D4 [05]       jz GetInterfaceStatus
+01E8            
+01E8            ; Get Interface returns the selected alternate setting.
+01E8            ;  This firmware supports no alternate settings.
+01E8            ; Get Interface                 bRequest = 10   *** not supported ***
+01E8            
+01E8            ;The HID class defines one more request for bmRequestType=10000001
+01E8            ; Get Descriptor                bRequest = 6
+01E8 16 06 [04]       cmp A, get_descriptor
+01EA A2 B2 [05]       jz GetDescriptor
+01EC            
+01EC            ;Stall unsupported functions
+01EC 81 AD [05]       jmp SendStall
+01EE            
+01EE            ;Device to host with endpoint as recipient
+01EE            RequestType82:
+01EE 1A 71 [06]      mov A, [bRequest]          ; load bRequest
+01F0            ; Get Status               bRequest = 0
+01F0 16 00 [04]      cmp A, get_status
+01F2 A2 DC [05]       jz GetEndpointStatus
+01F4            
+01F4            ; Get Descriptor               bRequest = 6
+01F4 16 06 [04]      cmp A, get_descriptor
+01F6 A2 B2 [05]      jz GetDescriptor
+01F8            ; Sync Frame                  bRequest = 12   *** not supported ***
+01F8            
+01F8            ;Stall unsupported functions.
+01F8 81 AD [05]      jmp SendStall
+01FA            
+01FA            
+01FA            ;Check for HID class requests
+01FA            
+01FA            ;Host to device with endpoint as recipient
+01FA            RequestType21:
+01FA 1A 71 [06]       mov A, [bRequest]      ; load bRequest
+01FC            
+01FC            ; Set Report               bRequest = 9
+01FC 16 09 [04]      cmp A, set_report
+01FE 20    [04]         NOP
+01FF 1F    [04]         XPAGE
+0200 A2 E7 [05]      jz SetReport
+0202            
+0202            ; Set Idle                    bRequest = 10
+0202 16 0A [04]       cmp A, set_idle
+0204 A2 FA [05]       jz SetIdle
+0206            
+0206            ; Set Protocol               bRequest = 11
+0206 16 0B [04]       cmp A, set_protocol
+0208 A2 FC [05]       jz SetProtocol
+020A            
+020A            ;Stall unsupported requests
+020A 81 AD [05]      jmp SendStall
+020C            
+020C            RequestType22:
+020C 1A 71 [06]         mov A, [bRequest]      ; load bRequest
+020E            
+020E            ; Set Report               bRequest = 9
+020E 16 09 [04]      cmp A, set_report     
+0210 A2 E7 [05]      jz SetReport
+0212            
+0212            ;Stall unsupported requests
+0212 81 AD [05]      jmp SendStall
+0214            
+0214            
+0214            ;Device to host with endpoint as recipient
+0214            RequestTypeA1:
+0214 1A 71 [06]         mov A, [bRequest]      ; load bRequest
+0216            
+0216            ; Get Report               bRequest = 1
+0216 16 01 [04]         cmp A, get_report
+0218 A3 05 [05]         jz GetReport
+021A            
+021A            ; Get Idle                 bRequest = 2
+021A 16 02 [04]         cmp A, get_idle
+021C A3 10 [05]         jz GetIdle
+021E            
+021E            ; Get Protocol             bRequest = 3
+021E 16 03 [04]         cmp A, get_protocol
+0220 A3 12 [05]         jz GetProtocol
+0222            
+0222            ;Stall unsupported requests
+0222 81 AD [05]         jmp SendStall
+0224            
+0224            ;----------------------------------------------------------------------
+0224            ;Control transfer, stage three
+0224            ;Process the request.
+0224            ;----------------------------------------------------------------------
+0224            
+0224            ;The host controls whether or not a device can request a remote wakeup.
+0224            
+0224            ; Disable the remote wakeup capability.
+0224            ClearRemoteWakeup:
+0224 1A 72 [06]         mov A, [wValue]
+0226 16 01 [04]         cmp A, device_remote_wakeup
+0228 B1 AD [05]         jnz SendStall
+022A            ;Handshake by sending a data packet
+022A 93 79 [10]         call Send0ByteDataPacket
+022C 19 00 [04]         mov A, DISABLE_REMOTE_WAKEUP
+022E 31 30 [05]         mov [remote_wakeup_status], A
+0230 3F    [08]         ret
+0231            
+0231            ; Enable the remote wakeup capability.
+0231            SetRemoteWakeup:
+0231 1A 72 [06]         mov A, [wValue]
+0233 16 01 [04]         cmp A, device_remote_wakeup
+0235            ;If not a match, stall.
+0235 B1 AD [05]         jnz SendStall
+0237            ;Handshake by sending a 0-byte data packet
+0237 93 79 [10]         call Send0ByteDataPacket
+0239            ;Perform the request.
+0239 19 02 [04]         mov A, ENABLE_REMOTE_WAKEUP
+023B 31 30 [05]         mov [remote_wakeup_status], A
+023D 3F    [08]         ret
+023E            
+023E            SetAddress:
+023E            ; Set the device address to match wValue in the Setup packet.
+023E            ;Complete the requested action after completing the transaction.
+023E            ;Handshake by sending a 0-byte data packet.
+023E 93 79 [10]         call Send0ByteDataPacket
+0240            ;Perform the request
+0240 1A 72 [06]         mov A, [wValue]
+0242 2A 12 [05]         iowr USB_Device_Address
+0244 3F    [08]         ret
+0245            
+0245            SetConfiguration:
+0245            ;Unconfigured: wValue=0, configured: wValue=1.
+0245            ;Also clear any stall condition and set Data 0/1 to Data0.
+0245            ;Handshake by sending a 0-byte data packet.
+0245 93 79 [10]       call Send0ByteDataPacket
+0247            ;Save the configuration status.
+0247 1A 72 [06]       mov A, [wValue]
+0249 31 31 [05]       mov [configuration_status], A
+024B            ;Clear any stall condtion
+024B 19 00 [04]       mov A, 0
+024D 31 29 [05]       mov [endpoint_stall], A
+024F            ;Set data 0/1 to Data0
+024F 29 11 [05]       iord USB_EP1_TX_Config
+0251 10 BF [04]       and A, ~DataToggle
+0253            
+0253            ;Set the configuration status.
+0253 2A 11 [05]      iowr USB_EP1_TX_Config     
+0255 1A 31 [06]      mov A, [configuration_status]
+0257 16 00 [04]      cmp A, 0
+0259            ;If configured, jump.
+0259 B2 69 [05]      jnz device_configured
+025B            
+025B            ;If unconfigured:
+025B            ;Disable Endpoint 1
+025B 29 11 [05]      iord USB_EP1_TX_Config
+025D 10 EF [04]      and A, EFh
+025F 2A 11 [05]      iowr USB_EP1_TX_Config
+0261            ;Disable Endpoint 1 interrupts.
+0261 1A 20 [06]      mov A, [interrupt_mask]
+0263 10 EF [04]      and A, EFh
+0265 31 20 [05]           mov [interrupt_mask], A
+0267 82 7D [05]      jmp done_configuration
+0269            
+0269            ;If configured:
+0269            device_configured:
+0269            ;Send NAK in response to IN packets
+0269 29 11 [05]      iord USB_EP1_TX_Config
+026B 10 7F [04]      and A,7Fh
+026D            ;Enable Endpoint 1
+026D 0D 10 [04]      or A, 10h
+026F 2A 11 [05]      iowr USB_EP1_TX_Config
+0271            ;Enable interrupts: Endpoint 1 and GPIO
+0271 1A 20 [06]      mov A, [interrupt_mask]
+0273 0D 50 [04]      or A, 50h
+0275 31 20 [05]      mov [interrupt_mask], A
+0277            ;Send NAK in response to Endpoint 0 OUT packets.
+0277 29 13 [05]      iord USB_Status_Control
+0279 10 EF [04]      and A,0EFh
+027B 2A 13 [05]      iowr USB_Status_Control
+027D            done_configuration:
+027D 3F    [08]         ret
+027E            
+027E            ClearEndpointStall:
+027E            ;Clear the stall condition for an endpoint.
+027E            ;For endpoint 1, also set Data 0/1 to Data 0.
+027E 1A 72 [06]         mov A, [wValue]
+0280 16 00 [04]         cmp A, endpoint_stalled
+0282 B1 AD [05]         jnz SendStall
+0284            ;
+0284            ;Clear Endpoint 1 stall
+0284            ;Handshake by sending a 0-byte data packet
+0284 93 79 [10]       call Send0ByteDataPacket
+0286            ;Clear the stall condition
+0286 19 00 [04]       mov A,0
+0288 31 29 [05]       mov [endpoint_stall], A
+028A            ;Set Data 0/1 to Data0
+028A 29 11 [05]       iord USB_EP1_TX_Config
+028C 10 BF [04]       and A, ~DataToggle
+028E 2A 11 [05]       iowr USB_EP1_TX_Config
+0290            ;Send NAK in response to Endpoint 0 OUT packets.
+0290 29 13 [05]       iord USB_Status_Control
+0292 10 EF [04]       and A,0EFh
+0294 2A 13 [05]       iowr USB_Status_Control
+0296 3F    [08]       ret
+0297            
+0297            ;Stall Endpoint 1
+0297            SetEndpointStall:
+0297 1A 72 [06]         mov A, [wValue]
+0299 16 00 [04]         cmp A, endpoint_stalled
+029B            ;Not a match, so stall
+029B B1 AD [05]         jnz SendStall
+029D            ;Handshake by sending a 0-byte data packet.
+029D 93 79 [10]         call Send0ByteDataPacket
+029F            ;Stall the endpoint.
+029F 19 01 [04]         mov A,1         
+02A1 31 29 [05]         mov [endpoint_stall], A
+02A3 19 30 [04]         mov A, 30h
+02A5 2A 11 [05]         iowr USB_EP1_TX_Config                 
+02A7 3F    [08]         ret
+02A8            
+02A8            GetDeviceStatus:
+02A8            ;Device Status is two bytes.
+02A8            ;Bit 0 must be 0 (bus-powered).
+02A8            ;Bit 1 is remote wakeup: 0=disabled, 1=enabled.
+02A8            ;All other bits are unused.
+02A8            ;Send two bytes.
+02A8 19 02 [04]         mov A, 2
+02AA 31 28 [05]         mov [data_count], A
+02AC            ;The control_read_table holds the two possible values for device status.
+02AC            ;Get the address of the first value.
+02AC 19 9C [04]         mov A, (get_dev_status_table - control_read_table)
+02AE            ;Add an index value to select the correct bytes.
+02AE 02 30 [06]         add A, [remote_wakeup_status]
+02B0            ;Send the value.
+02B0 83 3E [05]         jmp SendDescriptor
+02B2            
+02B2            GetDescriptor:
+02B2            ;The high byte of wValue contains the descriptor type.
+02B2            ;The low byte of wValue contains the descriptor index.
+02B2            
+02B2 1A 73 [06]         mov A, [wValueHi]               ; load descriptor type
+02B4            
+02B4            ;Test for standard descriptor types first.
+02B4            ;Supported descriptor types are device, configuration, string.
+02B4            ;Unsupported descriptor types are interface, endpoint.
+02B4            
+02B4            ; Get Descriptor (device)               wValueHi = 1
+02B4 16 01 [04]      cmp A, device
+02B6 A3 1C [05]      jz GetDeviceDescriptor
+02B8            ; Get Descriptor (configuration)        wValueHi = 2
+02B8 16 02 [04]      cmp A, configuration
+02BA A3 26 [05]      jz GetConfigurationDescriptor
+02BC            ; Get Descriptor (string)               wValueHi = 3
+02BC 16 03 [04]      cmp A, string
+02BE A3 2E [05]      jz GetStringDescriptor
+02C0            
+02C0            ; Test for HID-class descriptor types.
+02C0            ; Get Descriptor (HID)                  wValueHi = 21h
+02C0 16 21 [04]         cmp A, HID
+02C2 A3 5D [05]         jz GetHIDDescriptor
+02C4            ; Get Descriptor (report)               wValueHi = 22h  
+02C4 16 22 [04]      cmp A, report
+02C6 A3 07 [05]      jz GetReportDescriptor
+02C8            ; Get Descriptor (physical)             wValueHi = 23h  *** not supported ***
+02C8            ;Stall unsupported requests.
+02C8 81 AD [05]      jmp SendStall
+02CA            
+02CA            GetConfiguration:
+02CA            ;Send the current device configuration.
+02CA            ;0 = unconfigured, 1 = configured.
+02CA            
+02CA            ;Send 1 byte
+02CA 19 01 [04]         mov A, 1
+02CC 31 28 [05]         mov [data_count], A
+02CE            ;Get the address of the data to send.
+02CE 19 A6 [04]         mov A, (get_configuration_status_table - control_read_table)
+02D0            ;Add an index to point to the correct configuration.
+02D0 02 31 [06]         add A, [configuration_status]
+02D2            ;Send the data.
+02D2 83 3E [05]         jmp SendDescriptor
+02D4            
+02D4            GetInterfaceStatus:
+02D4            ;Interface status is 2 bytes, which are always 0.
+02D4            ;Send 2 bytes.
+02D4 19 02 [04]         mov A, 2
+02D6 31 28 [05]         mov [data_count], A
+02D8            ;Get the address of the data to send.
+02D8 19 A0 [04]         mov A, (get_interface_status_table - control_read_table)
+02DA            ;Send the data.
+02DA 83 3E [05]         jmp SendDescriptor
+02DC            
+02DC            GetEndpointStatus:
+02DC            ;Endpoint status is 2 bytes.
+02DC            ;Bit 0 = 0 when the endpoint is not stalled.
+02DC            ;Bit 0 = 1 when the endpoint is stalled.
+02DC            ;All other bits are unused.
+02DC            ;Send 2 bytes.
+02DC 19 02 [04]         mov A, 2
+02DE 31 28 [05]         mov [data_count], A
+02E0            ;Get the stall status.
+02E0 1A 29 [06]         mov A, [endpoint_stall]
+02E2            ;Shift left to get an index (0 or 2) for the endpoint status table
+02E2 3B    [04]         asl A
+02E3            ;Get the address of the data to send.
+02E3 01 A2 [04]         add A, (get_endpoint_status_table - control_read_table)
+02E5            ;Send the data.
+02E5 83 3E [05]         jmp SendDescriptor
+02E7            
+02E7            SetReport:
+02E7            ;The CY7C63000 doesn't support interrupt-mode OUT transfers.
+02E7            ;So the host uses Control transfers with Set_Report requests
+02E7            ;to get data from the device.
+02E7            
+02E7            ;Get the report data.
+02E7            
+02E7            ;For debugging: set Port 0, bit 0 =1 to show that we're here.
+02E7 29 00 [05]       iord Port0_Data
+02E9 0D 01 [04]       or a, 1
+02EB 2A 00 [05]       iowr Port0_Data
+02ED            
+02ED            ;Find out how many bytes to read. This value is in WLength.
+02ED            ;Save the length in data_count.
+02ED 1A 76 [06]      mov A, [wLength]
+02EF 31 28 [05]      mov [data_count], A
+02F1            
+02F1            ;Enable receiving data at endpoint 0 by setting the EnableOuts bit
+02F1            ;The bit is cleared following any Setup or OUT transaction.
+02F1 29 13 [05]      iord USB_Status_Control
+02F3 0D 10 [04]      or A, 10h
+02F5            ;Clear the StatusOuts bit to disable auto-Ack after receiving a valid 
+02F5            ;status packet in a Control read (IN) transfer.
+02F5            ;Otherwise, the USB engine will respond to a data OUT packet with a stall.
+02F5 10 F7 [04]      and A, F7h
+02F7 2A 13 [05]      iowr USB_Status_Control
+02F9            ;Now we're ready to receive the report data.
+02F9            ;An Endpoint 0 OUT interrupt signals the arrival of the report data.
+02F9 3F    [08] ret
+02FA            
+02FA            SetIdle:
+02FA 81 AD [05]         jmp SendStall   ; *** not supported ***
+02FC            
+02FC            SetProtocol:
+02FC            ;Switches between a boot protocol (wValue=0) and report protocol (wValue=1).
+02FC            ;This firmware doesn't distinguish between protocols.
+02FC 1A 72 [06]         mov A, [wValue]
+02FE 20    [04]         NOP
+02FF 1F    [04]         XPAGE
+0300 31 34 [05]         mov [protocol_status], A
+0302 93 79 [10]         call Send0ByteDataPacket
+0304 3F    [08]         ret
+0305            
+0305            GetReport:
+0305            ;Sends a report to the host.
+0305            ;The high byte of wValue contains the report type. 
+0305            ;The low byte of wValue contains the report ID.
+0305            ;Not supported (Use interrupt transfers to send data.)
+0305 81 AD [05]      jmp SendStall
+0307            
+0307            GetReportDescriptor:
+0307            ;Save the descriptor length
+0307 19 34 [04]      mov A, (end_hid_report_desc_table - hid_report_desc_table)
+0309 31 28 [05]      mov [data_count], A
+030B            ;Get the descriptor's starting address.
+030B 19 34 [04]      mov A, (hid_report_desc_table - control_read_table)
+030D 93 3E [10]      call SendDescriptor
+030F            
+030F 3F    [08]       ret
+0310            
+0310            GetIdle:
+0310            ;Not supported
+0310 81 AD [05]         jmp SendStall
+0312            
+0312            GetProtocol:
+0312            ;Send the current protocol status.
+0312            ;Send 1 byte.
+0312 19 01 [04]         mov A, 1
+0314 31 28 [05]         mov [data_count], A
+0316            ;Get the address of the data to send.
+0316 19 A8 [04]         mov A, (get_protocol_status_table - control_read_table)
+0318            ;Add an index that points to the correct data.
+0318 02 34 [06]         add A, [protocol_status]
+031A            ;Send the data.
+031A 83 3E [05]         jmp SendDescriptor
+031C                    
+031C            ; Standard Get Descriptor routines
+031C            ;
+031C            ;Send the device descriptor.
+031C            GetDeviceDescriptor:
+031C            ;Get the length of the descriptor
+031C            ;(stored in the first byte in the device descriptor table).
+031C 19 00 [04]         mov A, 0
+031E F3 E6 [14]        index device_desc_table
+0320 31 28 [05]         mov [data_count], A
+0322            ;Get the starting address of the descriptor.
+0322 19 00 [04]         mov A, (device_desc_table - control_read_table)
+0324            ;Send the descriptor.
+0324 83 3E [05]         jmp SendDescriptor
+0326            
+0326            GetConfigurationDescriptor:
+0326            ;Send the configuration descriptor.
+0326            ;Get the length of the descriptor.
+0326 19 22 [04]      mov A, (end_config_desc_table - config_desc_table)
+0328 31 28 [05]       mov [data_count], A
+032A            ;Get the starting address of the descriptor.
+032A 19 12 [04]      mov A, (config_desc_table - control_read_table)
+032C            ;Send the descriptor.
+032C 83 3E [05]      jmp SendDescriptor
+032E            
+032E            GetStringDescriptor:
+032E            ;Use the string index to find out which string it is.
+032E 1A 72 [06]      mov A, [wValue]
+0330 16 00 [04]      cmp A, 0h
+0332 A3 45 [05]      jz LanguageString
+0334 16 01 [04]      cmp A, 01h
+0336 A3 4D [05]      jz ManufacturerString
+0338 16 02 [04]      cmp A, 02h
+033A A3 55 [05]      jz ProductString
+033C            ;     cmp A, 03h
+033C            ;     jz SerialNumString
+033C            ;     cmp A, 04h
+033C            ;     jz ConfigurationString
+033C            ;     cmp A, 05h
+033C            ;     jz InterfaceString
+033C            ; No other strings supported
+033C 81 AD [05]       jmp SendStall
+033E            
+033E            SendDescriptor:
+033E            ;The starting address of the descriptor is in the accumulator. Save it.
+033E 31 27 [05]         mov [data_start], A
+0340            ;Get the descriptor length.
+0340 93 66 [10]         call get_descriptor_length
+0342            ;Send the descriptor.
+0342 93 8A [10]         call control_read
+0344 3F    [08]         ret
+0345            
+0345            ;Send the requested string.
+0345            ;For each, store the descriptor length in data_count, then send the descriptor.
+0345            LanguageString:
+0345 19 04 [04]      mov A, (USBStringDescription1 - USBStringLanguageDescription)
+0347 31 28 [05]       mov [data_count], A
+0349 19 68 [04]      mov A, (USBStringLanguageDescription - control_read_table)
+034B 83 3E [05]       jmp SendDescriptor
+034D            ManufacturerString:     
+034D 19 1A [04]      mov A, ( USBStringDescription2 - USBStringDescription1)
+034F 31 28 [05]       mov [data_count], A
+0351 19 6C [04]      mov A, (USBStringDescription1 - control_read_table)
+0353 83 3E [05]       jmp SendDescriptor
+0355            ProductString:
+0355 19 16 [04]      mov A, ( USBStringDescription3 - USBStringDescription2)
+0357 31 28 [05]       mov [data_count], A
+0359 19 86 [04]      mov A, (USBStringDescription2 - control_read_table)
+035B 83 3E [05]       jmp SendDescriptor
+035D            ;SerialNumString:
+035D            ;     mov A, ( USBStringDescription4 - USBStringDescription3)
+035D            ;      mov [data_count], A
+035D            ;     mov A, (USBStringDescription3 - control_read_table)
+035D            ;      jmp SendDescriptor
+035D            ;ConfigurationString:
+035D            ;     mov A, ( USBStringDescription5 - USBStringDescription4)
+035D            ;      mov [data_count], A
+035D            ;     mov A, (USBStringDescription4 - control_read_table)
+035D            ;      jmp SendDescriptor
+035D            ;InterfaceString:
+035D            ;     mov A, ( USBStringEnd - USBStringDescription5)
+035D            ;      mov [data_count], A
+035D            ;     mov A, (USBStringDescription5 - control_read_table)
+035D            ;      jmp SendDescriptor
+035D            
+035D            ; HID class Get Descriptor routines
+035D            ;
+035D            GetHIDDescriptor:
+035D            ;Send the HID descriptor.
+035D            ;Get the length of the descriptor.
+035D 19 09 [04]      mov A, (Endpoint_Descriptor - Class_Descriptor)
+035F 31 28 [05]       mov [data_count], A
+0361            ;Get the descriptor's starting address.
+0361 19 24 [04]      mov A, ( Class_Descriptor - control_read_table)
+0363            ;Send the descriptor.
+0363 93 3E [10]       call SendDescriptor
+0365 3F    [08]       ret
+0366            
+0366            ;======================================================================
+0366            ;USB support routines
+0366            ;======================================================================
+0366            
+0366            get_descriptor_length:
+0366            ;The host sometimes lies about the number of bytes it
+0366            ; wants from a descriptor.
+0366            ;A request to get a descriptor should return the smaller of the number 
+0366            ;of bytes requested or the actual length of the descriptor.
+0366            ;Get the requested number of bytes to send
+0366 1A 77 [06]      mov A, [wLengthHi]
+0368            ;If the requested high byte is >0, 
+0368            ;ignore the high byte and use the firmware's value.
+0368            ;(255 bytes is the maximum allowed.)
+0368 16 00 [04]      cmp A, 0
+036A B3 78 [05]      jnz use_actual_length
+036C            ;If the low byte =0, use the firmware's value.
+036C 1A 76 [06]      mov A, [wLength]
+036E 16 00 [04]      cmp A, 0
+0370 A3 78 [05]      jz use_actual_length
+0372            ;If the requested number of bytes => the firmware's value,
+0372            ;use the firmware's value.
+0372 17 28 [06]      cmp A, [data_count]
+0374 D3 78 [05]      jnc use_actual_length
+0376            ;If the requested number of bytes < the firmware's value,
+0376            ;use the requested number of bytes.
+0376 31 28 [05]      mov [data_count], A
+0378            use_actual_length:
+0378 3F    [08]         ret
+0379            
+0379            Send0ByteDataPacket:
+0379            ;Send a data packet with 0 bytes.
+0379            ;Use this handshake after receiving an OUT data packet.
+0379            ;Enable responding to IN packets and set Data 0/1 to Data 1.
+0379 19 C0 [04]      mov A, C0h
+037B 2A 10 [05]      iowr USB_EP0_TX_Config
+037D            ;Enable interrupts.
+037D 1A 20 [06]      mov A, [interrupt_mask]
+037F 2A 20 [05]      iowr Global_Interrupt
+0381            WaitForDataToTransfer:
+0381            ;Wait for the data to transfer.
+0381            ;Clear the watchdog timer
+0381 2A 21 [05]      iowr Watchdog
+0383            ;Bit 7 of USB_EP0_TX_Config is cleared when the host acknowledges
+0383            ;receiving the data.
+0383 29 10 [05]      iord USB_EP0_TX_Config
+0385 10 80 [04]      and A, 80h
+0387 B3 81 [05]      jnz WaitForDataToTransfer
+0389 3F    [08]      ret
+038A            
+038A            control_read: 
+038A            ;Do a Control Read transfer.
+038A            ;The device receives a Setup packet in the Setup stage,
+038A            ;sends 1 or more data packets (IN) in the Data stage,
+038A            ;and receives a 0-length data packet (OUT) in the Status stage.
+038A            ;Before calling this routine, the firmware must set 2 values:
+038A            ;data_start is the starting address of the descriptor to send,
+038A            ;expressed as an offset from the control read table.
+038A            ;data_count is the number of bytes in the descriptor.
+038A 2E    [05]      push X
+038B            ;Set the Data 0/1 bit to 0.
+038B 19 00 [04]      mov A, 00h
+038D 31 23 [05]      mov [endp0_data_toggle], A
+038F            
+038F            control_read_data_stage:
+038F 1C 00 [04]      mov X, 00h
+0391 19 00 [04]      mov A, 00h
+0393 31 24 [05]      mov [loop_counter], A
+0395            
+0395            ;Clear the Setup bit.
+0395 2A 14 [05]      iowr USB_EP0_RX_Status
+0397            ;Check the Setup bit.
+0397 29 14 [05]      iord USB_EP0_RX_Status
+0399 10 01 [04]      and A, 01h
+039B            ;If not cleared, another setup packet has arrived, 
+039B            ;so exit the routine.
+039B B3 E0 [05]      jnz control_read_status_stage
+039D            
+039D            ;Set the StatusOuts bit to 1 to enable auto-ACK of the OUT Status stage.
+039D 19 08 [04]      mov A, 08h
+039F 2A 13 [05]      iowr USB_Status_Control
+03A1            ;If there is no data to send, prepare a 0-length data packet.
+03A1            ;(The host might require a final 0-length packet if the descriptor is 
+03A1            ;a multiple of 8 bytes.)
+03A1 1A 28 [06]      mov A, [data_count]
+03A3 16 00 [04]      cmp A, 00h
+03A5 A3 BC [05]      jz dma_load_done
+03A7            
+03A7            dma_load_loop:
+03A7            ;Copy up to 8 bytes for transmitting into Endpoint 0's buffer
+03A7            ;and increment/decrement the various counting variables.
+03A7            
+03A7            ;Place the byte to send in the accumulator:
+03A7            ;(control_read_table) + (data_start).
+03A7 1A 27 [06]      mov A, [data_start]
+03A9 F3 E6 [14]      index control_read_table
+03AB            ;Place the byte in Endpoint 0's buffer.
+03AB 32 70 [06]      mov [X + Endpoint_0], A
+03AD            ;Increment the offset of the data being sent.
+03AD 23 27 [07]      inc [data_start]
+03AF            ;Increment the offset of Endpoint 0's buffer.
+03AF 22    [04]      inc X
+03B0            ;Increment the number of bytes stored in the buffer.
+03B0 23 24 [07]      inc [loop_counter]
+03B2            ;Decrement the number of bytes left to send.
+03B2 27 28 [07]      dec [data_count]
+03B4            ;If the count = 0, there's no more data to load.
+03B4 A3 BC [05]      jz dma_load_done
+03B6            ;If 8 bytes haven't been loaded into the buffer, get another byte.
+03B6            ;If 8 bytes have been loaded, it's the maximum for the transaction,
+03B6            ;so send the data.
+03B6 1A 24 [06]      mov A, [loop_counter]
+03B8 16 08 [04]      cmp A, 08h
+03BA B3 A7 [05]      jnz dma_load_loop
+03BC            
+03BC            dma_load_done:
+03BC            ;Send the data.
+03BC            
+03BC            ;Check the Setup bit.
+03BC            ;If it's not 0, another Setup packet has arrived, 
+03BC            ;so exit the routine.
+03BC 29 14 [05]      iord USB_EP0_RX_Status
+03BE 10 01 [04]      and A, 01h
+03C0 B3 E0 [05]      jnz control_read_status_stage
+03C2            
+03C2            ;Set the bits in the USB_EP0_TX_Config register.
+03C2            ;Toggle the Data 0/1 bit.
+03C2 1A 23 [06]      mov A, [endp0_data_toggle]
+03C4 13 40 [04]      xor A, 40h
+03C6 31 23 [05]      mov [endp0_data_toggle], A
+03C8            ;Enable responding to IN token packets.
+03C8 0D 80 [04]      or A, 80h
+03CA            ;The low 4 bits hold the number of bytes to send.
+03CA 0E 24 [06]      or A, [loop_counter]
+03CC 2A 10 [05]      iowr USB_EP0_TX_Config
+03CE            ;Enable interrupts
+03CE 1A 20 [06]      mov A, [interrupt_mask]
+03D0 2A 20 [05]      iowr Global_Interrupt
+03D2            
+03D2            wait_control_read:
+03D2            
+03D2            ;Clear the watchdog timer
+03D2 2A 21 [05]      iowr Watchdog
+03D4            
+03D4            ;Wait for the data to transfer and the host to acknowledge,
+03D4            ;indicated by Bit 7 = 0.
+03D4 29 10 [05]      iord USB_EP0_TX_Config
+03D6 10 80 [04]      and A, 80h
+03D8            ;When all of the transaction's data has transferred, 
+03D8            ;find out if there is more data to send in the transfer.
+03D8 A3 8F [05]      jz control_read_data_stage
+03DA            ;Find out if the host has sent an OUT packet to acknowledge 
+03DA            ;and end the transfer.
+03DA 29 14 [05]      iord USB_EP0_RX_Status
+03DC 10 02 [04]      and A, 02h
+03DE A3 D2 [05]      jz wait_control_read
+03E0            
+03E0            control_read_status_stage:
+03E0            ;The transfer is complete.
+03E0 2C    [04]      pop X
+03E1 1A 20 [06]      mov A, [interrupt_mask]
+03E3 2A 20 [05]      iowr Global_Interrupt
+03E5 3F    [08]      ret
+03E6            
+03E6            ;======================================================================
+03E6            ;Lookup Tables
+03E6            ;Contain the descriptors and the codes for status indicators.
+03E6            ;The firmware accesses the information by referencing a specific
+03E6            ;table's address as an offset from the control_read_table.
+03E6            ;======================================================================
+03E6            
+03E6            control_read_table:
+03E6            
+03E6            device_desc_table:
+03E6 12    [00]      db 12h          ; Descriptor length (18 bytes)
+03E7 01    [00]      db 01h          ; Descriptor type (Device)
+03E8 10    [00]      db 10h,01h      ; Complies with USB Spec. Release (0110h = release 1.10)
+03E9 01    [00] 
+03EA 00    [00]      db 00h          ; Class code (0)
+03EB 00    [00]      db 00h          ; Subclass code (0)
+03EC 00    [00]      db 00h          ; Protocol (No specific protocol)
+03ED 08    [00]      db 08h          ; Max. packet size for EP0 (8 bytes)
+03EE 25    [00]      db 25h,09h      ; Vendor ID (Lakeview Research, 0925h)
+03EF 09    [00] 
+03F0 34    [00]      db 34h,12h      ; Product ID (1234)
+03F1 12    [00] 
+03F2 01    [00]      db 01h,00h      ; Device release number (0001)
+03F3 00    [00] 
+03F4 01    [00]      db 01h          ; Mfr string descriptor index
+03F5 02    [00]      db 02h          ; Product string descriptor index
+03F6 00    [00]      db 00h          ; Serial Number string descriptor index (None)
+03F7 01    [00]      db 01h          ; Number of possible configurations (1)
+03F8            end_device_desc_table:
+03F8            
+03F8            config_desc_table:
+03F8 09    [00]      db 09h          ; Descriptor length (9 bytes)
+03F9 02    [00]      db 02h          ; Descriptor type (Configuration)
+03FA 22    [00]      db 22h,00h      ; Total data length (34 bytes)
+03FB 00    [00] 
+03FC 01    [00]      db 01h          ; Interface supported (1)
+03FD 01    [00]      db 01h          ; Configuration value (1)
+03FE 00    [00]      db 00h          ; Index of string descriptor (None)
+03FF 80    [00]      db 80h          ; Configuration (Bus powered)
+0400 32    [00]      db 32h          ; Maximum power consumption (100mA)
+0401            
+0401            Interface_Descriptor:
+0401 09    [00]      db 09h          ; Descriptor length (9 bytes)
+0402 04    [00]      db 04h          ; Descriptor type (Interface)
+0403 00    [00]      db 00h          ; Number of interface (0) 
+0404 00    [00]      db 00h          ; Alternate setting (0)
+0405 01    [00]      db 01h          ; Number of interface endpoint (1)
+0406 03    [00]      db 03h          ; Class code ()                    
+0407 00    [00]      db 00h          ; Subclass code ()                 
+0408 00    [00]      db 00h          ; Protocol code ()
+0409 00    [00]      db 00h          ; Index of string()       
+040A            
+040A            Class_Descriptor:
+040A 09    [00]      db 09h          ; Descriptor length (9 bytes)
+040B 21    [00]      db 21h          ; Descriptor type (HID)
+040C 00    [00]      db 00h,01h      ; HID class release number (1.00)
+040D 01    [00] 
+040E 00    [00]      db 00h          ; Localized country code (None)
+040F 01    [00]      db 01h          ; # of HID class dscrptr to follow (1)
+0410 22    [00]      db 22h          ; Report descriptor type (HID)
+0411                                 ; Total length of report descriptor
+0411 34    [00]      db (end_hid_report_desc_table - hid_report_desc_table),00h
+0412 00    [00] 
+0413            
+0413            Endpoint_Descriptor:
+0413 07    [00]      db 07h          ; Descriptor length (7 bytes)
+0414 05    [00]      db 05h          ; Descriptor type (Endpoint)
+0415 81    [00]      db 81h          ; Encoded address (Respond to IN, 1 endpoint)
+0416 03    [00]      db 03h          ; Endpoint attribute (Interrupt transfer)
+0417 06    [00]      db 06h,00h      ; Maximum packet size (6 bytes)
+0418 00    [00] 
+0419 0A    [00]      db 0Ah          ; Polling interval (10 ms)
+041A                  
+041A            end_config_desc_table:
+041A            
+041A            ;----------------------------------------------------------------------
+041A            ;The HID-report descriptor table
+041A            ;----------------------------------------------------------------------
+041A            
+041A            hid_report_desc_table:   
+041A 06    [00]      db 06h, A0h, FFh      ;         Usage Page (vendor defined) FFA0
+041B A0    [00] 
+041C FF    [00] 
+041D 09    [00]      db 09h, 01h     ;               Usage (vendor defined)
+041E 01    [00] 
+041F A1    [00]      db A1h, 01h     ;               Collection (Application)
+0420 01    [00] 
+0421 09    [00]      db 09h, 02h     ;               Usage (vendor defined)
+0422 02    [00] 
+0423 A1    [00]      db A1h, 00h     ;               Collection (Physical)
+0424 00    [00] 
+0425 06    [00]      db 06h, A1h, FFh ;               Usage Page (vendor defined) 
+0426 A1    [00] 
+0427 FF    [00] 
+0428            
+0428            ;The input report
+0428 09    [00]      db 09h, 03h     ;               usage - vendor defined
+0429 03    [00] 
+042A 09    [00]      db 09h, 04h     ;               usage - vendor defined
+042B 04    [00] 
+042C 15    [00]      db 15h, 80h     ;               Logical Minimum (-128)
+042D 80    [00] 
+042E 25    [00]      db 25h, 7Fh     ;               Logical Maximum (127)
+042F 7F    [00] 
+0430 35    [00]      db 35h, 00h     ;               Physical Minimum (0)
+0431 00    [00] 
+0432 45    [00]      db 45h, FFh;                    Physical Maximum (255)
+0433 FF    [00] 
+0434            ;    db 66h, 00h, 00h;               Unit (None (2 bytes))
+0434 75    [00]      db 75h, 08h     ;               Report Size (8)  (bits)
+0435 08    [00] 
+0436 95    [00]      db 95h, 02h     ;               Report Count (2)  (fields)
+0437 02    [00] 
+0438 81    [00]      db 81h, 02h     ;               Input (Data, Variable, Absolute)  
+0439 02    [00] 
+043A            
+043A            ;The output report
+043A 09    [00]      db 09h, 05h     ;               usage - vendor defined
+043B 05    [00] 
+043C 09    [00]      db 09h, 06h     ;               usage - vendor defined
+043D 06    [00] 
+043E 15    [00]      db 15h, 80h     ;               Logical Minimum (-128)
+043F 80    [00] 
+0440 25    [00]      db 25h, 7Fh     ;               Logical Maximum (127)
+0441 7F    [00] 
+0442 35    [00]      db 35h, 00h     ;               Physical Minimum (0)
+0443 00    [00] 
+0444 45    [00]      db 45h, FFh     ;               Physical Maximum (255)
+0445 FF    [00] 
+0446            ;    db 66h, 00h, 00h;               Unit (None (2 bytes))
+0446 75    [00]      db 75h, 08h     ;               Report Size (8)  (bits)
+0447 08    [00] 
+0448 95    [00]      db 95h, 02h     ;               Report Count (2)  (fields)
+0449 02    [00] 
+044A 91    [00]      db 91h, 02h     ;               Output (Data, Variable, Absolute)  
+044B 02    [00] 
+044C            
+044C C0    [00]      db C0h          ;               End Collection
+044D            
+044D C0    [00]      db C0h          ;               End Collection
+044E            
+044E            end_hid_report_desc_table:
+044E            
+044E            ;----------------------------------------------------------------------
+044E            ;String Descriptors
+044E            ;----------------------------------------------------------------------
+044E            
+044E            ;Define the strings
+044E            
+044E            ; string 0
+044E            USBStringLanguageDescription:
+044E 04    [00]     db 04h          ; Length
+044F 03    [00]     db 03h          ; Type (3=string)
+0450 09    [00]     db 09h          ; Language:  English
+0451 04    [00]     db 04h          ; Sub-language: US
+0452            ; string 1
+0452            
+0452            ;The Length value for each string =
+0452            ;((number of characters) * 2) + 2
+0452            
+0452            USBStringDescription1:     ; IManufacturerName
+0452 1A    [00]     db 1Ah          ; Length
+0453 03    [00]     db 03h          ; Type (3=string)
+0454 55 00 ...      dsu "USB Complete" ;
+     53 00 42 00 20 00 43 00 6F 00 6D 00 70 00 6C 00 65 00 74 00 65 00 
+046C            
+046C            ; string 2
+046C            USBStringDescription2:     ; IProduct
+046C 16    [00]     db 16h          ; Length
+046D 03    [00]     db 03h          ; Type (3=string)
+046E 48 00 ...      dsu "HID Sample"  ;
+     49 00 44 00 20 00 53 00 61 00 6D 00 70 00 6C 00 65 00 
+0482            
+0482            ;string 3
+0482            ;If the firmware contains a serial number, it must be unique
+0482            ;for each device or the devices may not enumerate properly.
+0482            USBStringDescription3:     ; serial number
+0482            
+0482            ; string 4                 
+0482            ;USBStringDescription4:     ; configuration string descriptor
+0482            ;    db 16h          ; Length
+0482            ;    db 03h          ; Type (3=string)
+0482            ;    dsu "Sample HID"  ;
+0482            
+0482            ;string 5
+0482            ;USBStringDescription5:     ; configuration string descriptor
+0482            ;    db 32h          ; Length
+0482            ;    db 03h          ; Type (3=string)
+0482            ;    dsu "EndPoint1 Interrupt Pipe"  ;
+0482            
+0482            USBStringEnd:
+0482            
+0482            ;----------------------------------------------------------------------
+0482            ;Status information.
+0482            ;The status can be either device, interface, or endpoint.
+0482            ;An index selects the correct value.
+0482            ;----------------------------------------------------------------------
+0482            get_dev_status_table:
+0482 00    [00]         db      00h, 00h        ; remote wakeup disabled, bus powered
+0483 00    [00] 
+0484 02    [00]         db      02h, 00h        ; remote wakeup enabled, bus powered
+0485 00    [00] 
+0486            get_interface_status_table:
+0486 00    [00]         db      00h, 00h        ; always return both bytes zero
+0487 00    [00] 
+0488            get_endpoint_status_table:
+0488 00    [00]         db      00h, 00h        ; not stalled
+0489 00    [00] 
+048A 01    [00]         db      01h, 00h        ; stalled
+048B 00    [00] 
+048C            get_configuration_status_table:
+048C 00    [00]         db      00h             ; not configured
+048D 01    [00]         db      01h             ; configured
+048E            get_protocol_status_table:
+048E 00    [00]         db      00h             ; boot protocol
+048F 01    [00]         db      01h             ; report protocol
+0490            
+
+CheckSum = 1AD8
+Warnings = 0
+Errors   = 0
+
+Product: CPU=63, RAM=128 bytes, ROM=4096K bytes
+
+ ************ SYMBOLIC REFERENCE TABLE ************
+
+Value  Label                # Uses 
+-----  -------------------- ------
+  f7   BusReset               1
+ 40a   Class_Descriptor       2
+ 27e   ClearEndpointStall     1
+ 224   ClearRemoteWakeup      1
+   0 = DISABLE_REMOTE_WAKEUP   1
+  40 = DataToggle             2
+  38 = Data_Byte0             3
+  39 = Data_Byte1             2
+  3a = Data_Byte2             0
+  3b = Data_Byte3             0
+  3c = Data_Byte4             0
+  3d = Data_Byte5             0
+  3e = Data_Byte6             0
+  3f = Data_Byte7             0
+  10   DoNothing_ISR          2
+ 178   DoneWithReceivedData   1
+   2 = ENABLE_REMOTE_WAKEUP   1
+   c = ENUMERATE_MASK         1
+  70 = Endpoint0_Byte0        0
+  71 = Endpoint0_Byte1        0
+  72 = Endpoint0_Byte2        0
+  73 = Endpoint0_Byte3        0
+  74 = Endpoint0_Byte4        0
+  75 = Endpoint0_Byte5        0
+  76 = Endpoint0_Byte6        0
+  77 = Endpoint0_Byte7        0
+  78 = Endpoint1_Byte0        2
+  79 = Endpoint1_Byte1        2
+  7a = Endpoint1_Byte2        1
+  7b = Endpoint1_Byte3        0
+  7c = Endpoint1_Byte4        0
+  7d = Endpoint1_Byte5        0
+  7e = Endpoint1_Byte6        0
+  7f = Endpoint1_Byte7        0
+  70 = Endpoint_0             4
+ 413   Endpoint_Descriptor    1
+  85   GPIO_ISR               1
+ 2ca   GetConfiguration       1
+ 326   GetConfigurationDescriptor   1
+ 2b2   GetDescriptor          3
+ 31c   GetDeviceDescriptor    1
+ 2a8   GetDeviceStatus        1
+ 2dc   GetEndpointStatus      1
+ 35d   GetHIDDescriptor       1
+ 310   GetIdle                1
+ 2d4   GetInterfaceStatus     1
+ 312   GetProtocol            1
+ 305   GetReport              1
+ 307   GetReportDescriptor    1
+ 32e   GetStringDescriptor    1
+ 160   Get_Received_Data      1
+  20 = Global_Interrupt       13
+  21 = HID                    1
+  34   Inc_counter            1
+ 401   Interface_Descriptor   0
+ 345   LanguageString         1
+ 34d   ManufacturerString     1
+ 171   NewValueSet            1
+  15   One_mSec_ISR           1
+   0 = Port0_Data             8
+   4 = Port0_Interrupt        1
+  30 = Port0_Isink            0
+  30 = Port0_Isink0           1
+  31 = Port0_Isink1           1
+  32 = Port0_Isink2           1
+  33 = Port0_Isink3           1
+  34 = Port0_Isink4           1
+  35 = Port0_Isink5           1
+  36 = Port0_Isink6           1
+  37 = Port0_Isink7           1
+   8 = Port0_Pullup           1
+   1 = Port1_Data             3
+   5 = Port1_Interrupt        0
+  38 = Port1_Isink            0
+  38 = Port1_Isink0           1
+  39 = Port1_Isink1           1
+  3a = Port1_Isink2           1
+  3b = Port1_Isink3           1
+   9 = Port1_Pullup           3
+ 355   ProductString          1
+  5c = RUNTIME_MASK           0
+ 1b2   RequestType00          1
+ 1c6   RequestType02          1
+ 1fa   RequestType21          1
+ 20c   RequestType22          1
+ 1d2   RequestType80          1
+ 1e2   RequestType81          1
+ 1ee   RequestType82          1
+ 214   RequestTypeA1          1
+  99   Reset                  2
+ 16f   ResetToZero            1
+   1 = RunBit                 1
+  7d   Select                 2
+ 379   Send0ByteDataPacket    8
+ 33e   SendDescriptor         12
+ 1ad   SendStall              17
+ 23e   SetAddress             1
+ 245   SetConfiguration       1
+ 297   SetEndpointStall       1
+ 2fa   SetIdle                1
+ 2fc   SetProtocol            1
+ 231   SetRemoteWakeup        1
+ 2e7   SetReport              2
+ 183   StageOne               1
+  ff = Status_Control         6
+  57   Suspend_end            2
+   4 = TIMER_ONLY             1
+  23 = Timer                  0
+  20 = USBReset               1
+ 452   USBStringDescription1   3
+ 46c   USBStringDescription2   3
+ 482   USBStringDescription3   1
+ 482   USBStringEnd           0
+ 44e   USBStringLanguageDescription   2
+  12 = USB_Device_Address     1
+ 124   USB_EP0_ISR            1
+  14 = USB_EP0_RX_Status      7
+  10 = USB_EP0_TX_Config      5
+  8c   USB_EP1_ISR            1
+  11 = USB_EP1_TX_Config      17
+  13 = USB_Status_Control     11
+ 381   WaitForDataToTransfer   1
+  40 = WatchDogReset          1
+  21 = Watchdog               6
+  ee   WatchdogHandler        1
+  71 = bRequest               8
+  70 = bmRequestType          1
+ 13d   check_for_out_packet   1
+   1 = clear_feature          2
+ 3f8   config_desc_table      2
+   2 = configuration          1
+  31 = configuration_status   4
+ 38a   control_read           1
+ 38f   control_read_data_stage   1
+ 3e0   control_read_status_stage   2
+ 3e6   control_read_table     13
+  28 = data_count             19
+  27 = data_start             3
+   1 = device                 1
+ 269   device_configured      1
+ 3e6   device_desc_table      2
+   1 = device_remote_wakeup   2
+ 3bc   dma_load_done          2
+ 3a7   dma_load_loop          1
+ 27d   done_configuration     1
+ 17b   done_with_packet       2
+ 41a   end_config_desc_table   1
+ 3f8   end_device_desc_table   0
+ 44e   end_hid_report_desc_table   2
+  23 = endp0_data_toggle      3
+   5 = endpoint               0
+  78 = endpoint_1             0
+  29 = endpoint_stall         5
+   0 = endpoint_stalled       2
+   8 = get_configuration      1
+ 48c   get_configuration_status_table   1
+   6 = get_descriptor         3
+ 366   get_descriptor_length   1
+ 482   get_dev_status_table   1
+ 488   get_endpoint_status_table   1
+   2 = get_idle               1
+   a = get_interface          0
+ 486   get_interface_status_table   1
+   3 = get_protocol           1
+ 48e   get_protocol_status_table   1
+   1 = get_report             1
+   0 = get_status             3
+ 41a   hid_report_desc_table   3
+   4 = interface              0
+  20 = interrupt_mask         24
+  24 = loop_counter           4
+  37 = loop_temp              5
+ 114   main                   1
+ 11e   no_set                 1
+ 122   nochange               0
+ 15d   not_a_match            1
+  20   not_main               1
+  23 = physical               0
+  34 = protocol_status        2
+  30 = remote_wakeup_status   4
+  22 = report                 1
+  65   send_value             1
+   5 = set_address            1
+   9 = set_configuration      1
+   7 = set_descriptor         0
+   3 = set_feature            2
+   a = set_idle               1
+   b = set_interface          0
+   b = set_protocol           1
+   9 = set_report             2
+  32 = start_send             3
+  21 = start_time             0
+   3 = string                 1
+  f0   suspendReset           2
+  35 = suspend_counter        4
+   c = synch_frame            0
+  25 = temp                   0
+  22 = testbit                0
+ 378   use_actual_length      3
+  74 = wIndex                 0
+  75 = wIndexHi               0
+  76 = wLength                2
+  77 = wLengthHi              1
+  72 = wValue                 8
+  73 = wValueHi               1
+ 102   wait                   1
+ 3d2   wait_control_read      1
