@@ -1,0 +1,1048 @@
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE USBCORE
+OBJECT MODULE PLACED IN UsbCore.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE UsbCore.c BROWSE DEBUG OBJECTEXTEND TABS(1)
+
+stmt level    source
+
+   1          /******************************************************************
+   2             本程序只供学习使用，未经作者许可，不得用于其它任何用途
+   3             
+   4                  欢迎访问我的USB专区：http://group.ednchina.com/93/
+   5                  欢迎访问我的blog：   http://www.ednchina.com/blog/computer00
+   6                                       http://computer00.21ic.org
+   7          
+   8                  感谢PCB赞助商——电子园： http://bbs.cepark.com/
+   9          
+  10          UsbCore.c file
+  11          
+  12          作者：电脑圈圈
+  13          建立日期: 2008.06.29
+  14          修改日期: 2008.08.15
+  15          版本：V1.1
+  16          版权所有，盗版必究。
+  17          Copyright(C) 电脑圈圈 2008-2018
+  18          All rights reserved            
+  19          *******************************************************************/
+  20          
+  21          #include "config.h"
+  22          #include "pdiusbd12.h"
+  23          #include "uart.h"
+  24          #include "usbcore.h"
+  25          #include "led.h"
+  26          #include "SCSI.h"
+  27          
+  28          
+  29          idata uint8 Buffer[16];  //读端点0用的缓冲区
+  30          
+  31          idata uint8 CBW[31];  //保存CBW用的缓冲区
+  32          idata uint8 CSW[13];  //保存CSW用的缓冲区
+  33          
+  34          //USB设备请求的各字段
+  35          uint8  bmRequestType;
+  36          uint8  bRequest;
+  37          uint16 wValue;
+  38          uint16 wIndex;
+  39          uint16 wLength;
+  40          //当前发送数据的位置
+  41          uint8 * pSendData;
+  42          //需要发送数据的长度
+  43          uint16 SendLength;
+  44          //是否需要发送0数据包的标志。在USB控制传输的数据过程中，
+  45          //当返回的数据包字节数少于最大包长时，会认为数据过程结束。
+  46          //当请求的字节数比实际需要返回的字节数长，而实际返回的字节
+  47          //数又刚好是端点0大小的整数倍时，就需要返回一个0长度的数据包
+  48          //来结束数据过程。因此这里增加一个标志，供程序决定是否需要返回
+  49          //一个0长度的数据包。
+  50          uint8 NeedZeroPacket;
+  51          
+  52          //当前的配置值。只有在设置非0配置后
+  53          uint8 ConfigValue;
+  54          
+  55          //端点1缓冲是否忙的标志。当缓冲区中有数据时，该标志为真。
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 2   
+
+  56          //当缓冲区中空闲时，该标志为假。
+  57          uint8 Ep1InIsBusy;
+  58          uint8 Ep2InIsBusy;
+  59          
+  60          //定义最大逻辑单元。本实例仅有一个逻辑单元，所以值为0。
+  61          //由于在对后面的命令处理中，忽略了逻辑单元字段，如果你
+  62          //将这里的0改成1，将会有两个逻辑单元，从而显示两块参数
+  63          //完全一样的磁盘。改成n，就会显示n+1块参数完全一样的磁盘。
+  64          //最多可以有16个逻辑单元（n=15）。
+  65          code uint8 MaxLun[1]={0};
+  66          
+  67          //传输的阶段，有命令(COMMAND_STAGE)、数据(DATA_STAGE)、状态(STATUS_STAGE)三个。
+  68          uint8 TransportStage;
+  69          
+  70          //USB设备描述符的定义
+  71          code uint8 DeviceDescriptor[0x12]=  //设备描述符为18字节
+  72          {
+  73          //bLength字段。设备描述符的长度为18(0x12)字节
+  74           0x12,
+  75           
+  76          //bDescriptorType字段。设备描述符的编号为0x01
+  77           0x01,
+  78           
+  79          //bcdUSB字段。这里设置版本为USB1.1，即0x0110。
+  80          //由于是小端结构，所以低字节在先，即0x10，0x01。
+  81           0x10,
+  82           0x01,
+  83           
+  84          //bDeviceClass字段。我们不在设备描述符中定义设备类，
+  85          //而在接口描述符中定义设备类，所以该字段的值为0。
+  86           0x00,
+  87           
+  88          //bDeviceSubClass字段。bDeviceClass字段为0时，该字段也为0。
+  89           0x00,
+  90           
+  91          //bDeviceProtocol字段。bDeviceClass字段为0时，该字段也为0。
+  92           0x00,
+  93           
+  94          //bMaxPacketSize0字段。PDIUSBD12的端点0大小的16字节。
+  95           0x10,
+  96           
+  97          //idVender字段。厂商ID号，我们这里取0x8888，仅供实验用。
+  98          //实际产品不能随便使用厂商ID号，必须跟USB协会申请厂商ID号。
+  99          //注意小端模式，低字节在先。
+ 100           0x88,
+ 101           0x88,
+ 102           
+ 103          //idProduct字段。产品ID号，由于是第九个实验，我们这里取0x0009。
+ 104          //注意小端模式，低字节应该在前。
+ 105           0x09,
+ 106           0x00,
+ 107           
+ 108          //bcdDevice字段。我们这个USB键盘刚开始做，就叫它1.0版吧，即0x0100。
+ 109          //小端模式，低字节在先。
+ 110           0x00,
+ 111           0x01,
+ 112           
+ 113          //iManufacturer字段。厂商字符串的索引值，为了方便记忆和管理，
+ 114          //字符串索引就从1开始吧。
+ 115           0x01,
+ 116          
+ 117          //iProduct字段。产品字符串的索引值。刚刚用了1，这里就取2吧。
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 3   
+
+ 118          //注意字符串索引值不要使用相同的值。
+ 119           0x02,
+ 120           
+ 121          //iSerialNumber字段。设备的序列号字符串索引值。
+ 122          //这里取3就可以了。
+ 123           0x03,
+ 124          
+ 125          //bNumConfigurations字段。该设备所具有的配置数。
+ 126          //我们只需要一种配置就行了，因此该值设置为1。
+ 127           0x01
+ 128          };
+ 129          //////////////////////////设备描述符完毕//////////////////////////////
+ 130          
+ 131          //USB配置描述符集合的定义
+ 132          //配置描述符总长度为9+9+7+7字节
+ 133          code uint8 ConfigurationDescriptor[9+9+7+7]=
+ 134          {
+ 135           /***************配置描述符***********************/
+ 136           //bLength字段。配置描述符的长度为9字节。
+ 137           0x09,
+ 138           
+ 139           //bDescriptorType字段。配置描述符编号为0x02。
+ 140           0x02,
+ 141           
+ 142           //wTotalLength字段。配置描述符集合的总长度，
+ 143           //包括配置描述符本身、接口描述符、类描述符、端点描述符等。
+ 144           sizeof(ConfigurationDescriptor)&0xFF, //低字节
+ 145           (sizeof(ConfigurationDescriptor)>>8)&0xFF, //高字节
+ 146           
+ 147           //bNumInterfaces字段。该配置包含的接口数，有1个接口。
+ 148           0x01,
+ 149           
+ 150           //bConfiguration字段。该配置的值为1。
+ 151           0x01,
+ 152           
+ 153           //iConfigurationz字段，该配置的字符串索引。这里没有，为0。
+ 154           0x00,
+ 155           
+ 156           //bmAttributes字段，该设备的属性。由于我们的板子是总线供电的，
+ 157           //并且我们不想实现远程唤醒的功能，所以该字段的值为0x80。
+ 158           0x80,
+ 159           
+ 160           //bMaxPower字段，该设备需要的最大电流量。由于我们的板子
+ 161           //需要的电流不到100mA，因此我们这里设置为100mA。由于每单位
+ 162           //电流为2mA，所以这里设置为50(0x32)。
+ 163           0x32,
+ 164           
+ 165           /*****************接口描述符*******************/
+ 166           //bLength字段。接口描述符的长度为9字节。
+ 167           0x09,
+ 168           
+ 169           //bDescriptorType字段。接口描述符的编号为0x04。
+ 170           0x04,
+ 171           
+ 172           //bInterfaceNumber字段。该接口的编号，第一个接口，编号为0。
+ 173           0x00,
+ 174           
+ 175           //bAlternateSetting字段。该接口的备用编号，为0。
+ 176           0x00,
+ 177           
+ 178           //bNumEndpoints字段。非0端点的数目。该接口有2个批量端点
+ 179           0x02,
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 4   
+
+ 180           
+ 181           //bInterfaceClass字段。该接口所使用的类。大容量存储设备接口类的代码为0x08。
+ 182           0x08,
+ 183           
+ 184           //bInterfaceSubClass字段。该接口所使用的子类。SCSI透明命令集的子类代码为0x06。
+ 185           0x06,
+ 186           
+ 187           //bInterfaceProtocol字段。协议为仅批量传输，代码为0x50。
+ 188           0x50,
+ 189           
+ 190           //iConfiguration字段。该接口的字符串索引值。这里没有，为0。
+ 191           0x00,
+ 192            
+ 193           /*************标准批量数据输入端点描述符****************/
+ 194           //bLength字段。端点描述符长度为7字节。
+ 195           0x07,
+ 196           
+ 197           //bDescriptorType字段。端点描述符编号为0x05。
+ 198           0x05,
+ 199           
+ 200           //bEndpointAddress字段。端点的地址。我们使用D12的输入端点2。
+ 201           //D7位表示数据方向，输入端点D7为1。所以输入端点2的地址为0x82。
+ 202           0x82,
+ 203           
+ 204           //bmAttributes字段。D1~D0为端点传输类型选择。
+ 205           //该端点为批端点。批量端点的编号为2。其它位保留为0。
+ 206           0x02,
+ 207           
+ 208           //wMaxPacketSize字段。该端点的最大包长。端点2的最大包长为64字节。
+ 209           //注意低字节在先。
+ 210           0x40,
+ 211           0x00,
+ 212           
+ 213           //bInterval字段。端点查询的时间，此处无意义。
+ 214           0x00,
+ 215           
+ 216           /*************标准批量数据输出端点描述符****************/
+ 217           //bLength字段。端点描述符长度为7字节。
+ 218           0x07,
+ 219           
+ 220           //bDescriptorType字段。端点描述符编号为0x05。
+ 221           0x05,
+ 222           
+ 223           //bEndpointAddress字段。端点的地址。我们使用D12的输出端点2。
+ 224           //D7位表示数据方向，输出端点D7为0。所以输出端点2的地址为0x02。
+ 225           0x02,
+ 226           
+ 227           //bmAttributes字段。D1~D0为端点传输类型选择。
+ 228           //该端点为批端点。批量端点的编号为2。其它位保留为0。
+ 229           0x02,
+ 230           
+ 231           //wMaxPacketSize字段。该端点的最大包长。端点2的最大包长为64字节。
+ 232           //注意低字节在先。
+ 233           0x40,
+ 234           0x00,
+ 235           
+ 236           //bInterval字段。端点查询的时间，此处无意义。
+ 237           0x00
+ 238          };
+ 239          ////////////////////////配置描述符集合完毕//////////////////////////
+ 240          
+ 241          /************************语言ID的定义********************/
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 5   
+
+ 242          code uint8 LanguageId[4]=
+ 243          {
+ 244           0x04, //本描述符的长度
+ 245           0x03, //字符串描述符
+ 246           //0x0409为美式英语的ID
+ 247           0x09,
+ 248           0x04
+ 249          };
+ 250          ////////////////////////语言ID完毕//////////////////////////////////
+ 251          
+ 252          /**************************************************/
+ 253          /*********        本转换结果来自         **********/
+ 254          /********* Http://computer00.21ic.org    **********/
+ 255          /*********        作者: 电脑圈圈         **********/
+ 256          /*********         欢迎大家使用          **********/
+ 257          /*********    版权所有，盗版请写明出处   **********/
+ 258          /**************************************************/
+ 259          
+ 260          //http://computer00.21ic.org/user1/2198/archives/2007/42769.html
+ 261          //字符串“电脑圈圈的USB专区 Http://group.ednchina.com/93/”的Unicode编码
+ 262          //8位小端格式
+ 263          code uint8 ManufacturerStringDescriptor[82]={
+ 264          82,         //该描述符的长度为82字节
+ 265          0x03,       //字符串描述符的类型编码为0x03
+ 266          0x35, 0x75, //电
+ 267          0x11, 0x81, //脑
+ 268          0x08, 0x57, //圈
+ 269          0x08, 0x57, //圈
+ 270          0x84, 0x76, //的
+ 271          0x55, 0x00, //U
+ 272          0x53, 0x00, //S
+ 273          0x42, 0x00, //B
+ 274          0x13, 0x4e, //专
+ 275          0x3a, 0x53, //区
+ 276          0x20, 0x00, // 
+ 277          0x48, 0x00, //H
+ 278          0x74, 0x00, //t
+ 279          0x74, 0x00, //t
+ 280          0x70, 0x00, //p
+ 281          0x3a, 0x00, //:
+ 282          0x2f, 0x00, ///
+ 283          0x2f, 0x00, ///
+ 284          0x67, 0x00, //g
+ 285          0x72, 0x00, //r
+ 286          0x6f, 0x00, //o
+ 287          0x75, 0x00, //u
+ 288          0x70, 0x00, //p
+ 289          0x2e, 0x00, //.
+ 290          0x65, 0x00, //e
+ 291          0x64, 0x00, //d
+ 292          0x6e, 0x00, //n
+ 293          0x63, 0x00, //c
+ 294          0x68, 0x00, //h
+ 295          0x69, 0x00, //i
+ 296          0x6e, 0x00, //n
+ 297          0x61, 0x00, //a
+ 298          0x2e, 0x00, //.
+ 299          0x63, 0x00, //c
+ 300          0x6f, 0x00, //o
+ 301          0x6d, 0x00, //m
+ 302          0x2f, 0x00, ///
+ 303          0x39, 0x00, //9
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 6   
+
+ 304          0x33, 0x00, //3
+ 305          0x2f, 0x00  ///
+ 306          };
+ 307          /////////////////////////厂商字符串结束/////////////////////////////
+ 308          
+ 309          //字符串“《圈圈教你玩USB》之 假U盘”的Unicode编码
+ 310          //8位小端格式
+ 311          code uint8 ProductStringDescriptor[32]={
+ 312          32,         //该描述符的长度为32字节
+ 313          0x03,       //字符串描述符的类型编码为0x03
+ 314          0x0a, 0x30, //《
+ 315          0x08, 0x57, //圈
+ 316          0x08, 0x57, //圈
+ 317          0x59, 0x65, //教
+ 318          0x60, 0x4f, //你
+ 319          0xa9, 0x73, //玩
+ 320          0x55, 0x00, //U
+ 321          0x53, 0x00, //S
+ 322          0x42, 0x00, //B
+ 323          0x0b, 0x30, //》
+ 324          0x4b, 0x4e, //之
+ 325          0x20, 0x00, // 
+ 326          0x47, 0x50, //假
+ 327          0x55, 0x00, //U
+ 328          0xd8, 0x76, //盘
+ 329          };
+ 330          ////////////////////////产品字符串结束////////////////////////////
+ 331          
+ 332          //字符串“2008-08-14”的Unicode编码
+ 333          //8位小端格式
+ 334          code uint8 SerialNumberStringDescriptor[22]={
+ 335          22,         //该描述符的长度为22字节
+ 336          0x03,       //字符串描述符的类型编码为0x03
+ 337          0x32, 0x00, //2
+ 338          0x30, 0x00, //0
+ 339          0x30, 0x00, //0
+ 340          0x38, 0x00, //8
+ 341          0x2d, 0x00, //-
+ 342          0x30, 0x00, //0
+ 343          0x38, 0x00, //8
+ 344          0x2d, 0x00, //-
+ 345          0x31, 0x00, //1
+ 346          0x34, 0x00  //4
+ 347          };
+ 348          //////////////////////产品序列号字符串结束/////////////////////////
+ 349          
+ 350          /********************************************************************
+ 351          函数功能：延时x毫秒函数。
+ 352          入口参数：x：延时的毫秒数。
+ 353          返    回：无。
+ 354          备    注：无。
+ 355          ********************************************************************/
+ 356          void DelayXms(uint16 x)                
+ 357          {
+ 358   1       uint16 i;
+ 359   1       uint16 j;
+ 360   1       for(i=0;i<x;i++)
+ 361   1       for(j=0;j<227;j++); //循环语句延时
+ 362   1      }
+ 363          ////////////////////////End of function//////////////////////////////
+ 364          
+ 365          /********************************************************************
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 7   
+
+ 366          函数功能：USB断开连接函数。
+ 367          入口参数：无。
+ 368          返    回：无。
+ 369          备    注：无。
+ 370          ********************************************************************/
+ 371          void UsbDisconnect(void)
+ 372          {
+ 373   1      #ifdef DEBUG0
+               Prints("断开USB连接。\r\n");
+              #endif
+ 376   1       D12WriteCommand(D12_SET_MODE);  //写设置模式命令
+ 377   1       D12WriteByte(0x06); //设置模式的第一字节
+ 378   1       D12WriteByte(0x47); //设置模式的第二字节
+ 379   1       DelayXms(1000);  //延迟1秒
+ 380   1      }
+ 381          ////////////////////////End of function//////////////////////////////
+ 382          
+ 383          /********************************************************************
+ 384          函数功能：USB连接函数。
+ 385          入口参数：无。
+ 386          返    回：无。
+ 387          备    注：无。
+ 388          ********************************************************************/
+ 389          void UsbConnect(void)
+ 390          {
+ 391   1      #ifdef DEBUG0
+               Prints("连接USB。\r\n");
+              #endif
+ 394   1       D12WriteCommand(D12_SET_MODE);  //写设置模式命令
+ 395   1       D12WriteByte(0x16); //设置模式的第一字节
+ 396   1       D12WriteByte(0x47); //设置模式的第二字节
+ 397   1      }
+ 398          ////////////////////////End of function//////////////////////////////
+ 399          
+ 400          /********************************************************************
+ 401          函数功能：总线挂起中断处理函数。
+ 402          入口参数：无。
+ 403          返    回：无。
+ 404          备    注：无。
+ 405          ********************************************************************/
+ 406          void UsbBusSuspend(void)
+ 407          {
+ 408   1      #ifdef DEBUG0
+               Prints("USB总线挂起。\r\n");
+              #endif
+ 411   1      }
+ 412          ////////////////////////End of function//////////////////////////////
+ 413          
+ 414          /********************************************************************
+ 415          函数功能：总线复位中断处理函数。
+ 416          入口参数：无。
+ 417          返    回：无。
+ 418          备    注：无。
+ 419          ********************************************************************/
+ 420          void UsbBusReset(void)
+ 421          {
+ 422   1      #ifdef DEBUG0
+               Prints("USB总线复位。\r\n");
+              #endif
+ 425   1       Ep1InIsBusy=0; //复位后端点1输入缓冲区空闲。
+ 426   1       Ep2InIsBusy=0; //复位后端点2输入缓冲区空闲。
+ 427   1       TransportStage=COMMAND_STAGE; //复位后传输阶段为命令阶段。
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 8   
+
+ 428   1      }
+ 429          ////////////////////////End of function//////////////////////////////
+ 430          
+ 431          /********************************************************************
+ 432          函数功能：根据pData和SendLength将数据发送到端点0的函数。
+ 433          入口参数：无。
+ 434          返    回：无。
+ 435          备    注：无。
+ 436          ********************************************************************/
+ 437          void UsbEp0SendData(void)
+ 438          {
+ 439   1       //将数据写到端点中去准备发送
+ 440   1       //写之前要先判断一下需要发送的数据是否比端点0
+ 441   1       //最大长度大，如果超过端点大小，则一次只能发送
+ 442   1       //最大包长的数据。端点0的最大包长在DeviceDescriptor[7]
+ 443   1       if(SendLength>DeviceDescriptor[7])
+ 444   1       {
+ 445   2        //按最大包长度发送
+ 446   2        D12WriteEndpointBuffer(1,DeviceDescriptor[7],pSendData);
+ 447   2        //发送后剩余字节数减少最大包长
+ 448   2        SendLength-=DeviceDescriptor[7];
+ 449   2        //发送一次后指针位置要调整
+ 450   2        pSendData+= DeviceDescriptor[7];
+ 451   2       }
+ 452   1       else
+ 453   1       {
+ 454   2        if(SendLength!=0)
+ 455   2        {
+ 456   3         //不够最大包长，可以直接发送
+ 457   3         D12WriteEndpointBuffer(1,SendLength,pSendData);
+ 458   3         //发送完毕后，SendLength长度变为0
+ 459   3         SendLength=0;
+ 460   3        }
+ 461   2        else //如果要发送的数据包长度为0
+ 462   2        {
+ 463   3         if(NeedZeroPacket==1) //如果需要发送0长度数据
+ 464   3         {
+ 465   4          D12WriteEndpointBuffer(1,0,pSendData); //发送0长度数据包
+ 466   4          NeedZeroPacket=0; //清需要发送0长度数据包标志
+ 467   4         }
+ 468   3        }
+ 469   2       }
+ 470   1      }
+ 471          ////////////////////////End of function//////////////////////////////
+ 472          
+ 473          /********************************************************************
+ 474          函数功能：端点0输出中断处理函数。
+ 475          入口参数：无。
+ 476          返    回：无。
+ 477          备    注：无。
+ 478          ********************************************************************/
+ 479          void UsbEp0Out(void)
+ 480          {
+ 481   1      #ifdef DEBUG0
+               Prints("USB端点0输出中断。\r\n");
+              #endif
+ 484   1       //读取端点0输出最后传输状态，该操作清除中断标志
+ 485   1       //并判断第5位是否为1，如果是，则说明是建立包
+ 486   1       if(D12ReadEndpointLastStatus(0)&0x20)
+ 487   1       {
+ 488   2        D12ReadEndpointBuffer(0,16,Buffer); //读建立过程数据
+ 489   2        D12AcknowledgeSetup(); //应答建立包
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 9   
+
+ 490   2        D12ClearBuffer(); //清缓冲区
+ 491   2        //将缓冲数据填到设备请求的各字段中
+ 492   2        bmRequestType=Buffer[0];
+ 493   2        bRequest=Buffer[1];
+ 494   2        wValue=Buffer[2]+(((uint16)Buffer[3])<<8);
+ 495   2        wIndex=Buffer[4]+(((uint16)Buffer[5])<<8);
+ 496   2        wLength=Buffer[6]+(((uint16)Buffer[7])<<8);
+ 497   2        //下面的代码判断具体的请求，并根据不同的请求进行相关操作
+ 498   2        //如果D7位为1，则说明是输入请求
+ 499   2        if((bmRequestType&0x80)==0x80)
+ 500   2        {
+ 501   3         //根据bmRequestType的D6~5位散转，D6~5位表示请求的类型
+ 502   3         //0为标准请求，1为类请求，2为厂商请求。
+ 503   3         switch((bmRequestType>>5)&0x03)
+ 504   3         {
+ 505   4          case 0:  //标准请求
+ 506   4           #ifdef DEBUG0
+                    Prints("USB标准输入请求：");
+                   #endif
+ 509   4           //USB协议定义了几个标准输入请求，我们实现这些标准请求即可
+ 510   4           //请求的代码在bRequest中，对不同的请求代码进行散转
+ 511   4           //事实上，我们还需要对接收者进行散转，因为不同的请求接收者
+ 512   4           //是不一样的。接收者在bmRequestType的D4~D0位中定义。
+ 513   4           //我们这里为了简化操作，有些就省略了对接收者的判断。
+ 514   4           //例如获取描述符的请求，只根据描述符的类型来区别。
+ 515   4           switch(bRequest)
+ 516   4           {
+ 517   5            case GET_CONFIGURATION: //获取配置
+ 518   5             #ifdef DEBUG0
+                      Prints("获取配置。\r\n");
+                     #endif
+ 521   5            break;
+ 522   5            
+ 523   5            case GET_DESCRIPTOR:  //获取描述符
+ 524   5             #ifdef DEBUG0
+                      Prints("获取描述符——");
+                     #endif
+ 527   5             //对描述符类型进行散转，对于全速设备，
+ 528   5             //标准请求只支持发送到设备的设备、配置、字符串三种描述符
+ 529   5             switch((wValue>>8)&0xFF)
+ 530   5              {
+ 531   6               case DEVICE_DESCRIPTOR: //设备描述符
+ 532   6                #ifdef DEBUG0
+                         Prints("设备描述符。\r\n");
+                        #endif
+ 535   6                pSendData=DeviceDescriptor;  //需要发送的数据
+ 536   6                //判断请求的字节数是否比实际需要发送的字节数多
+ 537   6                //这里请求的是设备描述符，因此数据长度就是
+ 538   6                //DeviceDescriptor[0]。如果请求的比实际的长，
+ 539   6                //那么只返回实际长度的数据
+ 540   6                if(wLength>DeviceDescriptor[0])
+ 541   6                {
+ 542   7                 SendLength=DeviceDescriptor[0];
+ 543   7                 if(SendLength%DeviceDescriptor[7]==0) //并且刚好是整数个数据包时
+ 544   7                 {
+ 545   8                  NeedZeroPacket=1; //需要返回0长度的数据包
+ 546   8                 }
+ 547   7                }
+ 548   6                else
+ 549   6                {
+ 550   7                 SendLength=wLength;
+ 551   7                }
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 10  
+
+ 552   6                //将数据通过EP0返回
+ 553   6                UsbEp0SendData();
+ 554   6               break;
+ 555   6               
+ 556   6               case CONFIGURATION_DESCRIPTOR:  //配置描述符
+ 557   6                #ifdef DEBUG0
+                         Prints("配置描述符。\r\n");
+                        #endif
+ 560   6                pSendData=ConfigurationDescriptor; //需要发送的数据为配置描述符
+ 561   6                //判断请求的字节数是否比实际需要发送的字节数多
+ 562   6                //这里请求的是配置描述符集合，因此数据长度就是
+ 563   6                //ConfigurationDescriptor[3]*256+ConfigurationDescriptor[2]。
+ 564   6                //如果请求的比实际的长，那么只返回实际长度的数据
+ 565   6                SendLength=ConfigurationDescriptor[3];
+ 566   6                SendLength=SendLength*256+ConfigurationDescriptor[2];
+ 567   6                if(wLength>SendLength)
+ 568   6                {
+ 569   7                 if(SendLength%DeviceDescriptor[7]==0) //并且刚好是整数个数据包时
+ 570   7                 {
+ 571   8                  NeedZeroPacket=1; //需要返回0长度的数据包
+ 572   8                 }
+ 573   7                }
+ 574   6                else
+ 575   6                {
+ 576   7                 SendLength=wLength;
+ 577   7                }
+ 578   6                //将数据通过EP0返回
+ 579   6                UsbEp0SendData();
+ 580   6               break;
+ 581   6               
+ 582   6               case STRING_DESCRIPTOR:  //字符串描述符
+ 583   6                #ifdef DEBUG0
+                         Prints("字符串描述符");
+                        #endif
+ 586   6                switch(wValue&0xFF)  //根据wValue的低字节（索引值）散转
+ 587   6                {
+ 588   7                 case 0:  //获取语言ID
+ 589   7                  #ifdef DEBUG0
+                           Prints("(语言ID)。\r\n");
+                          #endif
+ 592   7                  pSendData=LanguageId;
+ 593   7                  SendLength=LanguageId[0];
+ 594   7                 break;
+ 595   7                 
+ 596   7                 case 1:  //厂商字符串的索引值为1，所以这里为厂商字符串
+ 597   7                 #ifdef DEBUG0
+                           Prints("(厂商描述)。\r\n");
+                          #endif
+ 600   7                  pSendData=ManufacturerStringDescriptor;
+ 601   7                  SendLength=ManufacturerStringDescriptor[0];
+ 602   7                 break;
+ 603   7                 
+ 604   7                 case 2:  //产品字符串的索引值为2，所以这里为产品字符串
+ 605   7                 #ifdef DEBUG0
+                           Prints("(产品描述)。\r\n");
+                          #endif
+ 608   7                  pSendData=ProductStringDescriptor;
+ 609   7                  SendLength=ProductStringDescriptor[0];
+ 610   7                 break;
+ 611   7                 
+ 612   7                 case 3:  //产品序列号的索引值为3，所以这里为序列号
+ 613   7                 #ifdef DEBUG0
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 11  
+
+                           Prints("(产品序列号)。\r\n");
+                          #endif
+ 616   7                  pSendData=SerialNumberStringDescriptor;
+ 617   7                  SendLength=SerialNumberStringDescriptor[0];
+ 618   7                 break;
+ 619   7                 
+ 620   7                 default :
+ 621   7                  #ifdef DEBUG0
+                           Prints("(未知的索引值)。\r\n");
+                          #endif
+ 624   7                  //对于未知索引值的请求，返回一个0长度的包
+ 625   7                  SendLength=0;
+ 626   7                  NeedZeroPacket=1;
+ 627   7                 break;
+ 628   7                }
+ 629   6                //判断请求的字节数是否比实际需要发送的字节数多
+ 630   6                //如果请求的比实际的长，那么只返回实际长度的数据
+ 631   6                if(wLength>SendLength)
+ 632   6                {
+ 633   7                 if(SendLength%DeviceDescriptor[7]==0) //并且刚好是整数个数据包时
+ 634   7                 {
+ 635   8                  NeedZeroPacket=1; //需要返回0长度的数据包
+ 636   8                 }
+ 637   7                }
+ 638   6                else
+ 639   6                {
+ 640   7                 SendLength=wLength;
+ 641   7                }
+ 642   6                //将数据通过EP0返回
+ 643   6                UsbEp0SendData();         
+ 644   6               break;
+ 645   6      
+ 646   6               case REPORT_DESCRIPTOR:  //报告描述符
+ 647   6                #ifdef DEBUG0
+                         Prints("报告描述符。\r\n");
+                        #endif
+ 650   6               break;
+ 651   6                       
+ 652   6               default:  //其它描述符
+ 653   6                #ifdef DEBUG0
+                         Prints("其他描述符，描述符代码：");
+                         PrintHex((wValue>>8)&0xFF);
+                         Prints("\r\n");
+                        #endif
+ 658   6               break;
+ 659   6              }
+ 660   5             break;
+ 661   5            
+ 662   5            case GET_INTERFACE: //获取接口
+ 663   5             #ifdef DEBUG0
+                      Prints("获取接口。\r\n");
+                     #endif
+ 666   5            break;
+ 667   5            
+ 668   5            case GET_STATUS: //获取状态
+ 669   5             #ifdef DEBUG0
+                      Prints("获取状态。\r\n");
+                     #endif
+ 672   5            break;
+ 673   5            
+ 674   5            case SYNCH_FRAME: //同步帧
+ 675   5             #ifdef DEBUG0
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 12  
+
+                      Prints("同步帧。\r\n");
+                     #endif
+ 678   5            break;
+ 679   5            
+ 680   5            default:  //未定义的标准请求
+ 681   5             #ifdef DEBUG0
+                      Prints("错误：未定义的标准输入请求。\r\n");
+                     #endif       
+ 684   5            break;
+ 685   5           }
+ 686   4          break;
+ 687   4          
+ 688   4          case 1:  //类请求
+ 689   4           #ifdef DEBUG0
+                    Prints("USB类输入请求：");
+                   #endif
+ 692   4           switch(bRequest)
+ 693   4           {
+ 694   5            case GET_MAX_LUN: //请求为GET_MAX_LUN(0xFE)
+ 695   5             #ifdef DEBUG0
+                      Prints("获取最大逻辑单元。\r\n");
+                     #endif
+ 698   5             
+ 699   5             pSendData=MaxLun; //要返回的数据位置
+ 700   5             SendLength=1;     //长度为1字节
+ 701   5             //如果请求的长度比实际长度短，则仅返回请求长度
+ 702   5             if(wLength<SendLength) 
+ 703   5             {
+ 704   6              SendLength=wLength;
+ 705   6             }
+ 706   5             //将数据通过EP0返回
+ 707   5             UsbEp0SendData();
+ 708   5            break;
+ 709   5            
+ 710   5            default:
+ 711   5             #ifdef DEBUG0
+                      Prints("未知请求。\r\n");
+                     #endif
+ 714   5            break;
+ 715   5           }
+ 716   4          break;
+ 717   4          
+ 718   4          case 2:  //厂商请求
+ 719   4           #ifdef DEBUG0
+                    Prints("USB厂商输入请求：\r\n");
+                   #endif
+ 722   4          break;
+ 723   4          
+ 724   4          default: //未定义的请求。这里只显示一个报错信息。
+ 725   4           #ifdef DEBUG0
+                    Prints("错误：未定义的输入请求。\r\n");
+                   #endif
+ 728   4          break;
+ 729   4         }
+ 730   3        }
+ 731   2        //否则说明是输出请求
+ 732   2        else //if(bmRequestType&0x80==0x80)之else
+ 733   2        {
+ 734   3         //根据bmRequestType的D6~5位散转，D6~5位表示请求的类型
+ 735   3         //0为标准请求，1为类请求，2为厂商请求。
+ 736   3         switch((bmRequestType>>5)&0x03)
+ 737   3         {
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 13  
+
+ 738   4          case 0:  //标准请求
+ 739   4           #ifdef DEBUG0
+                    Prints("USB标准输出请求：");
+                   #endif
+ 742   4           //USB协议定义了几个标准输出请求，我们实现这些标准请求即可
+ 743   4           //请求的代码在bRequest中，对不同的请求代码进行散转
+ 744   4           switch(bRequest)
+ 745   4           {
+ 746   5            case CLEAR_FEATURE: //清除特性
+ 747   5             #ifdef DEBUG0
+                      Prints("清除特性。\r\n");
+                     #endif
+ 750   5            break;
+ 751   5            
+ 752   5            case SET_ADDRESS:  //设置地址
+ 753   5             #ifdef DEBUG0
+                      Prints("设置地址。地址为：");
+                      PrintHex(wValue&0xFF); //显示所设置的地址
+                      Prints("\r\n");
+                     #endif
+ 758   5             D12SetAddress(wValue&0xFF); //wValue中的低字节是设置的地址值
+ 759   5             //设置地址没有数据过程，直接进入到状态过程，返回一个0长度的数据包
+ 760   5             SendLength=0;
+ 761   5             NeedZeroPacket=1;
+ 762   5             //将数据通过EP0返回
+ 763   5             UsbEp0SendData();
+ 764   5            break;
+ 765   5            
+ 766   5            case SET_CONFIGURATION: //设置配置
+ 767   5             #ifdef DEBUG0
+                      Prints("设置配置。\r\n");
+                     #endif
+ 770   5             //使能非0端点。非0端点只有在设置为非0的配置后才能使能。
+ 771   5             //wValue的低字节为配置的值，如果该值为非0，才能使能非0端点。
+ 772   5             //保存当前配置值
+ 773   5             ConfigValue=wValue&0xFF;
+ 774   5             D12SetEndpointEnable(ConfigValue);
+ 775   5             //返回一个0长度的状态数据包
+ 776   5             SendLength=0;
+ 777   5             NeedZeroPacket=1;
+ 778   5             //将数据通过EP0返回
+ 779   5             UsbEp0SendData();
+ 780   5            break;
+ 781   5            
+ 782   5            case SET_DESCRIPTOR: //设置描述符
+ 783   5             #ifdef DEBUG0
+                      Prints("设置描述符。\r\n");
+                     #endif
+ 786   5            break;
+ 787   5            
+ 788   5            case SET_FEATURE: //设置特性
+ 789   5             #ifdef DEBUG0
+                      Prints("设置特性。\r\n");
+                     #endif
+ 792   5            break;
+ 793   5      
+ 794   5            case SET_INTERFACE: //设置接口
+ 795   5             #ifdef DEBUG0
+                      Prints("设置接口。\r\n");
+                     #endif
+ 798   5             //返回一个0长度的状态数据包
+ 799   5             SendLength=0;
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 14  
+
+ 800   5             NeedZeroPacket=1;
+ 801   5             //将数据通过EP0返回
+ 802   5             UsbEp0SendData();
+ 803   5            break;
+ 804   5            
+ 805   5            default:  //未定义的标准请求
+ 806   5             #ifdef DEBUG0
+                      Prints("错误：未定义的标准输出请求。\r\n");
+                     #endif       
+ 809   5            break;
+ 810   5           }
+ 811   4          break;
+ 812   4          
+ 813   4          case 1:  //类请求
+ 814   4           #ifdef DEBUG0
+                    Prints("USB类输出请求：");
+                   #endif
+ 817   4           switch(bRequest)
+ 818   4           {
+ 819   5            case MASS_STORAGE_RESET:
+ 820   5             #ifdef DEBUG0
+                      Prints("大容量存储设备复位。\r\n");
+                     #endif
+ 823   5             
+ 824   5             //接下来的数据为命令阶段(CBW)
+ 825   5             TransportStage=COMMAND_STAGE;
+ 826   5             //返回一个0长度的数据包
+ 827   5             SendLength=0;
+ 828   5             NeedZeroPacket=1;
+ 829   5             //将数据通过EP0返回
+ 830   5             UsbEp0SendData();
+ 831   5            break;
+ 832   5            
+ 833   5            default:
+ 834   5             #ifdef DEBUG0
+                      Prints("未知请求。\r\n");
+                     #endif
+ 837   5            break;
+ 838   5           }
+ 839   4          break;
+ 840   4          
+ 841   4          case 2:  //厂商请求
+ 842   4           #ifdef DEBUG0
+                    Prints("USB厂商输出请求：\r\n");
+                   #endif
+ 845   4          break;
+ 846   4          
+ 847   4          default: //未定义的请求。这里只显示一个报错信息。
+ 848   4           #ifdef DEBUG0
+                    Prints("错误：未定义的输出请求。\r\n");
+                   #endif
+ 851   4          break;
+ 852   4         }
+ 853   3        }
+ 854   2       }
+ 855   1       //普通数据输出
+ 856   1       else //if(D12ReadEndpointLastStatus(0)&0x20)之else
+ 857   1       {
+ 858   2        D12ReadEndpointBuffer(0,16,Buffer);
+ 859   2        D12ClearBuffer();
+ 860   2       }
+ 861   1      }
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 15  
+
+ 862          ////////////////////////End of function//////////////////////////////
+ 863          
+ 864          /********************************************************************
+ 865          函数功能：端点0输入中断处理函数。
+ 866          入口参数：无。
+ 867          返    回：无。
+ 868          备    注：无。
+ 869          ********************************************************************/
+ 870          void UsbEp0In(void)
+ 871          {
+ 872   1      #ifdef DEBUG0
+               Prints("USB端点0输入中断。\r\n");
+              #endif
+ 875   1       //读最后发送状态，这将清除端点0的中断标志位
+ 876   1       D12ReadEndpointLastStatus(1);
+ 877   1       //发送剩余的字节数
+ 878   1       UsbEp0SendData();
+ 879   1      }
+ 880          ////////////////////////End of function//////////////////////////////
+ 881          
+ 882          /********************************************************************
+ 883          函数功能：端点1输出中断处理函数。
+ 884          入口参数：无。
+ 885          返    回：无。
+ 886          备    注：无。
+ 887          ********************************************************************/
+ 888          void UsbEp1Out(void)
+ 889          {
+ 890   1      #ifdef DEBUG0
+               Prints("USB端点1输出中断。\r\n");
+              #endif
+ 893   1       //读端点最后状态，这将清除端点1输出的中断标志位
+ 894   1       D12ReadEndpointLastStatus(2);
+ 895   1       //清除端点缓冲区
+ 896   1       D12ClearBuffer();
+ 897   1      }
+ 898          ////////////////////////End of function//////////////////////////////
+ 899          
+ 900          /********************************************************************
+ 901          函数功能：端点1输入中断处理函数。
+ 902          入口参数：无。
+ 903          返    回：无。
+ 904          备    注：无。
+ 905          ********************************************************************/
+ 906          void UsbEp1In(void)
+ 907          {
+ 908   1      #ifdef DEBUG0
+               Prints("USB端点1输入中断。\r\n");
+              #endif
+ 911   1       //读最后发送状态，这将清除端点1输入的中断标志位
+ 912   1       D12ReadEndpointLastStatus(3);
+ 913   1       //端点1输入处于空闲状态
+ 914   1       Ep1InIsBusy=0;
+ 915   1      }
+ 916          ////////////////////////End of function//////////////////////////////
+ 917          
+ 918          /********************************************************************
+ 919          函数功能：端点2输出中断处理函数。
+ 920          入口参数：无。
+ 921          返    回：无。
+ 922          备    注：无。
+ 923          ********************************************************************/
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 16  
+
+ 924          void UsbEp2Out(void)
+ 925          {
+ 926   1       uint8 Len;
+ 927   1       
+ 928   1      #ifdef DEBUG0
+               Prints("USB端点2输出中断。\r\n");
+              #endif
+ 931   1      /*旧版代码，有BUG。修改在函数返回时清除中断
+ 932   1       //当双缓冲没有全满时，可以清除中断标志
+ 933   1       if((D12ReadEndpointStatus(4)&0x60)!=0x60)
+ 934   1       {
+ 935   1        //读最后发送状态，这将清除端点2输入的中断标志位
+ 936   1        D12ReadEndpointLastStatus(4);
+ 937   1       }
+ 938   1      */
+ 939   1       if(TransportStage==COMMAND_STAGE)
+ 940   1       {
+ 941   2        //将数据读回到CBW缓冲区中
+ 942   2        Len=D12ReadEndpointBuffer(4,sizeof(CBW),CBW);
+ 943   2        //清除端点缓冲区
+ 944   2        D12ClearBuffer();
+ 945   2        if(Len==31) //如果接收到的数据长度是31字节，则说明是CBW
+ 946   2        {
+ 947   3         //检查CBW的签名是否正确，签名为“USBC”
+ 948   3         if((CBW[0]=='U')&&(CBW[1]=='S')&&(CBW[2]=='B')&&(CBW[3]=='C'))
+ 949   3         {
+ 950   4          //CBW签名正确，处理SCSI命令
+ 951   4          ProcScsiCommand();
+ 952   4         }
+ 953   3        }
+ 954   2       }
+ 955   1       else if(TransportStage==DATA_STAGE)
+ 956   1       {
+ 957   2        ProcScsiOutData(); //处理SCSI输出数据
+ 958   2       }
+ 959   1       else
+ 960   1       {
+ 961   2        D12ReadEndpointBuffer(4,0,0);
+ 962   2        D12ClearBuffer();
+ 963   2       }
+ 964   1       //当两个缓冲区中都没有数据时，才能清除中断标志
+ 965   1       if(!(D12ReadEndpointStatus(4)&0x60))
+ 966   1       {
+ 967   2        //读最后发送状态，这将清除端点2输入的中断标志位
+ 968   2        D12ReadEndpointLastStatus(4);
+ 969   2       }
+ 970   1      }
+ 971          ////////////////////////End of function//////////////////////////////
+ 972          
+ 973          /********************************************************************
+ 974          函数功能：端点2输入中断处理函数。
+ 975          入口参数：无。
+ 976          返    回：无。
+ 977          备    注：无。
+ 978          ********************************************************************/
+ 979          void UsbEp2In(void)
+ 980          {
+ 981   1      #ifdef DEBUG0
+               Prints("USB端点2输入中断。\r\n");
+              #endif
+ 984   1       //读最后发送状态，这将清除端点2输入的中断标志位
+ 985   1       D12ReadEndpointLastStatus(5);
+C51 COMPILER V7.06   USBCORE                                                               04/13/2009 14:23:53 PAGE 17  
+
+ 986   1       Ep2SendData();  //发送数据
+ 987   1       //如果双缓冲区没有都满，还可以再写
+ 988   1       if((D12ReadEndpointStatus(5)&0x06)!=0x06)
+ 989   1       {
+ 990   2        Ep2SendData(); //再发一次数据，利用双缓冲
+ 991   2       }
+ 992   1      }
+ 993          ////////////////////////End of function//////////////////////////////
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    889    ----
+   CONSTANT SIZE    =    191    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     18       1
+   IDATA SIZE       =     60    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

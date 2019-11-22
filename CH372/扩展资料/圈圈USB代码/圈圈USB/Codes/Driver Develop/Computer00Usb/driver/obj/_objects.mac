@@ -1,0 +1,21 @@
+386_OBJECTS= \
+    $(_OBJ_DIR)\i386\computer00usb.res \
+    $(_OBJ_DIR)\i386\computer00usbdriver.obj \
+    $(_OBJ_DIR)\i386\computer00usbdevice.obj
+
+PASS0_386_OBJECTS=
+
+IA64_OBJECTS= \
+    $(_OBJ_DIR)\ia64\computer00usb.res \
+    $(_OBJ_DIR)\ia64\computer00usbdriver.obj \
+    $(_OBJ_DIR)\ia64\computer00usbdevice.obj
+
+PASS0_IA64_OBJECTS=
+
+AMD64_OBJECTS= \
+    $(_OBJ_DIR)\amd64\computer00usb.res \
+    $(_OBJ_DIR)\amd64\computer00usbdriver.obj \
+    $(_OBJ_DIR)\amd64\computer00usbdevice.obj
+
+PASS0_AMD64_OBJECTS=
+

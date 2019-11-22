@@ -1,0 +1,17 @@
+BUILD: Examining f:\driver~1\myusbl~1\driver directory for files to compile.
+Compiling f:\driver~1\myusbl~1\driver directory ********************
+'nmake.exe /c BUILDMSG=Stop. -i NTTEST= UMTEST= NOLINK=1 386=1'
+1>    rc -l 409 -DSXS_ASSEMBLY_NAME=""""""  -DSXS_ASSEMBLY_VERSION=""""""  -DSXS_ASSEMBLY_LANGUAGE=""""""  -DSXS_PROCESSOR_ARCHITECTURE="""x86"""  -DSXS_TARGET="""MyUsbLowerFilter.sys"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -z "MS Sans Serif,Helv/MS Shell Dlg"  -r -fo objchk\i386\myusblowerfilter.tmp -D_X86_=1 -Di386=1  -DSTD_CALL -DCONDITION_HANDLING=1   -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 -DWINNT=1 -D_WIN32_WINNT=0x0501 /DWINVER=0x0501 -D_WIN32_IE=0x0600    -DWIN32_LEAN_AND_MEAN=1 -DDBG=1 -DDEVL=1 -D__BUILDMACHINE__=WinDDK -DFPO=0  -DNDEBUG -D_DLL=1  -DNTVERSION='WDM'   -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\..\common\include\stl -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include -Id:\WINDDK\2600\inc\ddk\wxp -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\source -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_vxd -Iobjchk\i386 -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\ddk\wdm\wxp -Id:\WINDDK\2600\inc\crt .\myusblowerfilter.rc
+1>
+1>
+1>cl -nologo -Ii386\ -I. -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\..\common\include\stl -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include -Id:\WINDDK\2600\inc\ddk\wxp -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\source -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_vxd -Iobjchk\i386 -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\ddk\wdm\wxp -Id:\WINDDK\2600\inc\crt -D_X86_=1 -Di386=1  -DSTD_CALL -DCONDITION_HANDLING=1   -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 -DWINNT=1 -D_WIN32_WINNT=0x0501 /DWINVER=0x0501 -D_WIN32_IE=0x0600    -DWIN32_LEAN_AND_MEAN=1 -DDBG=1 -DDEVL=1 -D__BUILDMACHINE__=WinDDK -DFPO=0  -DNDEBUG -D_DLL=1  -DNTVERSION='WDM'     /c /Zel /Zp8 /Gy -cbstring /W3 /WX /Gz  /QIfdiv- /QIf /G6 /Gi- /Gm- /GX-  /GR- /GF  -Z7 /Od /Oi /Oy-   -FId:\WINDDK\2600\inc\wxp\warning.h     .\myusblowerfilterdriver.cpp
+1>myusblowerfilterdriver.cpp
+1>cl -nologo -Ii386\ -I. -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\..\common\include\stl -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include -Id:\WINDDK\2600\inc\ddk\wxp -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\source -ID:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_vxd -Iobjchk\i386 -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\ddk\wdm\wxp -Id:\WINDDK\2600\inc\crt -D_X86_=1 -Di386=1  -DSTD_CALL -DCONDITION_HANDLING=1   -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 -DWINNT=1 -D_WIN32_WINNT=0x0501 /DWINVER=0x0501 -D_WIN32_IE=0x0600    -DWIN32_LEAN_AND_MEAN=1 -DDBG=1 -DDEVL=1 -D__BUILDMACHINE__=WinDDK -DFPO=0  -DNDEBUG -D_DLL=1  -DNTVERSION='WDM'     /c /Zel /Zp8 /Gy -cbstring /W3 /WX /Gz  /QIfdiv- /QIf /G6 /Gi- /Gm- /GX-  /GR- /GF  -Z7 /Od /Oi /Oy-   -FId:\WINDDK\2600\inc\wxp\warning.h     .\myusblowerfilterdevice.cpp
+1>myusblowerfilterdevice.cpp
+1>
+1>Stop.
+Linking f:\driver~1\myusbl~1\driver directory ********************
+'nmake.exe /c BUILDMSG=Stop. -i LINKONLY=1 NOPASS0=1 NTTEST= UMTEST= 386=1'
+1>NMAKE :  U1073: don't know how to make 'd:\WINDDK\2600\lib\wxp\i386\ntstrsafe.lib'
+1>Stop.
+BUILD: nmake.exe /c BUILDMSG=Stop. -i LINKONLY=1 NOPASS0=1 NTTEST= UMTEST= 386=1 failed - rc = 2

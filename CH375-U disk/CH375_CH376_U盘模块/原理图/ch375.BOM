@@ -1,0 +1,18 @@
+Bill of Material for ch375.Sch
+On 2010/5/1 at 15:16:54
+
+ Comment             Pattern     Quantity  Components
+------------------------------------------------------------------------------
+ 0.47uF              0805             1    C1                           Capacitor            
+ 104                 0805             2    C6, C7                       Capacitor            
+ 10nF                0805             1    C2                           Capacitor            
+ 10uF                1206             1    C3                           Capacitor            
+ 12M                 XTAL             1    Y2                           Crystal              
+ 1K                  0805             1    R2                                                
+ 22pF                0805             2    C4, C5                       Capacitor            
+ CH375               SOP28            1    U1                                                
+ CON3                SIP3             2    P_S, S                       Connector            
+ HEADER 8X2          IDC16            1    P                                                 
+ LED                 LED0805          1    D1                                                
+ LM1117-3.3          LM1117           1    U2                                                
+ USBZUO              USB              1    USB                                               

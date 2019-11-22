@@ -1,0 +1,10 @@
+"STARTUP.obj",
+"Main.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj",
+"SCSI.obj",
+"FAT.obj" 
+TO "UsbDisk" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )

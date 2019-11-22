@@ -1,0 +1,67 @@
+
+├─《圈圈教你玩USB》随书光盘光盘目录.txt (你所看到的这个文件)
+├─单片机自动弹奏《容易受伤的女人》.mp3 (MIDI键盘单片机自动弹奏录音)
+├─学习板照片.jpg
+├─圈圈的防伪LOGO(无此LOGO为冒牌产品).bmp
+├─字符串描述符生成工具.mht
+├─原理图.pdf(学习板原理图)
+├─EDN USB Board.rar
+├─21ic电工之歌
+├─北航出版社单片机与嵌入式系统图书推荐
+└─Codes (书中全部源代码文件夹)
+    ├─Driver Develop (驱动程序相关代码)
+    │  ├─Computer00Usb (第九章驱动代码)
+    │  │  ├─app (应用程序)
+    │  │  │  ├─obj
+    │  │  │  ├─objchk
+    │  │  │  │  └─i386
+    │  │  │  └─objfre
+    │  │  │      └─i386
+    │  │  └─driver (驱动程序)
+    │  │      ├─obj
+    │  │      ├─objchk
+    │  │      │  └─i386
+    │  │      └─objfre
+    │  │          └─i386
+    │  └─MyUsbLowerFilter (第十章驱动代码)
+    │      ├─driver (驱动程序)
+    │      │  ├─obj
+    │      │  ├─objchk
+    │      │  │  └─i386
+    │      │  └─objfre
+    │      │      └─i386
+    │      ├─FilterInstallerOfComputer00 (安装程序)
+    │      │  ├─Debug
+    │      │  ├─Release
+    │      │  └─res
+    │      └─install  (安装程序dll)
+    │          ├─obj
+    │          ├─objchk
+    │          │  └─i386
+    │          └─objfre
+    │              └─i386
+    ├─MyUsbDevice (第九章学习板固件代码(用户自定义设备))
+    ├─MyUsbDeviceTestApp (第九章应用程序代码)
+    │  ├─Debug
+    │  ├─Release
+    │  └─res
+    ├─MyUsbHid (第五章学习板固件代码(用户自定义HID设备))
+    ├─MyUsbHidTestApp (第五章应用程序代码)
+    │  ├─Debug
+    │  ├─Release
+    │  └─res
+    ├─TestBoard (第二章学习板固件代码(基本功能测试))
+    ├─UsbDisk   (第八章学习板固件代码(U盘))
+    ├─UsbKeyboard (第三章学习板固件代码(键盘))
+    ├─UsbKeyboardWithMouse (第三章学习板固件代码(带鼠标的键盘))
+    ├─UsbKeyboardWithMouse(TwoInterfaces) (第三章学习板固件代码(双接口实现的带鼠标键盘))
+    ├─UsbMidiKeyboard  (第七章学习板固件代码(MIDI键盘))
+    ├─UsbMouse         (第三章学习板固件代码(鼠标))
+    ├─UsbMultimediaKeyboard (第三章学习板固件代码(多媒体键盘))
+    ├─UsbToIde         (第八章学习板固件代码(USB转IDE))
+    ├—UsbToIde(CeparkV2.0版)    (第八章学习板固件代码(USB转IDE CeparkV2.0版))
+    └─UsbToUart        (第六章学习板固件代码(USB转串口))
+        └─Driver       (安装USB转串口驱动用的inf文件)
+
+
+

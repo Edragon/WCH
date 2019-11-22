@@ -1,0 +1,58 @@
+;INF file for usbhidio.
+;Example INF file for HIDs.
+
+[Version]
+Signature="$CHICAGO$"
+Class=HID
+
+;The GUID for HIDs
+ClassGUID={745a17a0-74d3-11d0-b6fe-00a0c90f57da}
+
+;The provider is the creator of the INF file.
+provider=%Provider%
+;
+;Specified the Windows 98 installation files needed to install the drivers.
+LayoutFile=layout.inf, layout1.inf
+
+[ClassInstall]
+;Install a class to the registry's Class section if needed.
+Addreg=Class.AddReg
+
+[Class.AddReg]
+;Add a class decription to the registry if needed.
+HKR,,Icon,,"-1"
+HKR,,Installer,,mmci.dll
+
+[Manufacturer]
+%MfgName%=USBComplete
+
+[USBComplete]
+;Specify the Product and Vendor IDs.
+;Uses Lakeview Research's Vendor ID (0925)
+;Uses the Product ID 1234
+%USB\VID_0925&PID_1234.DeviceDesc%=SampleHID, USB\VID_0925&PID_1234
+
+[DestinationDirs]
+;Specify the folder for Copyfiles.
+;11 is the system directory.
+USBHID.CopyList = 11             ; LDID_SYS
+;---------------------------------------------------------------;
+[SampleHID]
+CopyFiles=SampleHID.CopyList
+AddReg=SampleHID.AddReg
+
+[SampleHID.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,"hidusb.sys"
+
+[SampleHID.CopyList]
+;These are Windows 98's HID drivers.
+hidusb.sys
+hidclass.sys
+hidparse.sys
+;---------------------------------------------------------------;
+[Strings]
+Provider="Lakeview Research"
+MfgName="USB Complete"
+USB\VID_0925&PID_1234.DeviceDesc="Sample USB human interface device (HID)"
+

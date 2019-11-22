@@ -1,0 +1,9 @@
+"STARTUP.obj",
+"Main.obj",
+"Key.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj" 
+TO "UsbKeyboardWithMouse" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )

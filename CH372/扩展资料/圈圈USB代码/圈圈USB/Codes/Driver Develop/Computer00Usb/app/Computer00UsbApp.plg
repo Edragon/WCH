@@ -1,0 +1,38 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Computer00UsbApp - Win32 Free--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x409 /fo"objfre\i386/Computer00UsbApp.res" /d "NDEBUG" "G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\App\Computer00UsbApp.rc"" 
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP48.tmp" with contents
+[
+/nologo /Gz /MT /W3 /GX /O2 /I "d:\WINDDK\2600\inc\wxp" /I "d:\WINDDK\2600\inc\crt" /I "d:\WINDDK\2600\inc\crt\atl30" /D "_UNICODE" /D "UNICODE" /D _X86_=1 /D i386=1 /D "STD_CALL" /D CONDITION_HANDLING=1 /D NT_INST=0 /D WIN32=100 /D _NT1X_=100 /D WINNT=1 /D WIN32_LEAN_AND_MEAN=1 /D DEVL=1 /D FPO=0 /D "NDEBUG" /D _WIN32_WINNT=0x0501 /D WINVER=0x0501 /D _WIN32_IE=0x0603 /D NTDDI_VERSION=0x05010000 /Fp"objfre\i386/Computer00UsbApp.pch" /YX /Fo"objfre\i386/" /Fd"objfre/i386/Computer00UsbApp.pdb" /FD /c 
+"G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\App\Computer00UsbApp.cpp"
+"G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\Computer00Usb\App\Computer00UsbIorw.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP48.tmp" 
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP49.tmp" with contents
+[
+setupapi.lib kernel32.lib user32.lib libcmt.lib advapi32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib ntdll.lib /nologo /dll /incremental:no /pdb:"objfre\i386/Computer00UsbApp.pdb" /machine:I386 /nodefaultlib /out:"objfre\i386\Computer00UsbApp.exe" /implib:"objfre\i386/Computer00UsbApp.lib" /libpath:"d:\WINDDK\2600\lib\wxp\i386" /libpath:"d:\WINDDK\2600\lib\wxp\i386" /ignore:4010,4037,4039,4065,4070,4078,4087,4089,4221,4210 
+".\objfre\i386\Computer00UsbApp.obj"
+".\objfre\i386\Computer00UsbIorw.obj"
+".\objfre\i386\Computer00UsbApp.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP49.tmp"
+<h3>Output Window</h3>
+Compiling resources with DDK resource compiler...
+Compiling with DDK compiler...
+Computer00UsbApp.cpp
+Computer00UsbIorw.cpp
+Linking with DDK linker...
+
+
+
+<h3>Results</h3>
+Computer00UsbApp.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

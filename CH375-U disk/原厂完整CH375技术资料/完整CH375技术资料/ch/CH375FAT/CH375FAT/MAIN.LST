@@ -1,0 +1,313 @@
+C51 COMPILER V7.06   MAIN                                                                  02/24/2005 15:49:36 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN MAIN.OBJ
+COMPILER INVOKED BY: F:\KEIL\C51\BIN\C51.EXE MAIN.C DEBUG OBJECTEXTEND CODE
+
+stmt level    source
+
+   1          #include "common.h"
+   2          #include <string.h>
+   3          
+   4          unsigned char xdata DBUF[BUFFER_LENGTH];
+   5          XXGFLAGS bdata bXXGFlags;
+   6          
+   7          extern unsigned char xdata CHBUF[CHBUF_LENGTH];
+   8          extern SYS_INFO_BLOCK xdata DeviceInfo;
+   9          extern CH_CMD_BLOCK xdata CHCmdBlock;
+  10          extern CH_RSP_BLOCK xdata CHRspBlock;
+  11          extern FILE_INFO xdata ThisFile;
+  12          extern FREE_FAT_INFO xdata FreeFat;
+  13          code unsigned char cmd_test_createfile[]=
+  14                  {
+  15                   0x54,0x45,0x53,0x54,0x20,0x20,0x20,0x20,
+  16                   0x54,0x58,0x54,0x20,0x00,0x00,0x00,0x00,
+  17                   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  18                   0x21,0x30,0x00,0x00,0x20,0x20,0x20,0x20,
+  19                   0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
+  20                   0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  21                   0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  22                   0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00
+  23                   };
+  24          code unsigned char cmd_test_writefile[]=
+  25                  {
+  26                  0x09,
+  27                  0x00,
+  28                  0x00,0x70,
+  29                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  30                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  31                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  32                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  33                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  34                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+  35                  0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00
+  36                  };
+  37          /* 将程序空间的字符串复制到内部RAM中,返回字符串长度 */
+  38          void    mCopyCodeStringToIRAM( unsigned char *iDestination, unsigned char code *iSource, unsigned char len)
+  39          {
+  40   1              //unsigned char i = 0;
+  41   1              while ( len ) {
+  42   2                              *iDestination = *iSource;
+  43   2                      iDestination ++;
+  44   2                      iSource ++;
+  45   2                      len --;
+  46   2              }
+  47   1      //      return( i );
+  48   1      }
+  49          void Init_Port()
+  50          {
+  51   1              P0 = 0xFF;
+  52   1              P1 = 0xFF;
+  53   1              P2 = 0xFF;
+  54   1              P3 = 0xFF;
+  55   1      }
+C51 COMPILER V7.06   MAIN                                                                  02/24/2005 15:49:36 PAGE 2   
+
+  56          void    mInitSTDIO( )
+  57          {
+  58   1              SCON = 0x50;
+  59   1              PCON = 0x80;
+  60   1              TMOD = 0x20;
+  61   1              TH1 = 0xf3;  /* 24MHz晶振, 9600bps */
+  62   1              TR1 = 1;
+  63   1              TI = 0;
+  64   1      }
+  65          
+  66          
+  67          void main(void)
+  68          {
+  69   1              unsigned char  temp;
+  70   1              unsigned char mIntStatus,retStatus;
+  71   1              unsigned int len,tempDataLength;
+  72   1       
+  73   1              Init_Port();
+  74   1      //      mInitSTDIO( );  /* 为了从串口输出监控信息,调试完成后应该禁止 */
+  75   1      
+  76   1      //      printf( "star \n" );
+  77   1              if ( !mCH375Init( ) ) {
+  78   2      //              printf( "Check hardware connect, and use CH375A, not CH375S \n" );
+  79   2                      while(1);
+  80   2              }
+  81   1              //mInitSTDIO( );
+  82   1      //      printf( " wait usb connect  \n" );
+  83   1              DelayMs(50);
+  84   1              for(temp=0;temp<64;temp++)DBUF[temp]=0;
+  85   1              mIntStatus = mWaitInterrupt( );  /* 等待中断并获取状态 */
+  86   1              if( mIntStatus != USB_INT_CONNECT ); /* U盘连接 */
+  87   1      
+  88   1              retStatus=EnumMassDev();
+  89   1              retStatus=GetCapacity();
+  90   1      
+  91   1                      
+  92   1                      strcpy( CHCmdBlock.CmdBlock.Cmd_OpenFile.filename, "CH375HFTC  " );  /* 文件名,该文件在C51子目录下 */
+  93   1      
+  94   1                      retStatus=OpenFile(CHCmdBlock.CmdBlock.Cmd_OpenFile.filename);
+  95   1                      len=ThisFile.LengthInByte;
+  96   1                      tempDataLength=ThisFile.LengthInByte;
+  97   1                      retStatus=ReadFile(len,CHBUF);
+  98   1      //
+  99   1                      //strcpy( CHCmdBlock.CmdBlock.Cmd_CreateFile.item, cmd_test_createfile );
+ 100   1      
+ 101   1                      mCopyCodeStringToIRAM( CHCmdBlock.CmdBlock.Cmd_CreateFile.item, cmd_test_createfile ,32);
+ 102   1      
+ 103   1                       retStatus=CreateFile(CHCmdBlock.CmdBlock.Cmd_CreateFile.item);
+ 104   1      
+ 105   1      //
+ 106   1              len=tempDataLength;
+ 107   1                      retStatus=WriteFile(len,CHBUF);
+ 108   1      
+ 109   1              //      strcpy( CHCmdBlock.CmdBlock.Cmd_RemoveFile.filename, "CH375HFTC  " );
+ 110   1          //  retStatus=RemoveFile(CHCmdBlock.CmdBlock.Cmd_RemoveFile.filename);
+ 111   1      
+ 112   1              while(1);
+ 113   1      
+ 114   1      }
+C51 COMPILER V7.06   MAIN                                                                  02/24/2005 15:49:36 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _mCopyCodeStringToIRAM (BEGIN)
+                                           ; SOURCE LINE # 38
+;---- Variable 'iSource' assigned to Register 'R4/R5' ----
+;---- Variable 'iDestination' assigned to Register 'R1/R2/R3' ----
+                                           ; SOURCE LINE # 39
+0000         ?C0001:
+                                           ; SOURCE LINE # 41
+0000 E500        R     MOV     A,len
+0002 6019              JZ      ?C0003
+                                           ; SOURCE LINE # 42
+0004 8D82              MOV     DPL,R5
+0006 8C83              MOV     DPH,R4
+0008 E4                CLR     A
+0009 93                MOVC    A,@A+DPTR
+000A 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 43
+000D 7401              MOV     A,#01H
+000F 29                ADD     A,R1
+0010 F9                MOV     R1,A
+0011 E4                CLR     A
+0012 3A                ADDC    A,R2
+0013 FA                MOV     R2,A
+                                           ; SOURCE LINE # 44
+0014 0D                INC     R5
+0015 BD0001            CJNE    R5,#00H,?C0016
+0018 0C                INC     R4
+0019         ?C0016:
+                                           ; SOURCE LINE # 45
+0019 1500        R     DEC     len
+                                           ; SOURCE LINE # 46
+001B 80E3              SJMP    ?C0001
+                                           ; SOURCE LINE # 48
+001D         ?C0003:
+001D 22                RET     
+             ; FUNCTION _mCopyCodeStringToIRAM (END)
+
+             ; FUNCTION Init_Port (BEGIN)
+                                           ; SOURCE LINE # 49
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 51
+0000 7580FF            MOV     P0,#0FFH
+                                           ; SOURCE LINE # 52
+0003 7590FF            MOV     P1,#0FFH
+                                           ; SOURCE LINE # 53
+0006 75A0FF            MOV     P2,#0FFH
+                                           ; SOURCE LINE # 54
+0009 75B0FF            MOV     P3,#0FFH
+                                           ; SOURCE LINE # 55
+000C 22                RET     
+             ; FUNCTION Init_Port (END)
+
+             ; FUNCTION mInitSTDIO (BEGIN)
+                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 58
+0000 759850            MOV     SCON,#050H
+                                           ; SOURCE LINE # 59
+0003 758780            MOV     PCON,#080H
+                                           ; SOURCE LINE # 60
+C51 COMPILER V7.06   MAIN                                                                  02/24/2005 15:49:36 PAGE 4   
+
+0006 758920            MOV     TMOD,#020H
+                                           ; SOURCE LINE # 61
+0009 758DF3            MOV     TH1,#0F3H
+                                           ; SOURCE LINE # 62
+000C D28E              SETB    TR1
+                                           ; SOURCE LINE # 63
+000E C299              CLR     TI
+                                           ; SOURCE LINE # 64
+0010 22                RET     
+             ; FUNCTION mInitSTDIO (END)
+
+             ; FUNCTION main (BEGIN)
+                                           ; SOURCE LINE # 67
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 73
+0000 120000      R     LCALL   Init_Port
+                                           ; SOURCE LINE # 77
+0003 120000      E     LCALL   mCH375Init
+0006 EF                MOV     A,R7
+0007 7002              JNZ     ?C0006
+0009         ?C0007:
+                                           ; SOURCE LINE # 79
+0009 80FE              SJMP    ?C0007
+                                           ; SOURCE LINE # 80
+000B         ?C0006:
+                                           ; SOURCE LINE # 83
+000B 7F32              MOV     R7,#032H
+000D 120000      E     LCALL   _DelayMs
+                                           ; SOURCE LINE # 84
+;---- Variable 'temp' assigned to Register 'R7' ----
+0010         ?C0009:
+0010 7F40              MOV     R7,#040H
+0012 900000      R     MOV     DPTR,#DBUF
+0015 E4                CLR     A
+0016         ?C0017:
+0016 F0                MOVX    @DPTR,A
+0017 A3                INC     DPTR
+0018 DFFC              DJNZ    R7,?C0017
+001A 7F40              MOV     R7,#040H
+001C         ?C0010:
+                                           ; SOURCE LINE # 85
+001C 120000      E     LCALL   mWaitInterrupt
+001F 8F00        R     MOV     mIntStatus,R7
+                                           ; SOURCE LINE # 86
+0021         ?C0012:
+                                           ; SOURCE LINE # 88
+0021 120000      E     LCALL   EnumMassDev
+;---- Variable 'retStatus' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 89
+0024 120000      E     LCALL   GetCapacity
+                                           ; SOURCE LINE # 92
+0027 7800        E     MOV     R0,#LOW CHCmdBlock+01H
+0029 7C00        E     MOV     R4,#HIGH CHCmdBlock+01H
+002B 7D01              MOV     R5,#01H
+002D 7BFF              MOV     R3,#0FFH
+002F 7A00        R     MOV     R2,#HIGH ?SC_0
+0031 7900        R     MOV     R1,#LOW ?SC_0
+0033 120000      E     LCALL   ?C?STRCPY
+                                           ; SOURCE LINE # 94
+0036 7B01              MOV     R3,#01H
+0038 7A00        E     MOV     R2,#HIGH CHCmdBlock+01H
+003A 7900        E     MOV     R1,#LOW CHCmdBlock+01H
+C51 COMPILER V7.06   MAIN                                                                  02/24/2005 15:49:36 PAGE 5   
+
+003C 120000      E     LCALL   _OpenFile
+                                           ; SOURCE LINE # 95
+003F 900000      E     MOV     DPTR,#ThisFile+05H
+0042 E0                MOVX    A,@DPTR
+0043 FC                MOV     R4,A
+0044 A3                INC     DPTR
+0045 E0                MOVX    A,@DPTR
+;---- Variable 'len' assigned to Register 'R2/R3' ----
+0046 AA04              MOV     R2,AR4
+                                           ; SOURCE LINE # 96
+0048 8C00        R     MOV     tempDataLength,R4
+004A F500        R     MOV     tempDataLength+01H,A
+                                           ; SOURCE LINE # 97
+004C FF                MOV     R7,A
+004D AE02              MOV     R6,AR2
+004F 7B01              MOV     R3,#01H
+0051 7A00        E     MOV     R2,#HIGH CHBUF
+0053 7900        E     MOV     R1,#LOW CHBUF
+0055 120000      E     LCALL   _ReadFile
+                                           ; SOURCE LINE # 101
+0058 7B01              MOV     R3,#01H
+005A 7A00        E     MOV     R2,#HIGH CHCmdBlock+01H
+005C 7900        E     MOV     R1,#LOW CHCmdBlock+01H
+005E 7C00        R     MOV     R4,#HIGH cmd_test_createfile
+0060 7D00        R     MOV     R5,#LOW cmd_test_createfile
+0062 750020      R     MOV     ?_mCopyCodeStringToIRAM?BYTE+05H,#020H
+0065 120000      R     LCALL   _mCopyCodeStringToIRAM
+                                           ; SOURCE LINE # 103
+0068 7A00        E     MOV     R2,#HIGH CHCmdBlock+01H
+006A 7900        E     MOV     R1,#LOW CHCmdBlock+01H
+006C 120000      E     LCALL   _CreateFile
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 107
+006F AF00        R     MOV     R7,tempDataLength+01H
+0071 AE00        R     MOV     R6,tempDataLength
+0073 7B01              MOV     R3,#01H
+0075 7A00        E     MOV     R2,#HIGH CHBUF
+0077 7900        E     MOV     R1,#LOW CHBUF
+0079 120000      E     LCALL   _WriteFile
+007C         ?C0013:
+                                           ; SOURCE LINE # 112
+007C 80FE              SJMP    ?C0013
+             ; FUNCTION main (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    186    ----
+   CONSTANT SIZE    =    136    ----
+   XDATA SIZE       =    512    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       9
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

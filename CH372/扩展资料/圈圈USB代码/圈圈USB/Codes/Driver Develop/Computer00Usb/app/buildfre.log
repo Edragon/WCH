@@ -1,0 +1,57 @@
+BUILD: Examining f:\driver~1\co445c~1\app directory for files to compile.
+Compiling f:\driver~1\co445c~1\app directory ********************
+'nmake.exe /c BUILDMSG=Stop. -i NTTEST= UMTEST= NOLINK=1 386=1'
+1>    rc -l 409 -DSXS_ASSEMBLY_NAME=""""""  -DSXS_ASSEMBLY_VERSION=""""""  -DSXS_ASSEMBLY_LANGUAGE=""""""  -DSXS_PROCESSOR_ARCHITECTURE="""x86"""  -DSXS_TARGET="""Computer00UsbApp.exe"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -z "MS Sans Serif,Helv/MS Shell Dlg"  -r -fo objfre\i386\computer00usbapp.tmp -D_X86_=1 -Di386=1  -DSTD_CALL -DCONDITION_HANDLING=1   -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 -DWINNT=1 -D_WIN32_WINNT=0x0501 /DWINVER=0x0501 -D_WIN32_IE=0x0600    -DWIN32_LEAN_AND_MEAN=1 -DDEVL=1 -D__BUILDMACHINE__=WinDDK -DFPO=1  -DNDEBUG -D_DLL=1 -D_MT=1  -DUNICODE -D_UNICODE   -Iobjfre\i386 -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\crt .\computer00usbapp.rc
+1>
+1>
+1>cl -nologo -Ii386\ -I. -Iobjfre\i386 -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\crt -D_X86_=1 -Di386=1  -DSTD_CALL -DCONDITION_HANDLING=1   -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 -DWINNT=1 -D_WIN32_WINNT=0x0501 /DWINVER=0x0501 -D_WIN32_IE=0x0600    -DWIN32_LEAN_AND_MEAN=1 -DDEVL=1 -D__BUILDMACHINE__=WinDDK -DFPO=1  -DNDEBUG -D_DLL=1 -D_MT=1  -DUNICODE -D_UNICODE     /c /Zel /Zp8 /Gy  /W3 /WX /Gz  /QIfdiv- /QIf /G6 /Gi- /Gm- /GX-  /GR- /GF  -Z7 /Oxs /Oy   -FId:\WINDDK\2600\inc\wxp\warning.h     .\computer00usbapp.cpp
+1>computer00usbapp.cpp
+1>cl -nologo -Ii386\ -I. -Iobjfre\i386 -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\wxp -Id:\WINDDK\2600\inc\crt -D_X86_=1 -Di386=1  -DSTD_CALL -DCONDITION_HANDLING=1   -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 -DWINNT=1 -D_WIN32_WINNT=0x0501 /DWINVER=0x0501 -D_WIN32_IE=0x0600    -DWIN32_LEAN_AND_MEAN=1 -DDEVL=1 -D__BUILDMACHINE__=WinDDK -DFPO=1  -DNDEBUG -D_DLL=1 -D_MT=1  -DUNICODE -D_UNICODE     /c /Zel /Zp8 /Gy  /W3 /WX /Gz  /QIfdiv- /QIf /G6 /Gi- /Gm- /GX-  /GR- /GF  -Z7 /Oxs /Oy   -FId:\WINDDK\2600\inc\wxp\warning.h     .\computer00usbiorw.cpp
+1>computer00usbiorw.cpp
+1>
+1>Stop.
+Linking f:\driver~1\co445c~1\app directory ********************
+'nmake.exe /c BUILDMSG=Stop. -i LINKONLY=1 NOPASS0=1 NTTEST= UMTEST= 386=1'
+1>	link -out:objfre\i386\Computer00UsbApp.exe -machine:ix86 @C:\DOCUME~1\ibm\LOCALS~1\Temp\nma02972.
+1>Microsoft (R) Incremental Linker Version 7.00.9210
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1>
+1>-MERGE:_PAGE=PAGE 
+1>-MERGE:_TEXT=.text 
+1>-SECTION:INIT,d 
+1>-OPT:REF 
+1>-OPT:ICF 
+1>-IGNORE:4010,4037,4039,4065,4070,4078,4087,4089,4198,4221 
+1>-INCREMENTAL:NO 
+1>-FULLBUILD 
+1>/release 
+1>-NODEFAULTLIB 
+1>/WX 
+1>-debug:FULL 
+1>-debugtype:cv 
+1>-version:5.1 
+1>-osversion:5.1 
+1>/opt:nowin98 
+1>-STACK:0x40000,0x1000 
+1>-merge:.rdata=.text 
+1>/tsaware 
+1>-subsystem:windows,4.00 
+1>-base:0x01000000 
+1>-entry:WinMainCRTStartup 
+1>objfre\i386\computer00usbapp.res 
+1>objfre\i386\computer00usbapp.obj 
+1>objfre\i386\computer00usbiorw.obj 
+1>d:\WINDDK\2600\lib\wxp\i386\msvcrt.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\advapi32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\kernel32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\gdi32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\user32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\setupapi.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\kernel32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\advapi32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\comctl32.lib 
+1>d:\WINDDK\2600\lib\wxp\i386\user32.lib 
+1>/debugtype:vc6 
+1>Skip Binplace:
+1>
+1>Stop.

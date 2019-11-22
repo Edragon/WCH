@@ -1,5 +1,0 @@
-"Debug.obj",
-"USBHostHUB_KM.obj",
-"USBHOST.obj" 
-TO "CH554DEMO" 
-RAMSIZE(256) 

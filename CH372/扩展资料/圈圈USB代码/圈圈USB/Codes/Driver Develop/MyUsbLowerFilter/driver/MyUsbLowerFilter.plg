@@ -1,0 +1,58 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: MyUsbLowerFilter - Win32 Checked--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x409 /fo".\objchk\i386/MyUsbLowerFilter.res" /i "d:\WINDDK\2600\inc\crt" /d "_DEBUG" /d NTVERSION='WDM' "G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\MyUsbLowerFilter\Driver\MyUsbLowerFilter.rc"" 
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP81.tmp" with contents
+[
+/nologo /Gz /ML /W3 /Zi /Oi /Gy /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\..\common\include\stl" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\source" /I "d:\WINDDK\2600\inc\wxp" /I "d:\WINDDK\2600\inc\crt" /I "d:\WINDDK\2600\inc\ddk\wxp" /I "d:\WINDDK\2600\inc\ddk\wdm\wxp" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_vxd" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_wdm" /I "D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\include\dep_ndis" /FI"warning.h" /D _X86_=1 /D i386=1 /D "STD_CALL" /D CONDITION_HANDLING=1 /D NT_INST=0 /D WIN32=100 /D _NT1X_=100 /D WINNT=1 /D WIN32_LEAN_AND_MEAN=1 /D DEVL=1 /D FPO=0 /D "NDEBUG" /D _DLL=1 /D DBG=1 /D "DEPRECATE_DDK_FUNCTIONS" /D _WIN32_WINNT=0x0501 /D WINVER=0x0501 /D _WIN32_IE=0x0603 /D NTDDI_VERSION=0x05010000 /D NTVERSION='WDM' /FR".\objchk\i386/" /Fo".\objchk\i386/" /Fd".\objchk\i386\MyUsbLowerFilter.pdb" /Zel -cbstring /GF /c 
+"G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\MyUsbLowerFilter\Driver\MyUsbLowerFilterDevice.cpp"
+"G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\MyUsbLowerFilter\Driver\MyUsbLowerFilterDriver.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP81.tmp" 
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP82.tmp" with contents
+[
+ntoskrnl.lib hal.lib vdw_wdm.lib usbd.lib /nologo /base:"0x10000" /version:5.0 /stack:0x40000,0x1000 /entry:"DriverEntry" /incremental:no /pdb:".\objchk\i386/MyUsbLowerFilter.pdb" /debug /machine:IX86 /nodefaultlib /out:".\objchk\i386\MyUsbLowerFilter.sys" /libpath:"d:\WINDDK\2600\lib\wxp\i386" /libpath:"D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\lib\i386\checked" /libpath:"D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~3\lib\i386\checked" /driver /MERGE:_PAGE=PAGE /MERGE:_TEXT=.text /SECTION:INIT,d /MERGE:.rdata=.text /FULLBUILD /RELEASE /OPT:REF /OPT:ICF /align:0x80 /osversion:5.00 /subsystem:native,1.10 /ignore:4010,4037,4039,4065,4070,4078,4087,4089,4099,4221,4210 
+".\objchk\i386\MyUsbLowerFilterDevice.obj"
+".\objchk\i386\MyUsbLowerFilterDriver.obj"
+".\objchk\i386\MyUsbLowerFilter.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP82.tmp"
+Creating temporary file "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP83.bat" with contents
+[
+@echo off
+D:\PROGRA~1\COMPUW~1\DRIVER~1\DRIVER~4\bin\nmsym /trans:source,package,always .\objchk\i386\MyUsbLowerFilter.sys
+]
+Creating command line "C:\DOCUME~1\ibm\LOCALS~1\Temp\RSP83.bat"
+Compiling resources with DDK resource compiler...
+Compiling with DDK compiler...
+MyUsbLowerFilterDevice.cpp
+MyUsbLowerFilterDriver.cpp
+Generating Code...
+Linking with DDK linker...
+<h3>Output Window</h3>
+---------------------------Build SoftICE Symbols----------------------------
+
+Compuware NM32 Symbol Translator/Loader version 4.3.2
+(C) Compuware Corporation, 1996-2004
+
+MODULE=.\objchk\i386\MyUsbLowerFilter.sys
+PROMPT=OFF
+SoftICE is not active
+Error translating G:\USB book\°∂»¶»¶ΩÃƒ„ÕÊUSB°∑ÀÊ Èπ‚≈Ã\Codes\Driver Develop\MyUsbLowerFilter\Driver\objchk\i386\MyUsbLowerFilter.sys: Matching PDB file not found.
+Error executing c:\windows\system32\cmd.exe.
+Creating command line "bscmake.exe /nologo /o".\objchk\i386/MyUsbLowerFilter.bsc"  ".\objchk\i386\MyUsbLowerFilterDevice.sbr" ".\objchk\i386\MyUsbLowerFilterDriver.sbr""
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+MyUsbLowerFilter.sys - 1 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

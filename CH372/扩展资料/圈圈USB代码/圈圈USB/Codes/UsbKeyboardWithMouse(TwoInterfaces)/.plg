@@ -1,0 +1,89 @@
+<html>
+<body>
+<pre>
+<h1>µVision3 Build Log</h1>
+<h2>Project:</h2>
+G:\USB book\Codes\UsbKeyboardWithMouse(TwoInterfaces)\UsbKeyboardWithMouseUsbKeyboardWithMouse(TwoInterfaces).uv2
+Project File Date:  07/15/2008
+
+<h2>Output:</h2>
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling Main.c...
+compiling Key.c...
+compiling UART.c...
+compiling PDIUSBD12.c...
+compiling UsbCore.c...
+linking...
+BL51 BANKED LINKER/LOCATER V5.03 - SN: K1DZP-5IUSHE
+COPYRIGHT KEIL ELEKTRONIK GmbH 1987 - 2002
+"STARTUP.obj",
+"Main.obj",
+"Key.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj" 
+TO "" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )
+*** FATAL ERROR L203: EXPECTED ITEM MISSING
+    POS: 89
+    RTUP.obj, Main.obj, Key.obj, UART.obj, PDIUSBD12.obj, UsbCore.obj TO  #
+Target not created
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling Main.c...
+compiling Key.c...
+compiling UART.c...
+compiling PDIUSBD12.c...
+compiling UsbCore.c...
+linking...
+BL51 BANKED LINKER/LOCATER V5.03 - SN: K1DZP-5IUSHE
+COPYRIGHT KEIL ELEKTRONIK GmbH 1987 - 2002
+"STARTUP.obj",
+"Main.obj",
+"Key.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj" 
+TO "" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )
+*** FATAL ERROR L203: EXPECTED ITEM MISSING
+    POS: 89
+    RTUP.obj, Main.obj, Key.obj, UART.obj, PDIUSBD12.obj, UsbCore.obj TO  #
+Target not created
+Build target 'Target 1'
+linking...
+BL51 BANKED LINKER/LOCATER V5.03 - SN: K1DZP-5IUSHE
+COPYRIGHT KEIL ELEKTRONIK GmbH 1987 - 2002
+"STARTUP.obj",
+"Main.obj",
+"Key.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj" 
+TO "" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )
+*** FATAL ERROR L203: EXPECTED ITEM MISSING
+    POS: 89
+    RTUP.obj, Main.obj, Key.obj, UART.obj, PDIUSBD12.obj, UsbCore.obj TO  #
+Target not created
+Build target 'Target 1'
+linking...
+BL51 BANKED LINKER/LOCATER V5.03 - SN: K1DZP-5IUSHE
+COPYRIGHT KEIL ELEKTRONIK GmbH 1987 - 2002
+"STARTUP.obj",
+"Main.obj",
+"Key.obj",
+"UART.obj",
+"PDIUSBD12.obj",
+"UsbCore.obj" 
+TO "" 
+RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )
+*** FATAL ERROR L203: EXPECTED ITEM MISSING
+    POS: 89
+    RTUP.obj, Main.obj, Key.obj, UART.obj, PDIUSBD12.obj, UsbCore.obj TO  #
+Target not created

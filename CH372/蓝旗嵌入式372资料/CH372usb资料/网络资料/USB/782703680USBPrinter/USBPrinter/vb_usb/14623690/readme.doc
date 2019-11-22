@@ -1,0 +1,110 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f1\fswiss\fcharset0\fprq2{\*\panose 020b0604020202020204}Arial;}
+{\f3\froman\fcharset2\fprq2{\*\panose 05050102010706020507}Symbol;}{\f16\froman\fcharset238\fprq2 Times New Roman CE;}{\f17\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f19\froman\fcharset161\fprq2 Times New Roman Greek;}
+{\f20\froman\fcharset162\fprq2 Times New Roman Tur;}{\f21\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f22\fswiss\fcharset238\fprq2 Arial CE;}{\f23\fswiss\fcharset204\fprq2 Arial Cyr;}{\f25\fswiss\fcharset161\fprq2 Arial Greek;}
+{\f26\fswiss\fcharset162\fprq2 Arial Tur;}{\f27\fswiss\fcharset186\fprq2 Arial Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;
+\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{
+\sa60\nowidctlpar\widctlpar\adjustright \cgrid \snext0 Normal;}{\s1\sb240\sa60\keepn\nowidctlpar\widctlpar\adjustright \b\f1\fs28\kerning28\cgrid \sbasedon0 \snext0 heading 1;}{\s2\sb240\sa60\keepn\nowidctlpar\widctlpar\adjustright \b\i\f1\cgrid 
+\sbasedon0 \snext0 heading 2;}{\s3\sb240\sa60\keepn\nowidctlpar\widctlpar\adjustright \f1\cgrid \sbasedon0 \snext0 heading 3;}{\*\cs10 \additive Default Paragraph Font;}{\s15\fi720\sa60\nowidctlpar\widctlpar\adjustright \cgrid \sbasedon0 \snext15 
+Manuscript;}}{\*\listtable{\list\listtemplateid67698689\listsimple{\listlevel\levelnfc23\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'01\u-3913 ?;}{\levelnumbers;}\f3\fbias0 \fi-360\li360\jclisttab\tx360 }{\listname 
+;}\listid534391351}{\list\listtemplateid67698689\listsimple{\listlevel\levelnfc23\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'01\u-3913 ?;}{\levelnumbers;}\f3\fbias0 \fi-360\li360\jclisttab\tx360 }{\listname ;}\listid670959215
+}{\list\listtemplateid67698689\listsimple{\listlevel\levelnfc23\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'01\u-3913 ?;}{\levelnumbers;}\f3\fbias0 \fi-360\li360\jclisttab\tx360 }{\listname ;}\listid1183592143}
+{\list\listtemplateid67698689\listsimple{\listlevel\levelnfc23\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'01\u-3913 ?;}{\levelnumbers;}\f3\fbias0 \fi-360\li360\jclisttab\tx360 }{\listname ;}\listid1918785605}}
+{\*\listoverridetable{\listoverride\listid1183592143\listoverridecount0\ls1}{\listoverride\listid1918785605\listoverridecount0\ls2}{\listoverride\listid534391351\listoverridecount0\ls3}{\listoverride\listid670959215\listoverridecount0\ls4}}{\info
+{\title readme}{\author Preferred Customer}{\operator Preferred Customer}{\creatim\yr1999\mo11\dy28\hr11\min33}{\revtim\yr1999\mo12\dy15\hr21\min3}{\version3}{\edmins5}{\nofpages3}{\nofwords786}{\nofchars4482}{\*\company Dell Computer Corporation}
+{\nofcharsws0}{\vern71}}\widowctrl\ftnbj\aenddoc\makebackup\hyphcaps0\formshade\viewkind4\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2
+\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6
+\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang
+{\pntxtb (}{\pntxta )}}\pard\plain \s1\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Usbhidio
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {This is the readme file for the }{\i usbhidio}{ application, which includes host software and device firmware for communicating with USB HID-class devices.
+\par 
+\par Usbhidio is brought to you by
+\par }\pard \nowidctlpar\widctlpar\adjustright {Jan Axelson
+\par Lakeview Research
+\par 2209 Winnebago St.
+\par Madison, WI 53704
+\par Phone: 608-241-5824
+\par Fax: 608-241-5848
+\par http://www.lvr.com
+\par jan@lvr.com
+\par }\pard \sa60\nowidctlpar\widctlpar\adjustright {
+\par (}{\i Usbhidio}{ means Universal Serial Bus (usb) Human Interface Device (hid) Input/Ouput (io) application.)
+\par }\pard\plain \s2\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Files
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {\i Usbhidio}{ includes the following files:
+\par }\pard\plain \s3\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f1\cgrid {The Readme File
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {\i readme.doc}{ is this file.
+\par }\pard\plain \s3\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f1\cgrid {The PC\rquote s Inf File
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {\i Usbhidio.inf}{ is an INF file that tells Windows what drivers to use for the device. The device uses Windows\rquote  built-in HID drivers. You can view the file in any text editor.
+\par }\pard\plain \s3\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f1\cgrid {The Visual-Basic Project
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {In the directory }{\i VisualBasic}{:
+\par }{\i Usbhidio.vbp}{ is a Visual-Basic 6 project that finds the device and exchanges data with it.
+\par }{\i Apideclarations.bas}{ contains declarations for the Win32 API functions used in the project.
+\par }{\i frmMain.frm}{ is the project\rquote s form.
+\par }{\i usbhidio.exe}{ is the executable file created from }{\i usbhidio.vbp}{.
+\par }\pard\plain \s3\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f1\cgrid {The Device Code
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {In the directory }{\i CY7C63000}{:
+\par }{\i Usbhidio.asm}{ is assembly-code firmware for Cypress\rquote  CY763001 USB microcontroller. The code handles enumeration on attachment to a host, and can exchange data in both directions. The firmware conforms to the USB\rquote 
+s human-interface device (HID) class specification.
+\par }{\i Usbhidio.rom}{ is the assembled code for loading into the development board\rquote s memory.
+\par }{\i Usbhidio.lst}{ is the listing file produced by the assembler.
+\par }{\i Usbhidio.hex}{ is the Hex file produced by the assembler (for use with device programmers that accept Intel Hex files).
+\par }\pard\plain \s2\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {What You Need
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {To use this code, you need all of the following:
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls2\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls2\adjustright {A PC running Windows 98.
+
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls2\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls2\adjustright {Visual Basic 6, to load }{
+\i usbhidio.vbp}{.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls2\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls2\adjustright {Cypress\rquote 
+ 3650 development kit, which contains a development board, assembler, and a monitor program for loading and running the usbio firmware, or the Starter Kit (see Tips below).
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls2\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls2\adjustright {An understandin
+g of USB and HID communications. See }{\i http://www.lvr.com}{ for links to more information about USB and HIDs.
+\par }\pard\plain \s3\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f1\cgrid {Also helpful are:
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard\plain \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls1\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls1\adjustright \cgrid {The freeware }
+{\i USBCheck}{ and }{\i HIDView}{ utilities, available from }{\i http://www.usb.org}{ . These will tell you if the host successfully enumerated the device, and if so, will display the descriptors retrieved. HIDView can also read data from the device.
+
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls1\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls1\adjustright {
+Oscilloscope, logic analyzer, voltmeter, protocol analyzer. The USB transmissions are encoded in a way that makes it just about impossible to interpret the
+ data without a specialized protocol analyzer, but basic test equipment is still useful for debugging. For example, the firmware includes debug code that sets port bits when the code is in a particular routine.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls1\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls1\adjustright {
+The HID documentation in the Windows 98 DDK, in the WDM section. You can download the DDK from Microsoft.
+\par }\pard\plain \s2\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {How to Use the Code
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {1. Copy }{\i usbhidio.inf }{to your }{\i \\Windows\\Inf}{ directory.
+\par 2. Use the Cypress monitor program to load }{\i usbhidio.rom }{into the development board\rquote s memory. Press the Start button on the development board.
+\par 3. Close the monitor program.
+\par 4. Run }{\i USBCheck}{. Unplug and plug in the cable. Run the tests. View the results.
+\par 5. Run the }{\i HIDView}{ tests in }{\i USBCheck}{. View the results.
+\par 6. Unplug and replug the cable. Look for the device under Windows 98\rquote s }{\i Start Menu > Control Panel > System > Device Manager > Human Interface Devices}{. The device should be listed as  both \ldblquote HID-compliant device\rdblquote  and 
+\ldblquote Sample USB Human Interface Device (HID)\rdblquote .
+\par 7. Run Visual Basic. Load the usbhidio project. Run and view the results.
+\par 8. From this point, you can edit and experiment with the Visual-Basic and Cypress code as you wish. }{\i Usbhidio.asm}{ contains the source code for the firmware. Edit it with any text editor, save as plain text, re-assemble using Cypress\rquote 
+ Cyasm assembler, and use the monitor program to load the new version into the development board.
+\par 9. Send any comments, questions, bug reports, etc. to me at jan@lvr.com.
+\par }\pard\plain \s2\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Tips
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard\plain \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls3\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls3\adjustright \cgrid {
+When you run USBCheck and HIDView, Windows detects your device as a \ldblquote USB Diagnostic Device\rdblquote  (under }{\i Start Menu > Control Panel > System > Device Manager > Other Detected Devices}{. When you\rquote 
+re finished using the utilities, unplug and replug the USB cable to allow Windows to re-enumerate the board as a standard Human Interface Device.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls3\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls3\adjustright {ReadFile is 
+a blocking call. If the device has nothing to send, the Visual-Basic application will hang while it waits. The firmware is written so the device always has something to send. But if the application does hang, you can often restore control by unplugging an
+d replugging the USB cable. If that fails, press control-alt-delete and wait for the dialog box that enables you to close the application.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls3\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls3\adjustright {
+The firmware will run on the Starter Kit. Use the EPROM programmer to load }{\i usbhidio.hex}{ into a chip, insert the chip into the kit's socket, and attach the board to the bus. The code currently will fit in a 2k CY7C63000, or a 4k '63001.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls3\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls3\adjustright {
+To prevent errors, close the Cypress monitor program before you run USBCheck or HIDView.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls3\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls3\adjustright {If your PC doesn\rquote 
+t boot with the development board attached, unplug the USB cable, boot up, and reload the firmware.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls3\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls3\adjustright {After loading new firmware
+ on the development board, you must press the board's Start button, then unplug and replug the USB cable so that Windows will detect and enumerate the device with the new firmware.
+\par }\pard\plain \s3\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f1\cgrid {Tips for using Cyasm (the Cypress assembler):
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard\plain \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls4\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls4\adjustright \cgrid {
+Variable names are case-sensitive. }{\i Port0_data}{ is not the same as }{\i Port0_Data}{.
+\par {\pntext\pard\plain\f3\cgrid \loch\af3\dbch\af0\hich\f3 \'b7\tab}}\pard \fi-360\li360\sa60\nowidctlpar\widctlpar\jclisttab\tx360{\*\pn \pnlvlblt\ilvl0\ls4\pnrnot0\pnf3\pnstart1\pnindent360\pnhang{\pntxtb \'b7}}\ls4\adjustright {The \ldblquote ~\rdblquote 
+ signifies complement. For example, The complement of the variable \ldblquote test\rdblquote  is \ldblquote ~test\rdblquote . This is undocumented.
+\par }\pard\plain \s2\sb240\sa60\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Rights information
+\par }\pard\plain \sa60\nowidctlpar\widctlpar\adjustright \cgrid {The computer software provided in the }{\i usbhidio.zip}{ file is copyright 1999 by Jan Axelson. The software is provided as-is. You hav
+e a royalty-free right to use, modify, reproduce and distribute this software (and/or any modified version) in any way you find useful, provided that you agree that Jan Axelson and Lakeview Research have no warranty, obligation or liability for their cont
+ents!
+\par 
+\par I welcome any comments, bug reports, questions, etc. about this code. Contact me at jan@lvr.com .
+\par 
+\par Jan Axelson
+\par Lakeview Research
+\par }}
