@@ -1,0 +1,522 @@
+BL51 BANKED LINKER/LOCATER V6.00                                                        09/03/2007  15:40:51  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.00, INVOKED BY:
+D:\KEIL\C51\BIN\BL51.EXE USBEX.obj TO hid RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  USBEX.obj (USBEX)
+  D:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+  D:\KEIL\C51\LIB\C51S.LIB (?C?CSTPTR)
+
+
+LINK MAP OF MODULE:  hid (USBEX)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            IDATA   0008H     000BH     UNIT         _IDATA_GROUP_
+            IDATA   0013H     0009H     UNIT         ?ID?USBEX
+                    001CH     0004H                  *** GAP ***
+            BIT     0020H.0   0000H.2   UNIT         ?BI?USBEX
+                    0020H.2   000FH.6                *** GAP ***
+            DATA    0030H     000AH     ABSOLUTE     
+            DATA    003AH     0024H     UNIT         _DATA_GROUP_
+            DATA    005EH     0020H     UNIT         ?DT?USBEX
+            IDATA   007EH     0001H     UNIT         ?STACK
+
+            * * * * * * *  X D A T A   M E M O R Y  * * * * * * *
+                    0000H     BCF0H                  *** GAP ***
+            XDATA   BCF0H     0001H     ABSOLUTE     
+                    BCF1H     0100H                  *** GAP ***
+            XDATA   BDF1H     0001H     ABSOLUTE     
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     01E8H     UNIT         ?PR?MCH375INTERRUPT?USBEX
+            CODE    01EBH     00C5H     UNIT         ?PR?MAIN?USBEX
+            CODE    02B0H     0080H     UNIT         ?CO?USBEX
+            CODE    0330H     003FH     UNIT         ?PR?MCH375EP0UP?USBEX
+            CODE    036FH     001EH     UNIT         ?PR?MCH375DESUP?USBEX
+            CODE    038DH     001AH     UNIT         ?PR?UP_DATA?USBEX
+            CODE    03A7H     0012H     UNIT         ?C?LIB_CODE
+            CODE    03B9H     0011H     UNIT         ?PR?CH375_INIT?USBEX
+            CODE    03CAH     000FH     UNIT         ?PR?DELAY50MS?USBEX
+            CODE    03D9H     000EH     UNIT         ?PR?CH375_RD_DAT_PORT?USBEX
+            CODE    03E7H     000CH     UNIT         ?C_C51STARTUP
+            CODE    03F3H     0008H     UNIT         ?PR?_CH375_WR_CMD_PORT?USBEX
+            CODE    03FBH     0008H     UNIT         ?PR?_CH375_WR_DAT_PORT?USBEX
+            CODE    0403H     0005H     UNIT         ?PR?DELAY2US?USBEX
+            CODE    0408H     0001H     UNIT         ?PR?DELAY1US?USBEX
+
+
+
+OVERLAY MAP OF MODULE:   hid (USBEX)
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 2
+
+
+
+
+SEGMENT                                DATA_GROUP          IDATA_GROUP
+  +--> CALLED SEGMENT                START    LENGTH     START    LENGTH
+------------------------------------------------------------------------
+?C_C51STARTUP                        -----    -----      -----    -----
+  +--> ?PR?MAIN?USBEX
+
+?PR?MAIN?USBEX                       003AH    0012H      0008H    000BH
+  +--> ?PR?DELAY50MS?USBEX
+  +--> ?PR?CH375_INIT?USBEX
+  +--> ?PR?MCH375INTERRUPT?USBEX
+  +--> ?PR?UP_DATA?USBEX
+
+?PR?CH375_INIT?USBEX                 -----    -----      -----    -----
+  +--> ?PR?_CH375_WR_CMD_PORT?USBEX
+  +--> ?PR?_CH375_WR_DAT_PORT?USBEX
+  +--> ?PR?CH375_RD_DAT_PORT?USBEX
+
+?PR?_CH375_WR_CMD_PORT?USBEX         -----    -----      -----    -----
+  +--> ?PR?DELAY2US?USBEX
+
+?PR?_CH375_WR_DAT_PORT?USBEX         -----    -----      -----    -----
+  +--> ?PR?DELAY1US?USBEX
+
+?PR?CH375_RD_DAT_PORT?USBEX          -----    -----      -----    -----
+  +--> ?PR?_CH375_WR_CMD_PORT?USBEX
+  +--> ?PR?DELAY1US?USBEX
+
+?PR?MCH375INTERRUPT?USBEX            004CH    0012H      -----    -----
+  +--> ?PR?_CH375_WR_CMD_PORT?USBEX
+  +--> ?PR?CH375_RD_DAT_PORT?USBEX
+  +--> ?PR?_CH375_WR_DAT_PORT?USBEX
+  +--> ?CO?USBEX
+  +--> ?PR?MCH375DESUP?USBEX
+  +--> ?PR?MCH375EP0UP?USBEX
+
+?PR?MCH375EP0UP?USBEX                -----    -----      -----    -----
+  +--> ?PR?_CH375_WR_CMD_PORT?USBEX
+  +--> ?PR?_CH375_WR_DAT_PORT?USBEX
+
+?PR?UP_DATA?USBEX                    -----    -----      -----    -----
+  +--> ?PR?_CH375_WR_CMD_PORT?USBEX
+  +--> ?PR?_CH375_WR_DAT_PORT?USBEX
+
+
+
+SYMBOL TABLE OF MODULE:  hid (USBEX)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        USBEX
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 3
+
+
+  C:03DEH         PUBLIC        CH375_RD_DAT_PORT
+  B:0090H.4       PUBLIC        CH375ACT
+  X:BDF1H         PUBLIC        CH375_CMD_PORT
+  C:0408H         PUBLIC        Delay1us
+  X:BCF0H         PUBLIC        CH375_DAT_PORT
+  D:005EH         PUBLIC        RevBuffer
+  C:0403H         PUBLIC        Delay2us
+  D:0068H         PUBLIC        request
+  D:00A8H         PUBLIC        IE
+  B:00B0H.2       PUBLIC        CH375_INT_WIRE
+  B:00A0H.2       PUBLIC        RED_LED
+  D:0070H         PUBLIC        mVarSetupLength
+  D:00B8H         PUBLIC        IP
+  D:0071H         PUBLIC        mVarSetupRequest
+  C:036FH         PUBLIC        mCh375DesUp
+  B:00A0H.4       PUBLIC        SPK_P
+  C:03B9H         PUBLIC        CH375_Init
+  D:0072H         PUBLIC        VarUsbAddress
+  C:01EBH         PUBLIC        main
+  B:0020H.0       PUBLIC        CH375CONFLAG
+  B:00A0H.3       PUBLIC        GREEN_LED
+  B:0020H.1       PUBLIC        CH375FLAGERR
+  D:0073H         PUBLIC        VarSetupDescr
+  C:02E4H         PUBLIC        Hid_des
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  C:03D0H         PUBLIC        Delay50ms
+  I:0013H         PUBLIC        UPDATA_FLAG
+  C:02B0H         PUBLIC        DevDes
+  I:0014H         PUBLIC        buf
+  C:02C2H         PUBLIC        ConDes
+  D:0030H         PUBLIC        BLK
+  C:038DH         PUBLIC        up_data
+  C:0330H         PUBLIC        mCh375Ep0Up
+  D:00C8H         PUBLIC        T2CON
+  C:0003H         PUBLIC        mCH375Interrupt
+  D:0075H         PUBLIC        buf1
+  C:03F3H         PUBLIC        _CH375_WR_CMD_PORT
+  C:03FBH         PUBLIC        _CH375_WR_DAT_PORT
+  D:007DH         PUBLIC        up_time
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          DELAY1US
+  C:0408H         LINE#         108
+  C:0408H         LINE#         110
+  -------         ENDPROC       DELAY1US
+  -------         PROC          DELAY2US
+  -------         DO            
+  D:0007H         SYMBOL        i
+  -------         ENDDO         
+  C:0403H         LINE#         112
+  C:0403H         LINE#         113
+  C:0403H         LINE#         116
+  C:0407H         LINE#         117
+  -------         ENDPROC       DELAY2US
+  -------         PROC          L?0137
+  -------         ENDPROC       L?0137
+  -------         PROC          DELAY50MS
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 4
+
+
+  -------         DO            
+  D:0007H         SYMBOL        i
+  D:0006H         SYMBOL        j
+  -------         ENDDO         
+  C:03D0H         LINE#         120
+  C:03D0H         LINE#         121
+  C:03D0H         LINE#         123
+  C:03D8H         LINE#         124
+  -------         ENDPROC       DELAY50MS
+  -------         PROC          _CH375_WR_CMD_PORT
+  D:0007H         SYMBOL        cmd
+  C:03F3H         LINE#         136
+  C:03F3H         LINE#         138
+  C:03F8H         LINE#         139
+  -------         ENDPROC       _CH375_WR_CMD_PORT
+  -------         PROC          _CH375_WR_DAT_PORT
+  D:0007H         SYMBOL        dat
+  C:03FBH         LINE#         142
+  C:03FBH         LINE#         143
+  C:0400H         LINE#         144
+  -------         ENDPROC       _CH375_WR_DAT_PORT
+  C:03D9H         SYMBOL        L?0136
+  -------         PROC          L?0135
+  -------         ENDPROC       L?0135
+  C:03D9H         SYMBOL        L?0136
+  -------         PROC          CH375_RD_DAT_PORT
+  C:03DEH         LINE#         147
+  C:03DEH         LINE#         148
+  C:03E1H         LINE#         149
+  C:03E6H         LINE#         151
+  -------         ENDPROC       CH375_RD_DAT_PORT
+  -------         PROC          CH375_INIT
+  C:03B9H         LINE#         153
+  C:03B9H         LINE#         154
+  C:03B9H         LINE#         156
+  C:03BEH         LINE#         157
+  C:03C3H         LINE#         158
+  C:03C3H         LINE#         159
+  C:03C9H         LINE#         160
+  C:03C9H         LINE#         161
+  -------         ENDPROC       CH375_INIT
+  -------         PROC          MCH375EP0UP
+  -------         DO            
+  D:0005H         SYMBOL        i
+  D:0006H         SYMBOL        len
+  -------         ENDDO         
+  C:0330H         LINE#         167
+  C:0330H         LINE#         169
+  C:0334H         LINE#         170
+  C:0339H         LINE#         171
+  C:033BH         LINE#         172
+  C:033EH         LINE#         173
+  C:0340H         LINE#         174
+  C:0340H         LINE#         175
+  C:0342H         LINE#         176
+  C:0348H         LINE#         177
+  C:0348H         LINE#         178
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 5
+
+
+  C:034DH         LINE#         179
+  C:0352H         LINE#         180
+  C:0358H         LINE#         181
+  C:0364H         LINE#         182
+  C:0364H         LINE#         183
+  C:0364H         LINE#         184
+  C:0369H         LINE#         185
+  C:036EH         LINE#         186
+  C:036EH         LINE#         187
+  -------         ENDPROC       MCH375EP0UP
+  -------         PROC          MCH375DESUP
+  -------         DO            
+  D:0007H         SYMBOL        k
+  -------         ENDDO         
+  C:036FH         LINE#         192
+  C:036FH         LINE#         194
+  C:0371H         LINE#         195
+  C:0380H         LINE#         196
+  C:0388H         LINE#         197
+  C:038CH         LINE#         198
+  -------         ENDPROC       MCH375DESUP
+  -------         PROC          MCH375INTERRUPT
+  -------         DO            
+  D:004CH         SYMBOL        InterruptStatus
+  D:004DH         SYMBOL        length
+  D:004EH         SYMBOL        c1
+  D:004FH         SYMBOL        len
+  D:0001H         SYMBOL        pBuf
+  D:0050H         SYMBOL        mBuf
+  -------         ENDDO         
+  C:0003H         LINE#         201
+  C:0003H         LINE#         202
+  C:0003H         LINE#         207
+  C:0008H         LINE#         208
+  C:000DH         LINE#         210
+  C:002FH         LINE#         211
+  C:002FH         LINE#         212
+  C:0035H         LINE#         213
+  C:0035H         LINE#         214
+  C:003AH         LINE#         215
+  C:0055H         LINE#         216
+  C:0055H         LINE#         222
+  C:0056H         LINE#         223
+  C:0056H         LINE#         226
+  C:0056H         LINE#         227
+  C:0056H         LINE#         238
+  C:0059H         LINE#         240
+  C:0059H         LINE#         241
+  C:0059H         LINE#         242
+  C:0064H         LINE#         243
+  C:0079H         LINE#         244
+  C:0079H         LINE#         245
+  C:0079H         LINE#         246
+  C:0079H         LINE#         247
+  C:0079H         LINE#         248
+  C:007EH         LINE#         249
+  C:0095H         LINE#         250
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 6
+
+
+  C:009EH         LINE#         251
+  C:00A1H         LINE#         252
+  C:00A5H         LINE#         253
+  C:00A5H         LINE#         254
+  C:00ADH         LINE#         255
+  C:00B3H         LINE#         256
+  C:00B3H         LINE#         257
+  C:00B8H         LINE#         258
+  C:00BCH         LINE#         259
+  C:00BCH         LINE#         260
+  C:00BCH         LINE#         261
+  C:00C8H         LINE#         262
+  C:00CBH         LINE#         263
+  C:00F0H         LINE#         264
+  C:00F0H         LINE#         265
+  C:00FAH         LINE#         266
+  C:0109H         LINE#         267
+  C:0109H         LINE#         268
+  C:010BH         LINE#         269
+  C:010BH         LINE#         270
+  C:010DH         LINE#         271
+  C:010DH         LINE#         272
+  C:010FH         LINE#         273
+  C:010FH         LINE#         274
+  C:0111H         LINE#         275
+  C:0111H         LINE#         276
+  C:0116H         LINE#         277
+  C:0118H         LINE#         278
+  C:011AH         LINE#         279
+  C:011AH         LINE#         280
+  C:011FH         LINE#         281
+  C:0124H         LINE#         282
+  C:0126H         LINE#         283
+  C:0126H         LINE#         284
+  C:0126H         LINE#         285
+  C:0126H         LINE#         286
+  C:0126H         LINE#         287
+  C:0126H         LINE#         288
+  C:0128H         LINE#         289
+  C:0128H         LINE#         290
+  C:012AH         LINE#         291
+  C:012AH         LINE#         292
+  C:012DH         LINE#         293
+  C:012FH         LINE#         294
+  C:0131H         LINE#         295
+  C:0131H         LINE#         296
+  C:0134H         LINE#         297
+  C:0136H         LINE#         298
+  C:0136H         LINE#         299
+  C:013BH         LINE#         300
+  C:0143H         LINE#         301
+  C:0148H         LINE#         302
+  C:0150H         LINE#         303
+  C:0155H         LINE#         304
+  C:015BH         LINE#         307
+  C:015BH         LINE#         308
+  C:015EH         LINE#         309
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 7
+
+
+  C:0160H         LINE#         310
+  C:0160H         LINE#         311
+  C:0163H         LINE#         312
+  C:0166H         LINE#         313
+  C:0168H         LINE#         314
+  C:0168H         LINE#         315
+  C:016AH         LINE#         316
+  C:016CH         LINE#         317
+  C:0170H         LINE#         318
+  C:0172H         LINE#         319
+  C:0174H         LINE#         320
+  C:0174H         LINE#         321
+  C:0176H         LINE#         322
+  C:0176H         LINE#         323
+  C:0179H         LINE#         324
+  C:017BH         LINE#         325
+  C:017BH         LINE#         326
+  C:017DH         LINE#         327
+  C:017FH         LINE#         328
+  C:017FH         LINE#         329
+  C:017FH         LINE#         330
+  C:017FH         LINE#         331
+  C:017FH         LINE#         332
+  C:0181H         LINE#         333
+  C:0181H         LINE#         334
+  C:0187H         LINE#         335
+  C:0187H         LINE#         336
+  C:018CH         LINE#         337
+  C:0191H         LINE#         338
+  C:0191H         LINE#         339
+  C:0191H         LINE#         340
+  C:0191H         LINE#         341
+  C:0196H         LINE#         342
+  C:0199H         LINE#         343
+  C:019CH         LINE#         344
+  C:019EH         LINE#         345
+  C:01A3H         LINE#         346
+  C:01A8H         LINE#         347
+  C:01ADH         LINE#         348
+  C:01ADH         LINE#         349
+  C:01B2H         LINE#         350
+  C:01B2H         LINE#         351
+  C:01B2H         LINE#         352
+  C:01B2H         LINE#         353
+  C:01BAH         LINE#         355
+  C:01CDH         LINE#         357
+  C:01D1H         LINE#         358
+  C:01D1H         LINE#         360
+  C:01D1H         LINE#         361
+  C:01D1H         LINE#         362
+  C:01D9H         LINE#         363
+  C:01DBH         LINE#         364
+  C:01DDH         LINE#         365
+  C:01E0H         LINE#         366
+  C:01E2H         LINE#         367
+  C:01E2H         LINE#         368
+  C:01E2H         LINE#         370
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 8
+
+
+  C:01E2H         LINE#         371
+  C:01E7H         LINE#         372
+  C:01EAH         LINE#         373
+  C:01EAH         LINE#         374
+  C:01EAH         LINE#         375
+  -------         ENDPROC       MCH375INTERRUPT
+  -------         PROC          UP_DATA
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:038DH         LINE#         377
+  C:038DH         LINE#         378
+  C:038DH         LINE#         384
+  C:0392H         LINE#         385
+  C:0397H         LINE#         386
+  C:0399H         LINE#         387
+  C:03A6H         LINE#         389
+  -------         ENDPROC       UP_DATA
+  -------         PROC          MAIN
+  -------         DO            
+  D:003AH         SYMBOL        data_flag
+  D:0004H         SYMBOL        i
+  D:003BH         SYMBOL        time
+  D:003CH         SYMBOL        k
+  D:003DH         SYMBOL        real_data
+  D:0048H         SYMBOL        ulHex
+  I:0008H         SYMBOL        ucsenddata
+  C:0325H         SYMBOL        uckeycode1
+  C:0217H         SYMBOL        SEND
+  -------         ENDDO         
+  C:01EBH         LINE#         393
+  C:01EBH         LINE#         394
+  C:01EEH         LINE#         412
+  C:01F0H         LINE#         414
+  C:01F0H         LINE#         415
+  C:01F0H         LINE#         416
+  C:01F3H         LINE#         417
+  C:01F6H         LINE#         420
+  C:01F8H         LINE#         423
+  C:01FAH         LINE#         424
+  C:01FCH         LINE#         425
+  C:01FCH         LINE#         426
+  C:01FCH         LINE#         429
+  C:01FFH         LINE#         431
+  C:0202H         LINE#         437
+  C:0209H         LINE#         438
+  C:0214H         LINE#         441
+  C:0214H         LINE#         443
+  C:0217H         LINE#         444
+  C:021AH         LINE#         446
+  C:0220H         LINE#         447
+  C:022EH         LINE#         448
+  C:0239H         LINE#         449
+  C:023CH         LINE#         450
+  C:023EH         LINE#         451
+  C:0240H         LINE#         453
+  C:0240H         LINE#         454
+BL51 BANKED LINKER/LOCATER V6.00                                                      09/03/2007  15:40:51  PAGE 9
+
+
+  C:0249H         LINE#         455
+  C:0250H         LINE#         457
+  C:0259H         LINE#         458
+  C:025CH         LINE#         459
+  C:025EH         LINE#         460
+  C:025EH         LINE#         461
+  C:0260H         LINE#         462
+  C:026BH         LINE#         463
+  C:0276H         LINE#         464
+  C:0279H         LINE#         465
+  C:0279H         LINE#         466
+  C:027BH         LINE#         467
+  C:027BH         LINE#         468
+  C:027BH         LINE#         470
+  C:0282H         LINE#         471
+  C:0282H         LINE#         472
+  C:028DH         LINE#         473
+  C:0290H         LINE#         474
+  C:0295H         LINE#         475
+  C:0297H         LINE#         476
+  C:0299H         LINE#         477
+  C:029BH         LINE#         478
+  C:029EH         LINE#         479
+  C:02A1H         LINE#         480
+  C:02A3H         LINE#         481
+  C:02A5H         LINE#         482
+  C:02A8H         LINE#         483
+  C:02ABH         LINE#         486
+  C:02ADH         LINE#         489
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        USBEX
+
+  -------         MODULE        ?C?CSTPTR
+  C:03A7H         PUBLIC        ?C?CSTPTR
+  -------         ENDMOD        ?C?CSTPTR
+
+Program Size: data=107.2 xdata=2 code=1033
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

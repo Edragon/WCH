@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<TKStudioOptions Version="3.00" Author="YinHandong[Òüº®¶¬]">
+    <Projects OPTPES="96,98,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,">
+        <Project ProjectGUID="{2EE56C57-E449-4286-BC04-A11F61D2AF4E}" Name="usbtext" ACTCFG="DebugRel">
+            <TARGOPT Name="DebugRel" OPTDF="0">
+                <OPTFFF VAL="&lt;.\usb.c&gt; {2,3,-1,-1,0,0,752,327,0,5094}" />
+            </TARGOPT>
+        </Project>
+    </Projects>
+</TKStudioOptions>

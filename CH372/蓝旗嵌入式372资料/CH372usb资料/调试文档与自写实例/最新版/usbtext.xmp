@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<TKStudioProject Name="usbtext" BuildTool="0" Version="3.00" Author="YinHandong[Òüº®¶¬]">
+    <Configurations>
+        <Configuration Name="DebugRel" CodeMode="2" MemMode="0" RTOS="0" T51FL="0" SIMCLK="24.000000" OCM51="" OCR51="" CodeBank="" OutputDirectory=".\DebugRel\" OutputName="usbtext" GENAPP="1" GENLIB="0" ListingDirectory=".\DebugRel\" OPTLT="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" OPTDBG="1,-1,1,1,1,0,()" DEVICE="AT89C51" VENDOR="Atmel" FAMINY="0">
+            <Tool Name="C51Tool" C51FL="4853008" C51VA="0" C51DEF="" C51UDF="" C51MSC="" INCC5="" />
+            <Tool Name="A51Tool" A51FL="68" A51SET="" A51RST="" A51MSC="" INCA5="" />
+            <Tool Name="Lx51Tool" LX51FL="4" LX51COB="" LX51XDB="" LX51PDB="" LX51BIB="" LX51DAB="" LX51IDB="" LX51PRC="" LX51STK="" LX51COS="" LX51XDS="" LX51BIS="" LX51DAS="" LX51IDS="" LX51OVL="" LX51MSC="" LX51DWN="" />
+            <DeviceProperties Item0='REGFILE=REGX51.H(&quot;Atmel&quot;)' Item1='SFILE=&quot;LIB\STARTUP.A51&quot; (&quot;Standard 8051 Startup Code&quot;)' Item2='SIM=S8051.DLL DP51.DLL(&quot;-p51&quot;)' Item3='BOOK0=DATASHTS\ATMEL\AT89C51_DS.PDF(&quot;Data Sheet&quot;)' Item4='BOOK1=DATASHTS\ATMEL\AT_C51ISM.PDF(&quot;Instruction Set Manual&quot;)' Item5="CPU=IRAM(0-0x7F) IROM(0-0xFFF) CLOCK(24000000)" Item6='MON=S8051.DLL TP51.DLL(&quot;-p51&quot;)' />
+            <DeviceDescription Description="8051-based Fullly Static 24MHz CMOS controller with 32  I/O Lines,&#x0D;&#x0A;2 Timers/Counters, 6 Interrupts/2 Priority Levels, UART,&#x0D;&#x0A;Three-Level Program Memory Lock, 4K Bytes Flash Memory,&#x0D;&#x0A;128 Bytes On-chip RAM" />
+        </Configuration>
+    </Configurations>
+    <Files>
+        <Filter Name="Source Files">
+            <File RelativePath="usb.c" />
+            <File RelativePath="CH375INC.H" />
+        </Filter>
+    </Files>
+</TKStudioProject>

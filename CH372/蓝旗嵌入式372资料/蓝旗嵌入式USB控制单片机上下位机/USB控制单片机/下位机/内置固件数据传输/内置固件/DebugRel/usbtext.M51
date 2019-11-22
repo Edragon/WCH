@@ -1,0 +1,266 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        05/26/2012  21:51:59  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+E:\PROGRA~1\KEIL\C51\BIN\BL51.EXE .\DebugRel\usb.obj, .\DebugRel\CH372.obj TO .\DebugRel\usbtext RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  .\DebugRel\usb.obj (USB)
+  .\DebugRel\CH372.obj (CH372)
+  E:\PROGRA~1\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  .\DebugRel\usbtext (USB)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0003H     UNIT         _DATA_GROUP_
+            DATA    000BH     0002H     UNIT         ?DT?_DATASEND?USB
+            IDATA   000DH     0080H     UNIT         ?ID?USB
+            IDATA   008DH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0003H     ABSOLUTE     
+            CODE    0006H     0072H     UNIT         ?PR?INT0?USB
+            CODE    0078H     0031H     UNIT         ?PR?MAIN?USB
+            CODE    00A9H     002BH     UNIT         ?PR?_DATASEND?USB
+            CODE    00D4H     001BH     UNIT         ?PR?_CH375_WRCMD?CH372
+            CODE    00EFH     0013H     UNIT         ?PR?CH375_REDAT?CH372
+            CODE    0102H     0010H     UNIT         ?PR?_CH375_WRDAT?CH372
+            CODE    0112H     000DH     UNIT         ?PR?DELAY50MS?CH372
+            CODE    011FH     000CH     UNIT         ?C_C51STARTUP
+            CODE    012BH     0007H     UNIT         ?PR?DELAY2US?CH372
+
+
+
+OVERLAY MAP OF MODULE:   .\DebugRel\usbtext (USB)
+
+
+SEGMENT                          DATA_GROUP 
+  +--> CALLED SEGMENT          START    LENGTH
+----------------------------------------------
+?PR?INT0?USB                   0008H    0002H
+  +--> ?PR?_CH375_WRCMD?CH372
+  +--> ?PR?CH375_REDAT?CH372
+  +--> ?PR?_CH375_WRDAT?CH372
+
+?PR?_CH375_WRCMD?CH372         -----    -----
+  +--> ?PR?DELAY2US?CH372
+
+*** NEW ROOT ***************************************************
+
+?C_C51STARTUP                  -----    -----
+BL51 BANKED LINKER/LOCATER V6.22                                                      05/26/2012  21:51:59  PAGE 2
+
+
+  +--> ?PR?MAIN?USB
+
+?PR?MAIN?USB                   000AH    0001H
+  +--> ?PR?DELAY50MS?CH372
+  +--> ?PR?_CH375_WRCMD?CH372
+  +--> ?PR?_CH375_WRDAT?CH372
+  +--> ?PR?CH375_REDAT?CH372
+
+
+
+SYMBOL TABLE OF MODULE:  .\DebugRel\usbtext (USB)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        USB
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0090H         PUBLIC        P1
+  D:00B0H         PUBLIC        P3
+  B:00A8H.7       PUBLIC        EA
+  C:00A9H         PUBLIC        _DataSend
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  C:0078H         PUBLIC        main
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  B:00A8H.0       PUBLIC        EX0
+  B:0088H.0       PUBLIC        IT0
+  D:00C8H         PUBLIC        T2CON
+  I:000DH         PUBLIC        RDataBuf
+  I:004DH         PUBLIC        TDataBuf
+  D:00D0H         PUBLIC        PSW
+  C:0006H         PUBLIC        int0
+  -------         PROC          _DATASEND
+  D:000BH         SYMBOL        length
+  -------         DO            
+  D:000CH         SYMBOL        i
+  -------         ENDDO         
+  C:00A9H         LINE#         31
+  C:00ABH         LINE#         32
+  C:00ABH         LINE#         34
+  C:00B0H         LINE#         35
+  C:00B5H         LINE#         36
+  C:00C5H         LINE#         37
+  C:00D3H         LINE#         38
+  -------         ENDPROC       _DATASEND
+  -------         PROC          INT0
+  -------         DO            
+  D:0008H         SYMBOL        i
+  D:0007H         SYMBOL        temp
+  D:0009H         SYMBOL        length
+  -------         ENDDO         
+  C:0006H         LINE#         45
+  C:0013H         LINE#         50
+  C:0018H         LINE#         52
+  C:001BH         LINE#         54
+  C:0024H         LINE#         55
+BL51 BANKED LINKER/LOCATER V6.22                                                      05/26/2012  21:51:59  PAGE 3
+
+
+  C:0024H         LINE#         56
+  C:0024H         LINE#         58
+  C:0029H         LINE#         59
+  C:002EH         LINE#         60
+  C:0038H         LINE#         61
+  C:0038H         LINE#         62
+  C:0042H         LINE#         63
+  C:0046H         LINE#         66
+  C:004BH         LINE#         67
+  C:0050H         LINE#         68
+  C:005AH         LINE#         69
+  C:0068H         LINE#         71
+  C:0068H         LINE#         73
+  C:0068H         LINE#         78
+  C:0068H         LINE#         79
+  C:006DH         LINE#         80
+  C:006DH         LINE#         81
+  C:006DH         LINE#         82
+  -------         ENDPROC       INT0
+  -------         PROC          MAIN
+  -------         DO            
+  D:000AH         SYMBOL        i
+  -------         ENDDO         
+  C:0078H         LINE#         89
+  C:0078H         LINE#         90
+  C:0078H         LINE#         92
+  C:007BH         LINE#         95
+  C:0080H         LINE#         96
+  C:0085H         LINE#         97
+  C:0088H         LINE#         98
+  C:008FH         LINE#         99
+  C:0094H         LINE#         101
+  C:0097H         LINE#         103
+  C:009CH         LINE#         104
+  C:00A1H         LINE#         105
+  C:00A3H         LINE#         106
+  C:00A5H         LINE#         107
+  C:00A7H         LINE#         109
+  C:00A7H         LINE#         110
+  C:00A7H         LINE#         112
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        USB
+
+  -------         MODULE        CH372
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00B0H         PUBLIC        P3
+  C:00D4H         PUBLIC        _CH375_WRCMD
+  D:00A8H         PUBLIC        IE
+  C:0102H         PUBLIC        _CH375_WRDAT
+  D:00B8H         PUBLIC        IP
+  B:00B0H.4       PUBLIC        CH375_RD
+  B:00B0H.3       PUBLIC        CH375_CS
+  C:012BH         PUBLIC        delay2us
+  D:0098H         PUBLIC        SCON
+  B:00B0H.5       PUBLIC        CH375_WR
+BL51 BANKED LINKER/LOCATER V6.22                                                      05/26/2012  21:51:59  PAGE 4
+
+
+  D:0088H         PUBLIC        TCON
+  C:0112H         PUBLIC        delay50ms
+  D:00C8H         PUBLIC        T2CON
+  D:00D0H         PUBLIC        PSW
+  B:00B0H.7       PUBLIC        CH375_A0
+  C:00EFH         PUBLIC        CH375_REDAT
+  -------         PROC          DELAY2US
+  -------         DO            
+  D:0007H         SYMBOL        i
+  -------         ENDDO         
+  C:012BH         LINE#         14
+  C:012BH         LINE#         15
+  C:012BH         LINE#         17
+  C:0131H         LINE#         18
+  -------         ENDPROC       DELAY2US
+  -------         PROC          DELAY50MS
+  -------         DO            
+  D:0007H         SYMBOL        m
+  D:0006H         SYMBOL        n
+  -------         ENDDO         
+  C:0112H         LINE#         24
+  C:0112H         LINE#         25
+  C:0112H         LINE#         27
+  C:0114H         LINE#         28
+  C:011EH         LINE#         29
+  -------         ENDPROC       DELAY50MS
+  -------         PROC          _CH375_WRCMD
+  D:0006H         SYMBOL        cmd
+  C:00D4H         LINE#         35
+  C:00D6H         LINE#         36
+  C:00D6H         LINE#         37
+  C:00D9H         LINE#         38
+  C:00DBH         LINE#         39
+  C:00DDH         LINE#         40
+  C:00DFH         LINE#         41
+  C:00E1H         LINE#         42
+  C:00E3H         LINE#         43
+  C:00E5H         LINE#         44
+  C:00E7H         LINE#         45
+  C:00E9H         LINE#         47
+  C:00ECH         LINE#         48
+  -------         ENDPROC       _CH375_WRCMD
+  -------         PROC          _CH375_WRDAT
+  D:0007H         SYMBOL        dat
+  C:0102H         LINE#         55
+  C:0102H         LINE#         56
+  C:0102H         LINE#         57
+  C:0104H         LINE#         59
+  C:0106H         LINE#         60
+  C:0108H         LINE#         61
+  C:010AH         LINE#         63
+  C:010CH         LINE#         64
+  C:010EH         LINE#         66
+  C:0111H         LINE#         68
+  -------         ENDPROC       _CH375_WRDAT
+  -------         PROC          CH375_REDAT
+  -------         DO            
+BL51 BANKED LINKER/LOCATER V6.22                                                      05/26/2012  21:51:59  PAGE 5
+
+
+  D:0007H         SYMBOL        temp
+  -------         ENDDO         
+  C:00EFH         LINE#         74
+  C:00EFH         LINE#         75
+  C:00EFH         LINE#         77
+  C:00F2H         LINE#         79
+  C:00F4H         LINE#         80
+  C:00F6H         LINE#         81
+  C:00F8H         LINE#         82
+  C:00FAH         LINE#         83
+  C:00FCH         LINE#         84
+  C:00FEH         LINE#         86
+  C:0101H         LINE#         88
+  C:0101H         LINE#         89
+  -------         ENDPROC       CH375_REDAT
+  -------         ENDMOD        CH372
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DATASEND?USB
+
+Program Size: data=142.0 xdata=0 code=306
+LINK/LOCATE RUN COMPLETE.  1 WARNING(S),  0 ERROR(S)

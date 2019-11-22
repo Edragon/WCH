@@ -1,0 +1,542 @@
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 1   
+
+
+C51 COMPILER V8.02, COMPILATION OF MODULE USBEX
+OBJECT MODULE PLACED IN USBEX.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE USBEX.C BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*
+   2          CH372 Íâ²¿¹Ì¼þ·½Ê½·¶Àý
+   3          ÕâÀï½ö´¦Àí±ê×¼ÇëÇóºÍ¶Ëµã2µÄ¼òµ¥¶ÁÐ´
+   4          */
+   5          
+   6          /* MCS-51µ¥Æ¬»úCÓïÑÔµÄÊ¾Àý³ÌÐò */
+   7          //#pragma NOAREGS
+   8          #include <reg52.h>
+   9          //#include <AT89x52.H>
+  10          #include <string.h>
+  11          #include "CH375INC.H"
+  12          #include "stdio.h"
+  13          #include "main.h"
+  14          
+  15          
+  16          //unsigned char data BLK[10] _at_ 0x30;
+  17          unsigned char data BLK[10] _at_ 0x30;
+  18          unsigned char data RevBuffer[10];
+  19          
+  20          //unsigned char bord;
+  21          unsigned char idata UPDATA_FLAG;
+  22          unsigned char idata buf[8];//unsigned char idata buf[8];
+  23          unsigned char  up_time;     
+  24          
+  25          
+  26          //unsigned char data BLK[10] _at_ 0x30; //¶Á¿¨Æ÷µÄ¶¨Òå½ÓÊÕÇø
+  27          //sbit    OUT         =           P2^0;           //½ÓÊÕIO¿Ú¶¨Òå
+  28          
+  29          
+  30          typedef union _REQUEST_PACK{
+  31                  unsigned char  buffer[8];
+  32                  struct{
+  33                          unsigned char    bmReuestType;           //±ê×¼ÇëÇó×Ö
+  34                          unsigned char    bRequest;                      //ÇëÇó´úÂë
+  35                          unsigned int     wValue;                        //ÌØÐÔÑ¡Ôñ¸ß
+  36                          unsigned int     wIndx;                         //Ë÷Òý
+  37                          unsigned int     wLength;                               //Êý¾Ý³¤¶È
+  38                  }r;
+  39          } mREQUEST_PACKET,      *mpREQUEST_PACKET;
+  40          
+  41          //Éè±¸ÃèÊö·û
+  42          unsigned char  code DevDes[]={
+  43                                                          0x12                    //ÃèÊö·û´óÐ¡                    
+  44                                                    , 0x01                        //³£ÊýDEVICE
+  45                                                   , 0x10                         //USB¹æ·¶°æ±¾ÐÅÏ¢
+  46                                               ,  0x01
+  47                                                  ,   0x00                        //Àà±ðÂë£¬
+  48                                                  ,  0x00                         //×ÓÀà±ðÂë      
+  49                                                  ,   0x00                        //Ð­ÒéÂë
+  50                                                  ,  0x08                         //¶Ëµã0µÄ×î´óÐÅÏ¢°ü´óÐ¡
+  51                                                  ,  0x3c                         //³§ÉÌID
+  52                                                  ,   0x41
+  53                                                  ,   0x03                        //²úÆ·ID        
+  54                                                  ,   0x20
+  55                                                  ,   0x00                        //Éè±¸°æ±¾ÐÅÏ¢
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 2   
+
+  56                                                  ,   0x02
+  57                                                  ,   0x01                        //Ë÷ÒýÖµ        
+  58                                                  ,   0x02
+  59                                                  ,   0x00
+  60                                                  ,   0x01                        //¿ÉÄÜÅäÖÃµÄÊýÄ¿        
+  61                                                  };
+  62          //ÅäÖÃÃèÊö·û
+  63          unsigned char   code ConDes[]={                 //ÅäÖÃÃèÊö·û
+  64                                     0x09, 0x02, 0x22, 0x00, 0x01, 0x01, 0x04, 0xa0,  0x23,
+  65                                 0x09, 0x04, 0x00, 0x00, 0x01, 0x03, 0x01, 0x01, 0x05, 
+  66                                     0x09, 0x21, 0x10, 0x01, 0x00, 0x01, 0x22, 0x41, 0x00,
+  67                                 0x07, 0x05, 0x81, 0x03, 0x08, 0x00, 0x18
+  68                                          };              //ÅäÖÃÃèÊö·û
+  69          //unsigned char  code LangDes[]={0x04,0x03,0x09,0x04};          //ÓïÑÔÃèÊö·û
+  70          //unsigned char  code SerDes[]={0x12,0x03,'C',0,'H',0,'3',0,'7',0,'5',0,'U',0,'S',0,'B',0};             //×Ö·û´®ÃèÊö·
+             -û
+  71          
+  72          
+  73          unsigned char code Hid_des[]={0x05, 0x01, 0x09, 0x06,  0xa1, 0x01, 0x05, 0x07,  0x19, 0xe0, 
+  74                                                                    0x29, 0xe7, 0x15, 0x00,  0x25, 0x01, 0x75, 0x01,  0x95, 0x08, 
+  75                                                                    0x81, 0x02, 0x95, 0x01,  0x75, 0x08, 0x81, 0x01,  0x95, 0x03, 0x75, 0x01,        
+  76                                                    0x05, 0x08, 0x19, 0x01,  0x29, 0x03, 0x91, 0x02,  0x95, 0x01, 0x75, 0x05,  
+  77                                                                    0x91, 0x01, 0x95, 0x06,  0x75, 0x08, 0x15, 0x00,  0x26, 0xff, 0x00, 0x05,
+  78                                                            0x07, 0x19, 0x00, 0x2a,  0xff, 0x00, 0x81, 0x00,  0xc0
+  79                                                                    };
+  80          
+  81          unsigned char mVarSetupRequest;                                         //      ;USBÇëÇóÂë
+  82          unsigned char mVarSetupLength;                                  //              ;ºóÐøÊý¾Ý³¤¶È
+  83          unsigned char  code * VarSetupDescr;//  ;ÃèÊö·ûÆ«ÒÆµØÖ·
+  84          unsigned char buf1[8];
+  85          unsigned char VarUsbAddress     ;                                       //
+  86          sbit    CH375_INT_WIRE          =               0xB0^2; /* P3.2, INT0, Á¬½ÓCH375µÄINT#Òý½Å,ÓÃÓÚ²éÑ¯ÖÐ¶Ï×´Ì¬ */
+  87          bit CH375FLAGERR;                                               //´íÎóÇå0
+  88          bit     CH375CONFLAG;
+  89          
+  90          unsigned char volatile xdata CH375_CMD_PORT _at_ 0xBDF1;                /* CH375ÃüÁî¶Ë¿ÚµÄI/OµØÖ· */
+  91          unsigned char volatile xdata CH375_DAT_PORT _at_ 0xBCF0;                /* CH375Êý¾Ý¶Ë¿ÚµÄI/OµØÖ· */
+  92          
+  93          mREQUEST_PACKET  request;
+  94          sbit  CH375ACT  = P1^4;
+  95          
+  96          /*
+  97          void    mInitSTDIO( )
+  98          {
+  99                  SCON = 0x50;
+ 100                  PCON = 0x80;
+ 101                  TMOD = 0x20;
+ 102                  TH1 = 0xf3;  // 24MHz¾§Õñ, 9600bps 
+ 103                  TR1 = 1;
+ 104                  TI = 0;
+ 105          }
+ 106          */
+ 107          /* ÑÓÊ±2Î¢Ãë,²»¾«È· */
+ 108          void Delay1us(){
+ 109   1              ;
+ 110   1      }
+ 111          
+ 112          void    Delay2us( )
+ 113          {
+ 114   1              unsigned char i;
+ 115   1      #define DELAY_START_VALUE       1                                                               /* ¸ù¾Ýµ¥Æ¬»úµÄÊ±ÖÓÑ¡Ôñ³õÖµ,20MHzÒÔÏÂÎª0,30MHzÒÔÉÏÎª2 */
+ 116   1              for ( i=DELAY_START_VALUE; i!=0; i-- );
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 3   
+
+ 117   1      }
+ 118          
+ 119          /* ÑÓÊ±50ºÁÃë,²»¾«È· */
+ 120          void    Delay50ms( )
+ 121          {
+ 122   1              unsigned char i, j;
+ 123   1              for ( i=200; i!=0; i-- ) for ( j=250; j!=0; j-- );
+ 124   1      }
+ 125          
+ 126          /* ½«PC»úµÄµÍ×Ö½ÚÔÚÇ°µÄ16Î»×ÖÊý¾Ý×ª»»ÎªC51µÄ¸ß×Ö½ÚÔÚÇ°µÄÊý¾Ý */
+ 127          //unsigned int  BIG_ENDIAN( unsigned int value )
+ 128          //{
+ 129          //      unsigned int  in, out;
+ 130          //      in = value;
+ 131          //      ((unsigned char *)&out)[1] = ((unsigned char *)&in)[0];
+ 132          //      ((unsigned char *)&out)[0] = ((unsigned char *)&in)[1];
+ 133          //      return( out );
+ 134          //}
+ 135          
+ 136          void CH375_WR_CMD_PORT( unsigned char cmd ) {                            /* ÏòCH375µÄÃüÁî¶Ë¿ÚÐ´ÈëÃüÁî,ÖÜÆÚ²»Ð¡ÓÚ4uS,Èç¹ûµ¥Æ¬»ú½Ï
+             -¿ìÔòÑÓÊ± */
+ 137   1              //delay2us();
+ 138   1              CH375_CMD_PORT=cmd;
+ 139   1              Delay2us( );
+ 140   1      }
+ 141          
+ 142          void CH375_WR_DAT_PORT( unsigned char dat ) {                            /* ÏòCH375µÄÊý¾Ý¶Ë¿ÚÐ´ÈëÊý¾Ý,ÖÜÆÚ²»Ð¡ÓÚ1.5uS,Èç¹ûµ¥Æ¬»ú
+             -½Ï¿ìÔòÑÓÊ± */
+ 143   1              CH375_DAT_PORT=dat;
+ 144   1              Delay1us();                                                                                     /* ÒòÎªMCS51µ¥Æ¬»ú½ÏÂýËùÒÔÊµ¼ÊÉÏÎÞÐèÑÓÊ± */
+ 145   1      }
+ 146          
+ 147          unsigned char CH375_RD_DAT_PORT() {                                             /* ´ÓCH375µÄÊý¾Ý¶Ë¿Ú¶Á³öÊý¾Ý,ÖÜÆÚ²»Ð¡ÓÚ1.5uS,Èç¹ûµ¥Æ¬»ú½Ï¿ìÔòÑÓ
+             -Ê± */
+ 148   1              Delay1us( );                                                                            /* ÒòÎªMCS51µ¥Æ¬»ú½ÏÂýËùÒÔÊµ¼ÊÉÏÎÞÐèÑÓÊ± */
+ 149   1              return( CH375_DAT_PORT );
+ 150   1      
+ 151   1      }
+ 152          /* CH375³õÊ¼»¯×Ó³ÌÐò */
+ 153          void    CH375_Init( )
+ 154          {
+ 155   1      /* ÉèÖÃUSB¹¤×÷Ä£Ê½, ±ØÒª²Ù×÷ */
+ 156   1              CH375_WR_CMD_PORT( CMD_SET_USB_MODE );
+ 157   1              CH375_WR_DAT_PORT( 1 );                                                                         /* ÉèÖÃÎªÊ¹ÓÃÄÚÖÃ¹Ì¼þµÄUSBÉè±¸·½Ê½ */
+ 158   1              for ( ;; ) {                                                                                    /* µÈ´ý²Ù×÷³É¹¦,Í¨³£ÐèÒªµÈ´ý10uS-20uS */
+ 159   2                      if ( CH375_RD_DAT_PORT( )==CMD_RET_SUCCESS ) break;
+ 160   2              }
+ 161   1      }
+ 162          
+ 163          //*********************************************************
+ 164          
+ 165          //*********************************************************
+ 166          //¶Ëµã0Êý¾ÝÉÏ´«
+ 167          void mCh375Ep0Up(){
+ 168   1              unsigned char i,len;
+ 169   1              if(mVarSetupLength){                                                                                            //³¤¶È²»Îª0´«Êä¾ßÌå³¤¶ÈµÄÊý¾Ý
+ 170   2                      if(mVarSetupLength<=8){
+ 171   3                              len=mVarSetupLength;
+ 172   3                              mVarSetupLength=0;
+ 173   3              }       //³¤¶ÈÐ¡ÓÚ8Ôò³¤ÊäÒªÇóµÄ³¤¶È
+ 174   2                      else{
+ 175   3                              len=8;
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 4   
+
+ 176   3                              mVarSetupLength-=8;
+ 177   3                      }                                                                                               //³¤¶È´óÓÚ8Ôò´«Êä8¸ö£¬ÇÐ×Ü³¤¶È¼õ8
+ 178   2                  CH375_WR_CMD_PORT(CMD_WR_USB_DATA3);                                                //·¢³öÐ´¶Ëµã0µÄÃüÁî
+ 179   2              CH375_WR_DAT_PORT(len);                                                                         //Ð´Èë³¤¶È
+ 180   2              for(i=0;i!=len;i++)
+ 181   2              CH375_WR_DAT_PORT(request.buffer[i]);                           //Ñ­»·Ð´ÈëÊý¾Ý
+ 182   2          }
+ 183   1              else{
+ 184   2                      CH375_WR_CMD_PORT(CMD_WR_USB_DATA3);                                            //·¢³öÐ´¶Ëµã0µÄÃüÁî
+ 185   2                      CH375_WR_DAT_PORT(0);                                                      //ÉÏ´«0³¤¶ÈÊý¾Ý£¬ÕâÊÇÒ»¸ö×´Ì¬½×¶Î
+ 186   2              }
+ 187   1      }
+ 188          
+ 189          //*********************************************************
+ 190          
+ 191          //¸´ÖÆÃèÊö·ûÒÔ±ãÉÏ´«
+ 192          void mCh375DesUp(){
+ 193   1              unsigned char k;        
+ 194   1              for (k=0; k!=8; k++ ) {
+ 195   2               request.buffer[k]=*VarSetupDescr;                                                              //ÒÀ´Î¸´ÖÆ8¸öÃèÊö·û£¬
+ 196   2               VarSetupDescr++;
+ 197   2          }
+ 198   1      }
+ 199          
+ 200          /* CH375ÖÐ¶Ï·þÎñ³ÌÐòINT0,Ê¹ÓÃ¼Ä´æÆ÷×é1 */
+ 201          void    mCH375Interrupt( )// interrupt 0 using 1
+ 202          {
+ 203   1              unsigned char InterruptStatus;
+ 204   1              unsigned char length, c1, len;
+ 205   1              unsigned char   *pBuf;
+ 206   1              unsigned char    mBuf[14];//unsigned char    mBuf[64];
+ 207   1              CH375_WR_CMD_PORT(CMD_GET_STATUS);                                                                      /* »ñÈ¡ÖÐ¶Ï×´Ì¬²¢È¡ÏûÖÐ¶ÏÇëÇó */
+ 208   1              InterruptStatus =CH375_RD_DAT_PORT();                                                                   /* »ñÈ¡ÖÐ¶Ï×´Ì¬ */
+ 209   1      //////////////////////////////////////////////  IE0 = 0;                                                                                                                                /* ÇåÖÐ¶Ï±êÖ¾,¶ÔÓ¦ÓÚINT0ÖÐ¶Ï */
+ 210   1              switch(InterruptStatus){  // ·ÖÎöÖÐ¶Ï×´Ì¬
+ 211   2                      case  USB_INT_EP2_OUT:                                                                                          // ÅúÁ¿¶ËµãÏÂ´«³É¹¦ 
+ 212   2                              pBuf=mBuf;                                                                                                                                      //Êý¾ÝÎ´´¦Àí
+ 213   2                              CH375_WR_CMD_PORT(CMD_RD_USB_DATA);                                                                     //·¢³ö¶ÁÊý¾ÝÃüÁî
+ 214   2                              length=CH375_RD_DAT_PORT();                                                                                     //Ê×ÏÈ¶Á³öµÄÊÇ³¤¶È                                                                                                              
+ 215   2                              for(len=0;len!=length;len++,pBuf++)*pBuf=CH375_RD_DAT_PORT();   //½«Êý¾Ý¶ÁÈëµ½»º³åÇø                     
+ 216   2                              pBuf=mBuf;
+ 217   2      // ÑÝÊ¾»Ø´«
+ 218   2      
+ 219   2      //                      CH375_WR_CMD_PORT(CMD_WR_USB_DATA7);                                                            //·¢³öÐ´ÉÏ´«¶ËµãÃüÁî
+ 220   2      //                      CH375_WR_DAT_PORT(length);      
+ 221   2      //                      for(len=0;len!=length;len++,pBuf++)CH375_WR_DAT_PORT(*pBuf);    //½«Êý¾ÝÐ´ÈëÉÏ´«¶Ëµã
+ 222   2                              break;
+ 223   2                      case   USB_INT_EP2_IN:                                                                                           //ÅúÁ¿¶ËµãÉÏ´«³É¹¦,Î´´¦Àí
+ 224   2                              CH375_WR_CMD_PORT (CMD_UNLOCK_USB);                                                             //ÊÍ·Å»º³åÇø
+ 225   2                              break;
+ 226   2                      case   USB_INT_EP1_IN:                                                                                          //ÖÐ¶Ï¶ËµãÉÏ´«³É¹¦£¬Î´´¦Àí
+ 227   2                              CH375_WR_CMD_PORT (CMD_UNLOCK_USB);                                                             //ÊÍ·Å»º³åÇø
+ 228   2        
+ 229   2      /*
+ 230   2      //             if(up_time==11){                 
+ 231   2                      for(i=0;i<8;i++) buf[i]=0;               //·¢ËÍ°Ë¸ö×Ö½Ú0£¬Ïàµ±ÓÚÊÍ·Å°´¼ü1
+ 232   2                                      CH375_WR_CMD_PORT(CMD_WR_USB_DATA5);                                                    
+ 233   2                                  CH375_WR_DAT_PORT(8);
+ 234   2                                      for(i=0;i!=8;i++)               CH375_WR_DAT_PORT(buf[i]);
+ 235   2      
+ 236   2      //             }
+ 237   2      */
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 5   
+
+ 238   2                              break;
+ 239   2      
+ 240   2                      case   USB_INT_EP1_OUT:                                                                                         //ÖÐ¶Ï¶ËµãÏÂ´«³É¹¦£¬Î´´¦Àí
+ 241   2                              CH375_WR_CMD_PORT(CMD_RD_USB_DATA);                                                                     //·¢³ö¶ÁÊý¾ÝÃüÁî
+ 242   2                              if(length=CH375_RD_DAT_PORT()){                                                                         //³¤¶ÈÎª0Ìø³ö
+ 243   3                                      for(len=0;len!=length;len++)c1=CH375_RD_DAT_PORT();                                     //È¡³öÏÂ´«Êý¾Ý
+ 244   3                              }
+ 245   2                              break;
+ 246   2                      case   USB_INT_EP0_SETUP:                                                                                       //¿ØÖÆ¶Ëµã½¨Á¢³É¹¦
+ 247   2                      CH375_WR_CMD_PORT(CMD_RD_USB_DATA);
+ 248   2                              length=CH375_RD_DAT_PORT();
+ 249   2                              for(len=0;len!=length;len++)request.buffer[len]=CH375_RD_DAT_PORT();  // È¡³öÊý¾Ý
+ 250   2                              if(length==0x08){
+ 251   3                                  mVarSetupLength=request.buffer[6];                                                  //¿ØÖÆ´«ÊäÊý¾Ý³¤¶È×î´óÉèÖÃÎª128
+ 252   3                                      if((c1=request.r.bmReuestType)&0x40){                                            //³§ÉÌÇëÇó£¬Î´´¦Àí
+ 253   4                                      }
+ 254   3                                      if((c1=request.r.bmReuestType)&0x20){// printf("b\n");                                          //ÀàÇëÇó£¬Î´´¦Àí
+ 255   4                                              if(request.buffer[1]==0x0a){//printf("c\n");
+ 256   5                                                      }                                                                                               //SET_IDLE
+ 257   4                                              else if(request.buffer[1]==0x09){
+ 258   5                                                              UPDATA_FLAG=1;
+ 259   5                                              }
+ 260   4                                      }
+ 261   3                                      if(!((c1=request.r.bmReuestType)&0x60)){                                        //±ê×¼ÇëÇó
+ 262   4                                              mVarSetupRequest=request.r.bRequest;                                                    //ÔÝ´æ±ê×¼ÇëÇóÂë
+ 263   4                                              switch(request.r.bRequest){  // ·ÖÎö±ê×¼ÇëÇó
+ 264   5                                                      case DEF_USB_CLR_FEATURE:                                                                       //Çå³ýÌØÐÔ
+ 265   5                                                              if((c1=request.r.bmReuestType&0x1F)==0X02){                                     //²»ÊÇ¶Ëµã²»Ö§³Ö
+ 266   6                                                                      switch(request.buffer[4]){
+ 267   7                                                                              case 0x82:
+ 268   7                                                                                      CH375_WR_CMD_PORT(CMD_SET_ENDP7);                                       //Çå³ý¶Ëµã2ÉÏ´«
+ 269   7                                                                                      CH375_WR_DAT_PORT(0x8E);                                        //·¢ÃüÁîÇå³ý¶Ëµã
+ 270   7                                                                                      break;
+ 271   7                                                                              case 0x02:
+ 272   7                                                                                      CH375_WR_CMD_PORT(CMD_SET_ENDP6);
+ 273   7                                                                                      CH375_WR_DAT_PORT(0x80);                                                        //Çå³ý¶Ëµã2ÏÂ´«
+ 274   7                                                                                      break;
+ 275   7                                                                              case 0x81:
+ 276   7                                                                                      CH375_WR_CMD_PORT(CMD_SET_ENDP5);                                       //Çå³ý¶Ëµã1ÉÏ´«
+ 277   7                                                                                      CH375_WR_DAT_PORT(0x8E);
+ 278   7                                                                                      break;
+ 279   7                                                                              case 0x01:
+ 280   7                                                                                      CH375_WR_CMD_PORT(CMD_SET_ENDP4);                                       //Çå³ý¶Ëµã1ÏÂ´«
+ 281   7                                                                                      CH375_WR_DAT_PORT(0x80);
+ 282   7                                                                                      break;
+ 283   7                                                                              default:
+ 284   7                                                                                      break;
+ 285   7                                                                      }
+ 286   6                                                              }
+ 287   5                                                              else{
+ 288   6                                                                      CH375FLAGERR=1;                                                         //²»Ö§³ÖµÄÇå³ýÌØÐÔ£¬ÖÃ´íÎó±êÖ¾
+ 289   6                                                              }
+ 290   5                                                              break;
+ 291   5                                                      case DEF_USB_GET_STATUS:                                                                //»ñµÃ×´Ì¬
+ 292   5                                                              request.buffer[0]=0;
+ 293   5                                                              request.buffer[1]=0;                                                            //ÉÏ´«×´Ì¬
+ 294   5                                                              break;
+ 295   5                                                      case DEF_USB_SET_ADDRESS:                                                               //ÉèÖÃµØÖ·
+ 296   5                                                              VarUsbAddress=request.buffer[2];                                        //ÔÝ´æUSBÖ÷»ú·¢À´µÄµØÖ·
+ 297   5                                                              break;
+ 298   5                                                      case DEF_USB_GET_DESCR:                                                                 //»ñµÃÃèÊö·û
+ 299   5                                                              if(request.buffer[3]==1)                                                        //Éè±¸ÃèÊö·ûÉÏ´«
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 6   
+
+ 300   5                                                                      VarSetupDescr=DevDes;
+ 301   5                                                              else if(request.buffer[3]==2)                                                   //ÅäÖÃÃèÊö·ûÉÏ´«
+ 302   5                                                                      VarSetupDescr=ConDes;
+ 303   5                                                              else if(request.buffer[3]==0x22) {
+ 304   6                                                                      VarSetupDescr=Hid_des;
+ 305   6      //                                                              if ( request.buffer[2]== 0 ) VarSetupDescr=LangDes;
+ 306   6      //                                                              else VarSetupDescr=SerDes;                                              //×ö×Ö·û´®´¦Àí
+ 307   6                                                              }
+ 308   5                                                                      mCh375DesUp();                                                                                  //ÆäÓàÃèÊö·û²»Ö§³Ö                                                                                                      
+ 309   5                                                              break;
+ 310   5                                                      case DEF_USB_GET_CONFIG:                                                                        //»ñµÃÅäÖÃ
+ 311   5                                                              request.buffer[0]=0;                                                                    //Ã»ÓÐÅäÖÃÔò´«0
+ 312   5                                                              if(CH375CONFLAG) request.buffer[0]=1;                                                                   //ÒÑ¾­ÅäÖÃÔò´«1£»ÕâÊÇÔÚÃèÊö·ûÀï¹æ¶¨µÄ
+ 313   5                                                              break;
+ 314   5                                                      case DEF_USB_SET_CONFIG:                                                        //ÉèÖÃÅäÖÃ
+ 315   5                                                              CH375CONFLAG=0;
+ 316   5                                                              CH375ACT=1;
+ 317   5                                                              if ( request.buffer[2] != 0 ) {
+ 318   6                                                                      CH375CONFLAG=1;                                                                                 //ÉèÖÃÅäÖÃ±êÖ¾
+ 319   6                                                                      CH375ACT=0;                                                                                             //Êä³öÅäÖÃÍê³ÉÐÅºÅ
+ 320   6                                                              }
+ 321   5                                                              break;
+ 322   5                                                      case DEF_USB_GET_INTERF:                                                                                //µÃµ½½Ó¿Ú
+ 323   5                                                              request.buffer[0]=1;                                                                    //ÉÏ´«½Ó¿ÚÊý£¬±¾ÊÂÀýÖ»Ö§³ÖÒ»¸ö½Ó¿Ú
+ 324   5                                                              break;
+ 325   5                                                      default :
+ 326   5                                                              CH375FLAGERR=1;                                                                                 //²»Ö§³ÖµÄ±ê×¼ÇëÇó
+ 327   5                                                              break;
+ 328   5                                              }
+ 329   4                                      }
+ 330   3                              }
+ 331   2                              else {  //²»Ö§³ÖµÄ¿ØÖÆ´«Êä£¬²»ÊÇ8×Ö½ÚµÄ¿ØÖÆ´«Êä
+ 332   3                                      CH375FLAGERR=1;
+ 333   3                              }
+ 334   2                              if(!CH375FLAGERR) mCh375Ep0Up();                                                                                //Ã»ÓÐ´íÎó/µ÷ÓÃÊý¾ÝÉÏ´«£¬£¬³¤¶ÈÎª0ÉÏ´«Îª×´Ì¬
+ 335   2                              else {
+ 336   3                                      CH375_WR_CMD_PORT(CMD_SET_ENDP3);                                                               //ÉèÖÃ¶Ëµã1ÎªSTALL£¬Ö¸Ê¾Ò»¸ö´íÎó
+ 337   3                                      CH375_WR_DAT_PORT(0x0F);
+ 338   3                              }
+ 339   2                              break;
+ 340   2                      case   USB_INT_EP0_IN:                                                                                                  //¿ØÖÆ¶ËµãÉÏ´«³É¹¦
+ 341   2                              if(mVarSetupRequest==DEF_USB_GET_DESCR){                                                                //ÃèÊö·ûÉÏ´«
+ 342   3                                      mCh375DesUp();
+ 343   3                                      mCh375Ep0Up();                                                                                                                  
+ 344   3                              }
+ 345   2                              else if(mVarSetupRequest==DEF_USB_SET_ADDRESS){                                                 //ÉèÖÃµØÖ·
+ 346   3                                      CH375_WR_CMD_PORT(CMD_SET_USB_ADDR);
+ 347   3                                      CH375_WR_DAT_PORT(VarUsbAddress);                                                               //ÉèÖÃUSBµØÖ·,ÉèÖÃÏÂ´ÎÊÂÎñµÄUSBµØÖ·
+ 348   3                              }
+ 349   2                              CH375_WR_CMD_PORT (CMD_UNLOCK_USB);                                                             //ÊÍ·Å»º³åÇø
+ 350   2                              break;
+ 351   2                      case   USB_INT_EP0_OUT:                                                                                                 //¿ØÖÆ¶ËµãÏÂ´«³É¹¦
+ 352   2                              CH375_WR_CMD_PORT(CMD_RD_USB_DATA);                                                                     //·¢³ö¶ÁÊý¾ÝÃüÁî
+ 353   2                              if(length=CH375_RD_DAT_PORT()){                                                                         //³¤¶ÈÎª0Ìø³ö
+ 354   3      //                              printf("len=%d\n",(unsigned int)length);
+ 355   3                                      for(len=0;len!=length;len++){buf1[len]=CH375_RD_DAT_PORT();                                     //È¡³öÏÂ´«Êý¾Ý
+ 356   4      //                                      printf("buf=%02x",(unsigned short)buf1[len]);
+ 357   4                                         }
+ 358   3                              }
+ 359   2      //                      printf("\n");
+ 360   2                              break;
+ 361   2                      default:
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 7   
+
+ 362   2                              if((InterruptStatus&0x03)==0x03){                                                                       //×ÜÏß¸´Î»
+ 363   3                                      CH375FLAGERR=0;                                                                                                 //´íÎóÇå0
+ 364   3                                      CH375CONFLAG=0;                                                                                                 //ÅäÖÃÇå0
+ 365   3                                      mVarSetupLength=0;
+ 366   3                                      CH375ACT=1;                                                                                                             //ÇåÅäÖÃÍê³ÉÊä³ö
+ 367   3                              }
+ 368   2                              else{                                                                                                                           //ÃüÁî²»Ö§³Ö
+ 369   3                                      ;
+ 370   3                              }
+ 371   2                              CH375_WR_CMD_PORT (CMD_UNLOCK_USB);                                                                     //ÊÍ·Å»º³åÇø
+ 372   2                              CH375_RD_DAT_PORT();
+ 373   2                              break;
+ 374   2              }
+ 375   1      }
+ 376          
+ 377          up_data( )
+ 378          {
+ 379   1              unsigned char i;
+ 380   1      
+ 381   1      //      for(i=0;i!=8;i++)                                                                                                               //·¢ËÍ0°´¼üÖµ
+ 382   1      //              buf[i]=0;
+ 383   1      //              buf[2]=0x59;
+ 384   1                      CH375_WR_CMD_PORT(CMD_WR_USB_DATA5);                                                            //·¢³öÐ´ÉÏ´«¶ËµãÃüÁî
+ 385   1                  CH375_WR_DAT_PORT(8);
+ 386   1                      for(i=0;i!=8;i++)
+ 387   1                      CH375_WR_DAT_PORT(buf[i]);
+ 388   1      
+ 389   1      }
+ 390          
+ 391          
+ 392          
+ 393          main( ) {
+ 394   1          unsigned char data_flag=0;       //ÓÐÎÞÊý¾Ý±êÖ¾
+ 395   1          unsigned char i,time,k;
+ 396   1          unsigned char real_data[11];      //ÐèÒªÉÏ´«µÄÊý¾Ý»º³åÇø
+ 397   1          //unsigned char       hHD[6];
+ 398   1          unsigned long ulHex;
+ 399   1              unsigned char idata ucsenddata[11];
+ 400   1              unsigned char code uckeycode1[11]={      0x62  //0           
+ 401   1                                                                                  ,0x59  //1 
+ 402   1                                                                                      ,0x5a  //2 
+ 403   1                                                                                      ,0x5b  //3
+ 404   1                                                                                      ,0x5c  //4
+ 405   1                                                                                      ,0x5d  //5
+ 406   1                                                                                      ,0x5e  //6
+ 407   1                                                                                      ,0x5f  //7
+ 408   1                                                                                      ,0x60  //8
+ 409   1                                                                                      ,0x61  //9
+ 410   1                                                                                      ,0x58
+ 411   1                                                                                  };
+ 412   1              SPK_P=1;
+ 413   1      //SPK_P=1;
+ 414   1              Delay50ms( );
+ 415   1              Delay50ms( );
+ 416   1              Delay50ms( );
+ 417   1              Delay50ms( );
+ 418   1      
+ 419   1      
+ 420   1          RED_LED=0;
+ 421   1      //      Delay50ms( );
+ 422   1      //      Delay50ms( );
+ 423   1              GREEN_LED=1;
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 8   
+
+ 424   1      SPK_P=0;
+ 425   1              Delay50ms( );
+ 426   1              Delay50ms( );
+ 427   1      
+ 428   1      
+ 429   1              Delay50ms( );   // ÑÓÊ±µÈ´ýCH375³õÊ¼»¯Íê³É,Èç¹ûµ¥Æ¬»úÓÉCH375Ìá¹©¸´Î»ÐÅºÅÔò²»±ØÑÓÊ± //
+ 430   1              //mInitSTDIO( );
+ 431   1              CH375_Init( );  // ³õÊ¼»¯CH375 //
+ 432   1          //EA=1;
+ 433   1      
+ 434   1      
+ 435   1       //Æô¶¯ºó£¬²»Êä³öÊý¾Ý£¬
+ 436   1              //data_flag=1;
+ 437   1          up_time=0;  time=0;k=0;
+ 438   1          for(i=0;i<8;i++) buf[i]=0;
+ 439   1      
+ 440   1              ////////
+ 441   1              while(1){               // Ö÷³ÌÐò //
+ 442   2                                      
+ 443   2                      if(CH375_INT_WIRE == 0){
+ 444   3        SEND:                         mCH375Interrupt( ); 
+ 445   3                               
+ 446   3                if(data_flag==1) {
+ 447   4                          if((UPDATA_FLAG==0x01)&&(k<=1)){      //ÏÈ·¢°Ë¸ö×Ö½ÚµÄ0°ü£¬Ïàµ±ÓÚÈ·±£°´¼üµÄÈ¡Ïû
+ 448   5                               for(i=0;i<8;i++) buf[i]=0;
+ 449   5                               up_data( );
+ 450   5                               k++;
+ 451   5                           }
+ 452   4              
+ 453   4                          else {
+ 454   5                                   if((UPDATA_FLAG==0x01)&&(time%2==1)){     //°´¼ü°´ÏÂ
+ 455   6                                                       if(up_time<=11){
+ 456   7                              //                    printf("%d\n",(unsigned short)up_time);
+ 457   7                                                   buf[2]=real_data[up_time];                       //·¢ËÍ°Ë¸ö×Ö½Ú£¬Ïàµ±ÓÚ·¢ËÍ1¸ö°´¼ü
+ 458   7                                                               up_data( ); 
+ 459   7                                               up_time++;                   
+ 460   7                                                       }      
+ 461   6                                   }
+ 462   5                                   else if((UPDATA_FLAG==0x01)&&(time%2==0)){  //°´¼üÈ¡Ïû
+ 463   6                                       for(i=0;i<8;i++) buf[i]=0;
+ 464   6                                       up_data( );
+ 465   6                                   }
+ 466   5                                   time++;
+ 467   5                          }
+ 468   4                 }
+ 469   3                 //if(up_time==11) { up_time=0;   data_flag=0;  goto RD;}        //Ñ­»·ÉÏ´«     
+ 470   3                 if(up_time>11) 
+ 471   3                         {
+ 472   4                       for(i=0;i<8;i++) buf[i]=0;
+ 473   4                       up_data( );
+ 474   4                       data_flag=0; up_time=0; 
+ 475   4                               SPK_P=1;
+ 476   4                               RED_LED=1;
+ 477   4                               GREEN_LED=0;
+ 478   4                               Delay50ms( );
+ 479   4                               Delay50ms( );
+ 480   4                               RED_LED=0;
+ 481   4                               GREEN_LED=1;
+ 482   4                               Delay50ms( );
+ 483   4                               Delay50ms( );
+ 484   4                               //Delay50ms( );
+ 485   4                               //Delay50ms( );
+C51 COMPILER V8.02   USBEX                                                                 09/03/2007 15:40:51 PAGE 9   
+
+ 486   4                               SPK_P=0;
+ 487   4      
+ 488   4                               //·äÃùÆ÷¡¢LED ²Ù×÷
+ 489   4                               goto SEND;
+ 490   4                         };
+ 491   3                      }
+ 492   2              }
+ 493   1      }
+*** WARNING C280 IN LINE 398 OF USBEX.C: 'ulHex': unreferenced local variable
+*** WARNING C280 IN LINE 399 OF USBEX.C: 'ucsenddata': unreferenced local variable
+*** WARNING C280 IN LINE 400 OF USBEX.C: 'uckeycode1': unreferenced local variable
+ 494          
+ 495          
+ 496           
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    872    ----
+   CONSTANT SIZE    =    128    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     32      36
+   IDATA SIZE       =      9      11
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  3 WARNING(S),  0 ERROR(S)

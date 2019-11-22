@@ -1,0 +1,81 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: CH37XDBG - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x804 /fo"Release/CH37XDBG.res" /i "MSFlxGrd.ocx" /d "NDEBUG" /d "_AFXDLL" "C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\CH37XDBG.rc"" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP12D.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/CH37XDBG.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\AllControlsSheet.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\CH37XDBG.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\CH37XDBGDlg.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\ENTER.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\ExternPage.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\font.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\IRAMPage.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\msdgridctrl.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\msflexgrid.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\picture.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\rowcursor.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\SFRPage.cpp"
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\XRAMPage.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP12D.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP12E.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/CH37XDBG.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Documents and Settings\Administrator\桌面\USB\100153ch372PC\PC\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP12E.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP12F.tmp" with contents
+[
+CH375DLL.LIB /nologo /subsystem:windows /incremental:no /pdb:"Release/CH37XDBG.pdb" /machine:I386 /out:"Release/CH37XDBG.exe" 
+".\Release\AllControlsSheet.obj"
+".\Release\CH37XDBG.obj"
+".\Release\CH37XDBGDlg.obj"
+".\Release\ENTER.obj"
+".\Release\ExternPage.obj"
+".\Release\font.obj"
+".\Release\IRAMPage.obj"
+".\Release\msdgridctrl.obj"
+".\Release\msflexgrid.obj"
+".\Release\picture.obj"
+".\Release\rowcursor.obj"
+".\Release\SFRPage.obj"
+".\Release\StdAfx.obj"
+".\Release\XRAMPage.obj"
+".\Release\CH37XDBG.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP12F.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+AllControlsSheet.cpp
+CH37XDBG.cpp
+CH37XDBGDlg.cpp
+ENTER.cpp
+ExternPage.cpp
+font.cpp
+IRAMPage.cpp
+msdgridctrl.cpp
+msflexgrid.cpp
+picture.cpp
+rowcursor.cpp
+SFRPage.cpp
+XRAMPage.cpp
+Generating Code...
+Linking...
+
+
+
+<h3>Results</h3>
+CH37XDBG.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

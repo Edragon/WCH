@@ -1,0 +1,16 @@
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\bin\Debug\HID.exe
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\bin\Debug\HID.pdb
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\obj\Debug\HID.Form1.resources
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\obj\Debug\HID.Properties.Resources.resources
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\obj\Debug\HID.csproj.GenerateResource.Cache
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\obj\Debug\HID.exe
+C:\Documents and Settings\Administrator\我的文档\Visual Studio 2005\Projects\HID\HID\obj\Debug\HID.pdb
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\obj\Debug\HID.exe
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\obj\Debug\HID.pdb
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\bin\Debug\HID.exe
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\bin\Debug\HID.pdb
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\obj\Debug\HID.Form1.resources
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\obj\Debug\HID.Properties.Resources.resources
+C:\Documents and Settings\Administrator\桌面\USB控制单片机\上位机\HID数据传输\HID\HID\obj\Debug\HID.csproj.GenerateResource.Cache

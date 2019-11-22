@@ -1,0 +1,91 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: testUSB - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x804 /fo"Release/testUSB.res" /d "NDEBUG" /d "_AFXDLL" "D:\VC写作目录\源代码\第八章\USB编程\testUSB.rc"" 
+Creating temporary file "C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP91.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/testUSB.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\VC写作目录\源代码\第八章\USB编程\ScrollerCtrl.cpp"
+"D:\VC写作目录\源代码\第八章\USB编程\testUSB.cpp"
+"D:\VC写作目录\源代码\第八章\USB编程\testUSBDlg.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP91.tmp" 
+Creating temporary file "C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP92.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Release/testUSB.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\VC写作目录\源代码\第八章\USB编程\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP92.tmp" 
+Creating temporary file "C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP93.tmp" with contents
+[
+hid.lib setupapi.lib /nologo /subsystem:windows /incremental:no /pdb:"Release/testUSB.pdb" /machine:I386 /out:"Release/testUSB.exe" 
+".\Release\ScrollerCtrl.obj"
+".\Release\StdAfx.obj"
+".\Release\testUSB.obj"
+".\Release\testUSBDlg.obj"
+".\Release\testUSB.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP93.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+D:\VC写作目录\源代码\第八章\USB编程\usbhead.h(72) : error C2146: syntax error : missing ';' before identifier 'StringDescriptor'
+D:\VC写作目录\源代码\第八章\USB编程\usbhead.h(72) : error C2501: 'USB_STRING_DESCRIPTOR' : missing storage-class or type specifiers
+D:\VC写作目录\源代码\第八章\USB编程\usbhead.h(72) : error C2501: 'StringDescriptor' : missing storage-class or type specifiers
+Error executing cl.exe.
+
+
+
+<h3>Results</h3>
+testUSB.exe - 3 error(s), 0 warning(s)
+<h3>
+--------------------Configuration: testUSB - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x804 /fo"Debug/testUSB.res" /d "_DEBUG" /d "_AFXDLL" "D:\VC写作目录\源代码\第八章\USB编程\testUSB.rc"" 
+Creating temporary file "C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP94.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Debug/testUSB.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\VC写作目录\源代码\第八章\USB编程\ScrollerCtrl.cpp"
+"D:\VC写作目录\源代码\第八章\USB编程\testUSB.cpp"
+"D:\VC写作目录\源代码\第八章\USB编程\testUSBDlg.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP94.tmp" 
+Creating temporary file "C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP95.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Fp"Debug/testUSB.pch" /Yc"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\VC写作目录\源代码\第八章\USB编程\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP95.tmp" 
+Creating temporary file "C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP96.tmp" with contents
+[
+hid.lib setupapi.lib /nologo /subsystem:windows /incremental:yes /pdb:"Debug/testUSB.pdb" /debug /machine:I386 /out:"Debug/testUSB.exe" /pdbtype:sept 
+".\Debug\ScrollerCtrl.obj"
+".\Debug\StdAfx.obj"
+".\Debug\testUSB.obj"
+".\Debug\testUSBDlg.obj"
+".\Debug\testUSB.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\tangbin\LOCALS~1\Temp\RSP96.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+d:\vc写作目录\源代码\第八章\usb编程\usbhead.h(72) : error C2146: syntax error : missing ';' before identifier 'StringDescriptor'
+d:\vc写作目录\源代码\第八章\usb编程\usbhead.h(72) : error C2501: 'USB_STRING_DESCRIPTOR' : missing storage-class or type specifiers
+d:\vc写作目录\源代码\第八章\usb编程\usbhead.h(72) : error C2501: 'StringDescriptor' : missing storage-class or type specifiers
+Error executing cl.exe.
+
+
+
+<h3>Results</h3>
+testUSB.exe - 3 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
