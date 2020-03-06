@@ -1,0 +1,5 @@
+".\Objects\CDC.obj",
+".\Objects\DEBUG.obj",
+".\Objects\GPIO.obj" 
+TO ".\Objects\CDC" 
+PRINT(".\Listings\CDC.m51") RAMSIZE(256) 
